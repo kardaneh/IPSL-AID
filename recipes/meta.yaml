@@ -1,0 +1,36 @@
+{% set version = "0.1.0" %}
+
+package:
+  name: AI-Downscaling
+  version: {{ version }}
+
+source:
+  - url: file://{{ RECIPE_DIR }}/../dist/AI-Downscaling-{{ version }}.tar.gz
+
+build:
+  number: 0
+  script: "{{PYTHON}} -m pip install . --no-deps -vv"
+  noarch: python
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy
+    - matplotlib
+
+test:
+  imports:
+    - AI-Downscaling
+
+about:
+  home: http://github.com/kardaneh/AI-Downscaling
+  license: BSD
+  license_family: BSD
+  summary: "AI Downscaling generator"
+  description: "AI Downscaling generator"
+
+extra:
+  recipe-maintainers: "kazem.arrdaneh@gmail.com"

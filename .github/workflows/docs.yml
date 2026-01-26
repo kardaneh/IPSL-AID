@@ -71,15 +71,17 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Download docs
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: documentation
-          path: doc/build/html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: doc/build/html
+          github_token: ${{ secrets.GH_PAGES_TOKEN }}
+          publish_dir: .
           publish_branch: gh-pages
+          force_orphan: true  # Clean history for private repo
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'

@@ -38,7 +38,7 @@ Architecture Components
    Multi-head self-attention at specific resolutions (64 channels per head):
 
    .. math::
-      
+
       \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\Big({\mathbf{Q}^\top \mathbf{K}}/{\sqrt{d_{\mathrm k}}}\Big)\mathbf{V}
 
 **Conditioning**
@@ -54,7 +54,7 @@ Embedding Layers
 Noise levels :math:`\sigma` are represented using sinusoidal positional embedding:
 
 .. math::
-   
+
    \mathbf{e}_\sigma = \text{PE}(\sigma) \in \mathbb{R}^{C_\mathrm{base}}
 
 Processed by two fully connected layers with SiLU activations.
@@ -113,7 +113,7 @@ Configuration Examples
      dropout: 0.1
      use_attention: true
      conditioning: "concat"
-     
+
    input:
      variables: ["t2m", "u10", "v10"]
      static_features: ["lat", "lon", "z", "lsm"]

@@ -28,7 +28,7 @@ Project Structure
    │   └── diffusion_model.out          # Output logging utilities
    │
    ├── slurm/                          # HPC job scripts
-   │   ├── run_<experiment_name>.sh    # Executable run scripts  
+   │   ├── run_<experiment_name>.sh    # Executable run scripts
    │   └── sbatch_diffusion_*.sh       # SLURM submission scripts
    │
    └── outputs/                        # Generated outputs (not in version control)
@@ -128,7 +128,7 @@ The test suite in ``tests/test_all.py`` uses Python's ``unittest`` framework:
 
    # Run all tests
    python tests/test_all.py
-   
+
    # Run specific test module
    python tests/test_all.py loss
 
@@ -157,18 +157,18 @@ Development Workflow
    uv venv --python=python3.11
    source .venv/bin/activate
    uv pip install -r pyproject.toml
-   
+
    # 2. Configuration
    ./setup  # Edit parameters as needed
-   
+
    # 3. Testing
    python tests/test_all.py
 
    # 4. Local debugging (small scale)
    python -m IPSL_AID.main --debug --epochs 2 --batch_size 4
-   
+
    # 5. HPC submission
    sbatch slurm/sbatch_diffusion_*.sh
-   
+
    # 6. Analysis
    All outputs saved in results/ for study.

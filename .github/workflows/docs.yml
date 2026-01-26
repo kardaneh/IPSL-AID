@@ -1,0 +1,70 @@
+name: Documentation CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'doc/**'
+      - 'IPSL_AID/**'
+      - 'pyproject.toml'
+      - '.readthedocs.yaml'
+      - 'README.rst'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.15"
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies with uv
+        run: |
+          uv sync --extra docs --dev
+          uv pip install sphinx-rtd-theme
+
+      - name: Build documentation locally
+        run: |
+          cd doc
+          uv run sphinx-build -b html source build/html
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: doc/build/html/
+          retention-days: 7
+
+  deploy-docs:
+    needs: build-docs
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download documentation artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: doc/build/html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: doc/build/html
+          publish_branch: gh-pages
+          force_orphan: true

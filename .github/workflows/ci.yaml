@@ -1,0 +1,21 @@
+name: aidownscaling-ci
+
+on:
+  pull_request:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: pre-commit/action@v3.0.1
+
+pylint:
+  runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@v3
+  - uses: prefix-dev/setup-pixi@v0.8.1
+    with:
+      pixi-version: v0.24.2
+      cache: true
+  - run: pixi run lint

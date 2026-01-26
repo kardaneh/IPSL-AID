@@ -1,0 +1,300 @@
+#!/usr/bin/env bash
+
+# ======================
+# 1. Unified Debug Flag
+# ======================
+debug=true     # true = SLURM debug job + Python --debug true
+                # false = full job + Python --debug false
+
+DATE=$(date +"%Y%m%d")
+TODAY=$(date +"%Y%m%d_%H%M%S")
+
+# ======================
+# 2. Parameters
+# ======================
+
+run_type="train"  #"inference"
+region=""
+save_model=true
+save_checkpoint_name="difusion_model"
+load_checkpoint_name="difusion_model"
+save_per_samples=10000
+
+year_start=2019
+year_end=2019
+year_start_test=2020 #2020
+year_end_test=2020 #2020
+
+batch_size=70 #20 #40 # use maximum 18 for 1 GPU
+num_epochs=1
+learning_rate=0.0001
+num_workers=8
+
+datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+per_var_datadir=(
+  "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+  "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+  "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp")
+
+
+time_normalization="cos_sin"
+
+varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") # "VAR_TP"
+constant_varnames_list=("z" "lsm")
+constant_varnames_file="ERA5_const_sfc_variables.nc"
+normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=standard") # "VAR_TP=standard"
+units_list=("K" "m/s" "m/s" "m/h") # "m/h"
+dynamic_covariates=()
+dynamic_covariates_dir="../data_covariates/"
+
+sbatch=12 #12
+tbatch=1800
+batch_size_lat=145
+batch_size_lon=361
+
+epsilon=0.02
+beta=1.0
+margin=8
+
+pretrained_path=""
+model_name=""
+
+dtype="fp32"
+arch="adm"
+precond="edm"
+in_channels=4 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
+cond_channels=8 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm
+out_channels=4 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
+inference_type="sampler" # "direct" or  "sampler"
+# NEW: Add apply_filter parameter
+apply_filter=false
+
+# ======================
+# 3. SLURM Configuration
+# ======================
+
+SLURM_ACCOUNT="EUHPC_D27_095"
+SLURM_PARTITION="boost_usr_prod"
+SLURM_QOS="boost_qos_lprod"
+SLURM_GRES=4
+SLURM_NODES=1
+SLURM_NTASKS_PER_NODE=32
+
+# ======================
+# Generate Tag and Output Paths
+# ======================
+eps_str="${epsilon//./d}"
+lr_str="${learning_rate//./d}"
+
+mode_str=$([[ "$debug" == true ]] && echo "debug" || echo "prod")
+
+# Create BASE model name parts (configuration only)
+base_parts=("y${year_start}_${year_end}")
+base_parts+=("norm_${time_normalization}")
+base_parts+=("lat${batch_size_lat}")
+base_parts+=("lon${batch_size_lon}")
+base_parts+=("vars${#varnames_list[@]}")
+base_parts+=("dt${dtype}")
+base_parts+=("arch${arch}")
+base_parts+=("pre${precond}")
+base_parts+=("in${in_channels}")
+base_parts+=("cond${cond_channels}")
+base_parts+=("out${out_channels}")
+filter_str=$([[ "$apply_filter" == true ]] && echo "filter" || echo "nofilter")
+base_parts+=("${filter_str}")
+
+# Create TRAINING model name parts (training-specific)
+train_parts=("ep${num_epochs}")
+train_parts+=("sb${sbatch}")
+train_parts+=("tb${tbatch}")
+train_parts+=("eps${eps_str}")
+train_parts+=("mrg${margin}")
+train_parts+=("inf_${inference_type}")
+
+# Add checkpoint info to model name if not training from scratch
+if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
+    train_parts+=("resume")
+fi
+
+# Combine all parts
+model_parts=("${mode_str}" "${base_parts[@]}" "${train_parts[@]}")
+
+# Model name (full configuration) - PROPERLY joined with underscores
+model_name=$(IFS=_ ; echo "${model_parts[*]}")
+tag="${model_name}_bs${batch_size}_lr${lr_str}_${TODAY}"
+
+# Define output paths - hierarchical structure
+# Main folder: mode + base configuration - PROPERLY joined
+main_folder="${mode_str}_$(IFS=_ ; echo "${base_parts[*]}")"
+
+# Sub folder: training parameters + date - PROPERLY joined
+train_parts_str=$(IFS=_ ; echo "${train_parts[*]}")
+sub_folder="train_${train_parts_str}_bs${batch_size}_lr${lr_str}"
+
+# Prefix: simple run identifier
+prefix="run_${TODAY}"
+
+run_script="slurm/run_diffusion_${main_folder}_${sub_folder}.sh"
+sbatch_script="slurm/sbatch_diffusion_${main_folder}_${sub_folder}.sh"
+
+# ======================
+# Generate Run Script
+# ======================
+
+cat > $run_script <<EOF
+#!/usr/bin/env bash
+echo "Starting training: $TODAY"
+echo "Debug mode: $debug"
+echo "Run type: $run_type"
+echo "Configuration: $tag"
+echo "Main folder: $main_folder"
+echo "Sub folder: $sub_folder"
+echo "Prefix: $prefix"
+
+# Set script and project directories
+SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="\$(cd "\$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="\$PROJECT_ROOT:\$PYTHONPATH"
+
+# run from project root so -m works
+cd "\$PROJECT_ROOT"
+
+python -m IPSL_AID.main \\
+EOF
+
+# Updated debug flag syntax
+echo "    --debug $debug \\" >> $run_script
+
+# Output paths (modified)
+echo "    --main_folder \"$main_folder\" \\" >> $run_script
+echo "    --sub_folder \"$sub_folder\" \\" >> $run_script
+echo "    --prefix \"$prefix\" \\" >> $run_script
+
+# Additional args
+echo "    --run_type \"$run_type\" \\" >> $run_script
+echo "    --save_model $save_model \\" >> $run_script
+echo "    --save_checkpoint_name \"$save_checkpoint_name\" \\" >> $run_script
+echo "    --load_checkpoint_name \"$load_checkpoint_name\" \\" >> $run_script
+echo "    --save_per_samples \"$save_per_samples\" \\" >> $run_script
+echo "    --inference_type \"$inference_type\" \\" >> $run_script
+echo "    --arch \"$arch\" \\" >> $run_script
+echo "    --precond \"$precond\" \\" >> $run_script
+echo "    --in_channels \"$in_channels\" \\" >> $run_script
+echo "    --cond_channels \"$cond_channels\" \\" >> $run_script
+echo "    --out_channels \"$out_channels\" \\" >> $run_script
+
+# NEW: Add apply_filter parameter
+echo "    --apply_filter $apply_filter \\" >> $run_script
+
+# Optional parameters
+[ -n "$region" ] && echo "    --region \"$region\" \\" >> $run_script
+[ -n "$pretrained_path" ] && echo "    --pretrained_path \"$pretrained_path\" \\" >> $run_script
+[ -n "$model_name" ] && echo "    --model_name \"$model_name\" \\" >> $run_script
+
+# Arrays
+[ ${#varnames_list[@]} -gt 0 ] && echo "    --varnames_list ${varnames_list[@]} \\" >> $run_script
+[ ${#normalization_types[@]} -gt 0 ] && echo "    --normalization_types ${normalization_types[@]} \\" >> $run_script
+[ ${#constant_varnames_list[@]} -gt 0 ] && echo "    --constant_varnames_list ${constant_varnames_list[@]} \\" >> $run_script
+echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $run_script
+[ ${#units_list[@]} -gt 0 ] && echo "    --units_list ${units_list[@]} \\" >> $run_script
+[ ${#dynamic_covariates[@]} -gt 0 ] && echo "    --dynamic_covariates ${dynamic_covariates[@]} \\" >> $run_script
+
+#--per_var_datadir ${per_var_datadir[@]} \\
+cat >> $run_script <<EOF
+    --year_start "$year_start" \\
+    --year_end "$year_end" \\
+    --year_start_test "$year_start_test" \\
+    --year_end_test "$year_end_test" \\
+    --batch_size "$batch_size" \\
+    --num_epochs "$num_epochs" \\
+    --learning_rate "$learning_rate" \\
+    --num_workers "$num_workers" \\
+    --datadir "$datadir" \\
+    --per_var_datadir ${per_var_datadir[@]} \\
+    --time_normalization "$time_normalization" \\
+    --tbatch "$tbatch" \\
+    --sbatch "$sbatch" \\
+    --batch_size_lat "$batch_size_lat" \\
+    --batch_size_lon "$batch_size_lon" \\
+    --epsilon "$epsilon" \\
+    --beta "$beta" \\
+    --margin "$margin" \\
+    --dynamic_covariates_dir "$dynamic_covariates_dir" \\
+    --dtype "$dtype"
+EOF
+
+chmod +x $run_script
+
+# ======================
+# Generate SBATCH Script
+# ======================
+
+cat > $sbatch_script <<EOF
+#!/bin/bash
+#SBATCH --job-name=diffusion_${tag}
+#SBATCH --account=$SLURM_ACCOUNT
+#SBATCH --partition=$SLURM_PARTITION
+EOF
+
+# SLURM debug selection
+if [ "$debug" = true ]; then
+    echo "#SBATCH --qos=boost_qos_dbg" >> $sbatch_script
+    echo "#SBATCH --time=00:30:00" >> $sbatch_script
+else
+    echo "#SBATCH --time=24:00:00" >> $sbatch_script
+fi
+
+cat >> $sbatch_script <<EOF
+#SBATCH --nodes=$SLURM_NODES
+#SBATCH --gpus-per-node=$SLURM_GRES
+#SBATCH --mem-per-gpu=64G
+#SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
+#SBATCH --error=../slurm_io/diffusion_${tag}_%j.err
+#SBATCH --output=../slurm_io/diffusion_${tag}_%j.out
+##SBATCH --mail-user=kkingston@ipsl.fr
+##SBATCH --mail-type=END,FAIL
+
+ulimit -s unlimited
+module purge
+source ../arch-nvhpc_LEONARDO.env
+##module load cuda/12.1
+##source ~/torch_test/bin/activate
+
+export PYTHONUNBUFFERED=1
+
+echo "===== Job Infos ====="
+echo "Debug mode: $debug"
+echo "Apply filter: $apply_filter"
+echo "Node list: \${SLURM_NODELIST}"
+echo "Job ID: \${SLURM_JOB_ID}"
+echo "Current dir: \$(pwd)"
+echo "Output main folder: $main_folder"
+echo "Output sub folder: $sub_folder"
+echo "====================="
+
+./run_diffusion_${main_folder}_${sub_folder}.sh
+
+exit \$?
+EOF
+
+chmod +x $sbatch_script
+
+echo "=== Setup Complete ==="
+echo "Debug mode: $debug"
+echo "Apply filter: $apply_filter"
+echo "Inference type: $inference_type"
+echo "Run type: $run_type"
+echo "Checkpoint: load=$load_model, save=$save_model"
+if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
+    echo "Checkpoint file: $load_checkpoint_name"
+fi
+echo "Model name parts: ${model_parts[*]}"
+echo "Model name: $model_name"
+echo "Tag: $tag"
+echo "Main folder: $main_folder"
+echo "Sub folder: $sub_folder"
+echo "Prefix: $prefix"
+echo "Run script: ./$run_script"
+echo "SBATCH: ./$sbatch_script"
+echo "To submit: sbatch ./$sbatch_script"

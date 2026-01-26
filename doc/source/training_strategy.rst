@@ -22,7 +22,7 @@ boundaries.
 .. figure:: ../../images/random_block_sampling.png
    :width: 80%
    :align: center
-   
+
    Example of randomly sampled spatial blocks used during training
 
 Several values for the number of spatial blocks per epoch (:math:`s=6`, 9, and 12)

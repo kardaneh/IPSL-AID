@@ -119,30 +119,30 @@ Example Usage
 .. code-block:: python
 
    from IPSL_AID.evaluater import run_validation
-   
+
    # Load trained model
    model = load_model("checkpoints/corresponding_expriment/best_model.pth")
-   
+
    # Run global inference
    avg_val_loss, val_metrics = run_validation(
-      model, 
+      model,
       valid_dataset,
-      valid_loader, 
-      loss_fn, 
-      norm_mapping, 
-      normalization_type, 
-      index_mapping, 
+      valid_loader,
+      loss_fn,
+      norm_mapping,
+      normalization_type,
+      index_mapping,
       args,
-      steps, 
-      device, 
-      logger, 
-      epoch=0,  
+      steps,
+      device,
+      logger,
+      epoch=0,
       writer=writer,
-      plot_every_n_epochs=1, 
+      plot_every_n_epochs=1,
       edm_sampler_steps=20,
       paths=paths,
       compute_crps=True
       )
-   
+
    # Check results
    "results/corresponding_expriment/*.png"

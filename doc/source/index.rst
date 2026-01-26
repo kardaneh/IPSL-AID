@@ -13,7 +13,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
 .. toctree::
    :maxdepth: 2
    :caption: User Guide
-   
+
    overview
    installation
    quickstart
@@ -24,7 +24,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
 .. toctree::
    :maxdepth: 2
    :caption: Core Concepts
-   
+
    diffusion_models
    neural_architectures
    training_strategy
@@ -33,7 +33,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
-   
+
    api/modules
    api/IPSL_AID
 

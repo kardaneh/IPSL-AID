@@ -19,7 +19,7 @@ The EDM preconditioned model stabilizes training by standardizing the scales of
 inputs, outputs, and targets across varying noise levels:
 
 .. math::
-   
+
    D_\theta(\mathbf{x}; \sigma) =  c_{\rm {skip}}(\sigma) \mathbf{x} + c_{\rm{out}}(\sigma) F_\theta\big(c_{\rm{in}}(\sigma) \mathbf{x}; c_\mathrm{noise}(\sigma)\big)
 
 Where:
@@ -51,7 +51,7 @@ selected noise level :math:`\sigma` is added to the image. The network is traine
 with weighted denoising loss:
 
 .. math::
-   
+
    \mathcal{L} = \mathbb{E}_{\sigma, \mathbf{y}, \mathbf{n}} \left[ \lambda(\sigma) \left\| D_{\theta}(\mathbf{y} + \sigma\mathbf{n}, \sigma) - \mathbf{y} \right\|_2^2 \right]
 
 Where :math:`\lambda(\sigma) = (\sigma^2 + \sigma_{\mathrm{data}}^2) / (\sigma \, \sigma_{\mathrm{data}})^2`.
@@ -101,7 +101,7 @@ Configuration Example
      rho: 7.0
      p_mean: -1.2
      p_std: 1.2
-     
+
    sampling:
      steps: 40
      sampler: "heun"

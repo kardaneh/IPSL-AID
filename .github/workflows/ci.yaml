@@ -34,7 +34,7 @@ jobs:
 
       - name: Basic import test
         run: |
-          python -c "
+          uv run python -c "
           # Mock HPC/GPU modules
           import sys
           class Mock:

@@ -1,21 +1,51 @@
-name: aidownscaling-ci
+name: CI
 
 on:
+  push:
+    branches: [ main, develop ]
   pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggers
 
 jobs:
-  pre-commit:
+  checks:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: pre-commit/action@v3.0.1
 
-pylint:
-  runs-on: ubuntu-latest
-  steps:
-  - uses: actions/checkout@v3
-  - uses: prefix-dev/setup-pixi@v0.8.1
-    with:
-      pixi-version: v0.24.2
-      cache: true
-  - run: pixi run lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files
+
+      - name: Check package builds
+        run: uv build
+
+      - name: Basic import test
+        run: |
+          python -c "
+          # Mock HPC/GPU modules
+          import sys
+          class Mock:
+              def __getattr__(self, name): return Mock()
+              def __call__(self, *args, **kwargs): return Mock()
+
+          sys.modules['torch'] = Mock()
+          sys.modules['cartopy'] = type('obj', (), {'config': {}})()
+
+          # Test basic imports
+          import IPSL_AID.utils
+          import IPSL_AID.logger
+          print('✅ Basic imports work')
+          "

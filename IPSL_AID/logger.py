@@ -14,26 +14,25 @@
 # limitations under the License.
 
 import logging
-import time
-import json
 import traceback
-import functools
-import inspect
 from datetime import datetime
 from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
-from rich.layout import Layout
 from rich.text import Text
 from rich.progress import BarColumn
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, BarColumn, TextColumn
-from rich.traceback import install
-from rich.logging import RichHandler
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn
 
 
 class Logger:
-    def __init__(self, console_output=True, file_output=False, log_file="module_log_file.log", pretty_print=True, record=False):
-
+    def __init__(
+        self,
+        console_output=True,
+        file_output=False,
+        log_file="module_log_file.log",
+        pretty_print=True,
+        record=False,
+    ):
         self.console_output = console_output
         self.file_output = file_output
         self.log_file = log_file
@@ -41,19 +40,21 @@ class Logger:
         self.record = record
 
         self.console = Console(record=self.record)
-        self.logger = logging.getLogger(f"ModuleLogger")
+        self.logger = logging.getLogger("ModuleLogger")
         self.logger.setLevel(logging.INFO)
-        
+
         # Clear any existing handlers
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
 
         # Plain text handler for file output only (no RichHandler for console)
         if self.file_output:
-            file_handler = logging.FileHandler(self.log_file, mode="w", encoding='utf-8')
+            file_handler = logging.FileHandler(
+                self.log_file, mode="w", encoding="utf-8"
+            )
             file_handler.setLevel(logging.INFO)
             # Use a simple formatter for file output
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 
@@ -75,7 +76,7 @@ class Logger:
             "end_time": None,
             "node_sequence": [],
             "steps_completed": 0,
-            "node_count": {}
+            "node_count": {},
         }
 
     def clear_logs(self):
@@ -87,10 +88,13 @@ class Logger:
         """Display startup banner."""
         self.module_name = module_name
         if self.console_output:
-            self.console.print(Panel(
-                f"[bold red]🚀 Starting Module:[/bold red] [cyan]{self.module_name}[/cyan]",
-                title="IPSL AI Downscaling Tool", border_style="bright_blue"
-            ))
+            self.console.print(
+                Panel(
+                    f"[bold red]🚀 Starting Module:[/bold red] [cyan]{self.module_name}[/cyan]",
+                    title="IPSL AI Downscaling Tool",
+                    border_style="bright_blue",
+                )
+            )
         # Also log to file
         if self.file_output:
             self.logger.info(f"🚀 Starting Module: {self.module_name}")
@@ -116,7 +120,7 @@ class Logger:
         components.append(Text(""))  # blank line
         if meta_lines:
             components.extend(Text.from_markup(line) for line in meta_lines)
-            components.append(Text("")) 
+            components.append(Text(""))
 
         content = Group(*components)
 
@@ -130,12 +134,12 @@ class Logger:
                     padding=(1, 4),  # (top-bottom, left-right)
                 )
             )
-        
+
         # Log to file
         if self.file_output:
             meta_str = ", ".join([f"{k.upper()}: {v}" for k, v in meta.items()])
             self.logger.info(f"TASK STARTED: {task_name} - {description} - {meta_str}")
-    
+
     def log_metrics(self):
         """Log pipeline metrics"""
         if self.console_output:
@@ -150,18 +154,24 @@ class Logger:
             table.add_row(
                 "[bold]Total[/bold]",
                 f"[bold]{sum(self.metrics['node_count'].values())}[/bold]",
-                f"[bold]{sum(self.metrics['node_times'].values()):.2f}[/bold]"
+                f"[bold]{sum(self.metrics['node_times'].values()):.2f}[/bold]",
             )
-            
-            self.console.print(Panel(table, title="Metrics Summary", border_style="bright_blue"))
-        
+
+            self.console.print(
+                Panel(table, title="Metrics Summary", border_style="bright_blue")
+            )
+
         # Log metrics to file
         if self.file_output:
             self.logger.info("Pipeline Metrics Summary:")
             for node, count in self.metrics["node_count"].items():
                 total_time = self.metrics["node_times"].get(node, 0)
-                self.logger.info(f"  {node}: Count={count}, Total Time={total_time:.2f}s")
-            self.logger.info(f"  Total: Count={sum(self.metrics['node_count'].values())}, Total Time={sum(self.metrics['node_times'].values()):.2f}s")
+                self.logger.info(
+                    f"  {node}: Count={count}, Total Time={total_time:.2f}s"
+                )
+            self.logger.info(
+                f"  Total: Count={sum(self.metrics['node_count'].values())}, Total Time={sum(self.metrics['node_times'].values()):.2f}s"
+            )
 
     def info(self, message):
         """Formatted info message"""
@@ -173,7 +183,9 @@ class Logger:
     def warning(self, message):
         """Formatted warning message"""
         if self.console_output:
-            self.console.print(f"[bold yellow][WARNING][/bold yellow] :warning: {message}")
+            self.console.print(
+                f"[bold yellow][WARNING][/bold yellow] :warning: {message}"
+            )
         if self.file_output:
             self.logger.warning(message)
 
@@ -187,7 +199,9 @@ class Logger:
     def step(self, step_name, message):
         """Highlight pipeline step events"""
         if self.console_output:
-            self.console.print(f"[bold magenta]▶ Step: {step_name}[/bold magenta] — {message}")
+            self.console.print(
+                f"[bold magenta]▶ Step: {step_name}[/bold magenta] — {message}"
+            )
         if self.file_output:
             self.logger.info(f"Step: {step_name} - {message}")
 
@@ -210,7 +224,9 @@ class Logger:
 
             if code_line:
                 # Use from_markup for the highlighted code
-                code_text = Text.from_markup(f"Code: [italic yellow]{code_line}[/italic yellow]")
+                code_text = Text.from_markup(
+                    f"Code: [italic yellow]{code_line}[/italic yellow]"
+                )
                 header.append(code_text)
 
             frame_panel = Panel(
@@ -222,7 +238,9 @@ class Logger:
             panels.append(frame_panel)
 
         exception_info = Panel(
-            Text.from_markup(f"[bold red]{type(exception).__name__}[/bold red]: {exception}"),
+            Text.from_markup(
+                f"[bold red]{type(exception).__name__}[/bold red]: {exception}"
+            ),
             title="[bold red]Exception Raised[/bold red]",
             border_style="red",
         )
@@ -231,7 +249,7 @@ class Logger:
             Group(*panels, exception_info),
             title="[bold red]Traceback[/bold red]",
             border_style="red",
-            expand=False
+            expand=False,
         )
 
     def exception(self, message, exception=None):
@@ -243,18 +261,23 @@ class Logger:
                 tb_panels = self._format_traceback_panels(exception)
                 main_panel = Panel(
                     Group(
-                        Text.from_markup(f"[bold red]{message}[/bold red]\n"),
-                        tb_panels
+                        Text.from_markup(f"[bold red]{message}[/bold red]\n"), tb_panels
                     ),
                     title="[bold red]EXCEPTION[/bold red]",
-                    border_style="red"
+                    border_style="red",
                 )
                 self.console.print(main_panel)
         else:
             if self.file_output:
                 self.logger.error(message)
             if self.console_output:
-                self.console.print(Panel(f"[bold red]{message}[/bold red]", title="[bold red]EXCEPTION[/bold red]", border_style="red"))
+                self.console.print(
+                    Panel(
+                        f"[bold red]{message}[/bold red]",
+                        title="[bold red]EXCEPTION[/bold red]",
+                        border_style="red",
+                    )
+                )
 
     def error(self, message, exception=None):
         """Display a formatted error log, optionally including exception trace."""
@@ -263,15 +286,23 @@ class Logger:
                 self.logger.error(f"{message} - {exception}")
             if self.console_output:
                 tb = traceback.format_exc()
-                self.console.print(Panel(
-                    f"[bold red]{message}[/bold red]\n\n"
-                    f"[red]Error:[/red] [bold]{type(exception).__name__}[/bold]: {str(exception)}\n\n"
-                    f"[dim]{tb}[/dim]",
-                    title="[bold red]ERROR[/bold red]",
-                    border_style="red"
-                ))
+                self.console.print(
+                    Panel(
+                        f"[bold red]{message}[/bold red]\n\n"
+                        f"[red]Error:[/red] [bold]{type(exception).__name__}[/bold]: {str(exception)}\n\n"
+                        f"[dim]{tb}[/dim]",
+                        title="[bold red]ERROR[/bold red]",
+                        border_style="red",
+                    )
+                )
         else:
             if self.file_output:
                 self.logger.error(message)
             if self.console_output:
-                self.console.print(Panel(f"[bold red]{message}[/bold red]", title="[bold red]ERROR[/bold red]", border_style="red"))
+                self.console.print(
+                    Panel(
+                        f"[bold red]{message}[/bold red]",
+                        title="[bold red]ERROR[/bold red]",
+                        border_style="red",
+                    )
+                )

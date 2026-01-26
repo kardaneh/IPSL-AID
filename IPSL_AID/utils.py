@@ -14,7 +14,8 @@
 # limitations under the License.
 
 import os
-from typing import Any, List, Tuple, Union, Optional
+from typing import Any
+
 
 class EasyDict(dict):
     """
@@ -37,6 +38,7 @@ class EasyDict(dict):
 
     def __delattr__(self, name: str) -> None:
         del self[name]
+
 
 class FileUtils:
     """

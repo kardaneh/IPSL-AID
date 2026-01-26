@@ -11,10 +11,11 @@ Run all tests in the package:
     $ python test_all.py
 
 Run tests from specific modules:
-    $ python test_all.py loss network 
+    $ python test_all.py loss network
 
 Skip modules can be configured via the SKIP_MODULES set.
 """
+
 import sys
 import os
 import unittest
@@ -26,10 +27,10 @@ import importlib
 # ---------------------------------------------------------------------
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+    sys.path.insert(0, ROOT_DIR)  # noqa: E402
 
-import IPSL_AID
-from IPSL_AID.logger import Logger
+import IPSL_AID  # noqa: E402
+from IPSL_AID.logger import Logger  # noqa: E402
 
 # ---------------------------------------------------------------------
 # Configuration
@@ -76,10 +77,7 @@ def load_module_tests(module_name, logger):
             and issubclass(attr, unittest.TestCase)
             and attr is not unittest.TestCase
         ):
-            test_methods = [
-                name for name in dir(attr)
-                if name.startswith("test_")
-            ]
+            test_methods = [name for name in dir(attr) if name.startswith("test_")]
 
             logger.info(
                 f"📦 Loading {len(test_methods)} tests from "
@@ -147,11 +145,7 @@ def main():
         - No arguments: Run all tests
         - With arguments: Run tests from specified modules only
     """
-    logger = Logger(
-        console_output=True,
-        file_output=False,
-        record=True
-    )
+    logger = Logger(console_output=True, file_output=False, record=True)
 
     logger.show_header("IPSL-AID Test Suite")
 

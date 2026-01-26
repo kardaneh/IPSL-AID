@@ -74,9 +74,7 @@ for day in unique_days:
 
     # Select only the fixed hours (00h, 06h, 12h, 18h)
     fixed_hours = [0, 6, 12, 18]
-    selected = [
-        idx for idx, t in zip(day_inds, day_times) if t.hour in fixed_hours
-    ]
+    selected = [idx for idx, t in zip(day_inds, day_times) if t.hour in fixed_hours]
 
     # Keep the indices only if all 4 fixed hours are available
     if len(selected) == 4:

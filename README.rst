@@ -25,8 +25,8 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
 
 ## Authors & Affiliation
 
-- **Kazem Ardaneh**  
-- **Kishanthan Kingston**  
+- **Kazem Ardaneh**
+- **Kishanthan Kingston**
 
 Developed at **IPSL / CNRS / Sorbonne University** (2026)
 
@@ -34,8 +34,8 @@ Developed at **IPSL / CNRS / Sorbonne University** (2026)
 
 ## License
 
-This software is licensed under the **Apache License, Version 2.0**.  
-You may not use this software except in compliance with the License.  
+This software is licensed under the **Apache License, Version 2.0**.
+You may not use this software except in compliance with the License.
 You may obtain a copy of the License at:
 
 [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
@@ -48,6 +48,6 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 If you use **IPSL-AID** in your research, please cite:
 
-**IPSL-AID: Generative Diffusion Models for Climate Downscaling from Regional to Global Scales**  
-Kishanthan Kingston, Olivier Boucher, Freddy Bouchet, Pierre Chapel, Rosemary Eade, Jean-François Lamarque, Redouane Lguensat, 2026.  
+**IPSL-AID: Generative Diffusion Models for Climate Downscaling from Regional to Global Scales**
+Kishanthan Kingston, Olivier Boucher, Freddy Bouchet, Pierre Chapel, Rosemary Eade, Jean-François Lamarque, Redouane Lguensat, 2026.
 IPSL / CNRS / Sorbonne University.

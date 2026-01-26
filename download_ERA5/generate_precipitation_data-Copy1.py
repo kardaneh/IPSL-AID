@@ -8,7 +8,9 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description="Process ERA5 TP data for a year range")
-parser.add_argument("--year_start", type=int, required=True, help="Start year (inclusive)")
+parser.add_argument(
+    "--year_start", type=int, required=True, help="Start year (inclusive)"
+)
 parser.add_argument("--year_end", type=int, required=True, help="End year (inclusive)")
 args = parser.parse_args()
 
@@ -23,17 +25,18 @@ dir_in = "/bdd/ERA5/NETCDF/GLOBAL_025/hourly/FC_SF"
 dir_out = "/net/nfs/ssd1/kkingston/AI-Downscaling/data_tp"
 os.makedirs(dir_out, exist_ok=True)
 
-csv_path = "/net/nfs/ssd1/kkingston/AI-Downscaling/data/dates_hours_1980_2022_1xDaily.csv"
+csv_path = (
+    "/net/nfs/ssd1/kkingston/AI-Downscaling/data/dates_hours_1980_2022_1xDaily.csv"
+)
+
 
 def open_and_select(file):
     if not os.path.exists(file):
         print(f"File not found: {file}")
         return None
     ds = xr.open_dataset(file)
-    return ds.sel(
-        longitude=slice(lonmin, lonmax),
-        latitude=slice(latmax, latmin)
-    )
+    return ds.sel(longitude=slice(lonmin, lonmax), latitude=slice(latmax, latmin))
+
 
 # Load timestamp CSV
 df_dates = pd.read_csv(csv_path)
@@ -53,15 +56,21 @@ for year in range(year_start, year_end + 1):
     # Previous Dec 31
     prev_year = year - 1
     for hour in ["600", "1800"]:
-        fpath = f"{dir_in}/{prev_year}/12/{var}.{prev_year}1231.{hour}.fs1e5.GLOBAL_025.nc"
+        fpath = (
+            f"{dir_in}/{prev_year}/12/{var}.{prev_year}1231.{hour}.fs1e5.GLOBAL_025.nc"
+        )
         if os.path.exists(fpath):
             all_files.append(fpath)
 
     # Current year
     for m in range(1, 13):
         dir_month = f"{dir_in}/{year}/{m:02d}"
-        files_600 = sorted(glob(f"{dir_month}/{var}.{year}{m:02d}*.600.fs1e5.GLOBAL_025.nc"))
-        files_1800 = sorted(glob(f"{dir_month}/{var}.{year}{m:02d}*.1800.fs1e5.GLOBAL_025.nc"))
+        files_600 = sorted(
+            glob(f"{dir_month}/{var}.{year}{m:02d}*.600.fs1e5.GLOBAL_025.nc")
+        )
+        files_1800 = sorted(
+            glob(f"{dir_month}/{var}.{year}{m:02d}*.1800.fs1e5.GLOBAL_025.nc")
+        )
         all_files.extend(files_600 + files_1800)
 
     # Next Jan 1
@@ -89,8 +98,8 @@ for year in range(year_start, year_end + 1):
 
     print("Sorting and deduplicating time values...")
     ds_all = ds_all.sortby("time")
-    #time_index = pd.to_datetime(ds_all.time.values)
-    #ds_all = ds_all.isel(time=~time_index.duplicated())
+    # time_index = pd.to_datetime(ds_all.time.values)
+    # ds_all = ds_all.isel(time=~time_index.duplicated())
     _, index = np.unique(ds_all.time.values, return_index=True)
     ds_all = ds_all.isel(time=np.sort(index))
     print("Time cleanup done.")
@@ -107,4 +116,3 @@ for year in range(year_start, year_end + 1):
     ds_filtered.to_netcdf(output_filtered)
     print(f"Saved: {output_filtered}")
     print(f"Finished processing {year}")
-

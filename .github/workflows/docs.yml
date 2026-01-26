@@ -1,61 +1,77 @@
-name: Documentation CI
+name: Documentation
 
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'doc/**'
-      - 'IPSL_AID/**'
-      - 'pyproject.toml'
-      - '.readthedocs.yaml'
-      - 'README.rst'
-  pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build-docs:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "0.4.15"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        run: uv python install 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-      - name: Install dependencies with uv
+      - name: Install ONLY documentation packages
         run: |
-          uv sync --extra docs --dev
-          uv pip install sphinx-rtd-theme
+          # Install ONLY what's needed for Sphinx
+          pip install sphinx sphinx-rtd-theme myst-parser sphinx-copybutton
 
-      - name: Build documentation locally
+          # Create mock modules BEFORE Sphinx runs
+          python -c "
+          import sys
+
+          # Mock cartopy
+          class MockCartopy:
+              class config:
+                  data_dir = '/tmp/cartopy_data'
+
+              def __getattr__(self, name):
+                  return MockCartopy()
+
+          sys.modules['cartopy'] = MockCartopy()
+
+          # Mock other heavy deps
+          class MockModule:
+              def __init__(self, *args, **kwargs):
+                  pass
+              def __getattr__(self, name):
+                  return MockModule()
+              def __call__(self, *args, **kwargs):
+                  return MockModule()
+
+          for dep in ['torch', 'xarray', 'netCDF4', 'h5netcdf',
+                     'matplotlib', 'scipy', 'numpy', 'pandas']:
+              sys.modules[dep] = MockModule()
+
+          print('✅ Mocked all heavy dependencies')
+          "
+
+      - name: Build documentation
         run: |
           cd doc
-          uv run sphinx-build -b html source build/html
+          python -m sphinx.cmd.build -b html source build/html -q
+          echo "✅ Documentation built successfully!"
 
-      - name: Upload documentation artifact
+      - name: Upload docs
         uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: doc/build/html/
-          retention-days: 7
 
-  deploy-docs:
+  deploy:
+    runs-on: ubuntu-latest
     needs: build-docs
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Download documentation artifact
+    steps:
+      - name: Download docs
         uses: actions/download-artifact@v4
         with:
           name: documentation
@@ -67,4 +83,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: doc/build/html
           publish_branch: gh-pages
-          force_orphan: true

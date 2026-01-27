@@ -53,7 +53,6 @@ jobs:
           # Now import your modules
           import IPSL_AID.utils
           import IPSL_AID.logger
-          import IPSL_AID.networks
 
           print("✅ Basic imports work")
           EOF

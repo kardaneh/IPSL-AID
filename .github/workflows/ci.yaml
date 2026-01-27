@@ -46,14 +46,7 @@ jobs:
 
           # Mock torch and submodules
           torch = Mock("torch")
-          torch.nn = Mock("torch.nn")
-          torch.nn.functional = Mock("torch.nn.functional")
-          torch.nn.functional.silu = lambda *a, **k: None
-
           sys.modules["torch"] = torch
-          sys.modules["torch.nn"] = torch.nn
-          sys.modules["torch.nn.functional"] = torch.nn.functional
-
           # cartopy minimal mock
           sys.modules["cartopy"] = type("obj", (), {"config": {}})()
 

@@ -1,6 +1,24 @@
 Diffusion Models
 ================
 
+Diffusion models are a class of generative models that progressively transform
+simple noise into complex data distributions, such as images or climate fields.
+Intuitively, they work in two phases:
+
+1. **Forward diffusion**: A clean signal is gradually corrupted by adding Gaussian noise,
+   eventually transforming it into a nearly pure Gaussian distribution.
+2. **Reverse denoising**: A neural network is trained to gradually remove the noise,
+   step by step, reconstructing the original data distribution from the noisy signal.
+
+This can be visualized as follows:
+
+.. figure:: ../../images/diffusion.png
+   :width: 80%
+   :align: center
+
+   Two original Gaussian distributions are progressively transformed into normal distribution.
+   A denoising network then reconstructs the original distributions.
+
 The framework implements several diffusion formulations commonly used in
 state-of-the-art generative modeling:
 

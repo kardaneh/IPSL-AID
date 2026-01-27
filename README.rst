@@ -22,17 +22,14 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :target: https://ipsl-aid.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
----
 
-Authors & Affiliation
+Authors
 ---------------------
 
 - **Kazem Ardaneh**
 - **Kishanthan Kingston**
 
 Developed at **IPSL / CNRS / Sorbonne University** (2026)
-
----
 
 License
 ~~~~~~~
@@ -45,9 +42,9 @@ You may obtain a copy of the License at:
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
----
 
-## Citation (optional but recommended)
+Citation
+~~~~~~~~
 
 If you use **IPSL-AID** in your research, please cite:
 

@@ -34,16 +34,17 @@ jobs:
 
       - name: Basic import test
         run: |
-          uv run python -c "
+          uv run python << 'EOF'
           import sys
           from types import ModuleType
 
           class Mock(ModuleType):
-            def __getattr__(self, name):
-              return self
-            def __call__(self, *args, **kwargs):
-              return self
+              def __getattr__(self, name):
+                  return self
+              def __call__(self, *args, **kwargs):
+                  return self
 
+          # Mock torch and submodules
           torch = Mock("torch")
           torch.nn = Mock("torch.nn")
           torch.nn.functional = Mock("torch.nn.functional")
@@ -56,8 +57,10 @@ jobs:
           # cartopy minimal mock
           sys.modules["cartopy"] = type("obj", (), {"config": {}})()
 
+          # Now import your modules
           import IPSL_AID.utils
           import IPSL_AID.logger
           import IPSL_AID.networks
-          print('✅ Basic imports work')
-          "
+
+          print("✅ Basic imports work")
+          EOF

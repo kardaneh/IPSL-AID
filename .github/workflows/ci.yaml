@@ -5,7 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # Allow manual triggers
+  workflow_dispatch:
 
 jobs:
   checks:
@@ -35,17 +35,29 @@ jobs:
       - name: Basic import test
         run: |
           uv run python -c "
-          # Mock HPC/GPU modules
           import sys
-          class Mock:
-              def __getattr__(self, name): return Mock()
-              def __call__(self, *args, **kwargs): return Mock()
+          from types import ModuleType
 
-          sys.modules['torch'] = Mock()
-          sys.modules['cartopy'] = type('obj', (), {'config': {}})()
+          class Mock(ModuleType):
+            def __getattr__(self, name):
+              return self
+            def __call__(self, *args, **kwargs):
+              return self
 
-          # Test basic imports
+          torch = Mock("torch")
+          torch.nn = Mock("torch.nn")
+          torch.nn.functional = Mock("torch.nn.functional")
+          torch.nn.functional.silu = lambda *a, **k: None
+
+          sys.modules["torch"] = torch
+          sys.modules["torch.nn"] = torch.nn
+          sys.modules["torch.nn.functional"] = torch.nn.functional
+
+          # cartopy minimal mock
+          sys.modules["cartopy"] = type("obj", (), {"config": {}})()
+
           import IPSL_AID.utils
           import IPSL_AID.logger
+          import IPSL_AID.networks
           print('✅ Basic imports work')
           "

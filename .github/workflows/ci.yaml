@@ -42,7 +42,6 @@ jobs:
               def __call__(self, *args, **kwargs): return Mock()
 
           sys.modules['torch'] = Mock()
-          sys.modules["torchvision"] = Mock()
           sys.modules['cartopy'] = type('obj', (), {'config': {}})()
 
           import IPSL_AID.utils

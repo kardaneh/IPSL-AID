@@ -5,7 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:  # Allow manual triggers
 
 jobs:
   checks:
@@ -34,25 +34,18 @@ jobs:
 
       - name: Basic import test
         run: |
-          uv run python << 'EOF'
+          uv run python -c "
           import sys
-          from types import ModuleType
 
-          class Mock(ModuleType):
-              def __getattr__(self, name):
-                  return self
-              def __call__(self, *args, **kwargs):
-                  return self
+          class Mock:
+              def __getattr__(self, name): return Mock()
+              def __call__(self, *args, **kwargs): return Mock()
 
-          # Mock torch and submodules
-          torch = Mock("torch")
-          sys.modules["torch"] = torch
-          # cartopy minimal mock
-          sys.modules["cartopy"] = type("obj", (), {"config": {}})()
+          sys.modules['torch'] = Mock()
+          sys.modules["torchvision"] = Mock()
+          sys.modules['cartopy'] = type('obj', (), {'config': {}})()
 
-          # Now import your modules
           import IPSL_AID.utils
           import IPSL_AID.logger
-
-          print("✅ Basic imports work")
-          EOF
+          print('✅ Basic imports work')
+          "

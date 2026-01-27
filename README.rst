@@ -1,4 +1,5 @@
-# IPSL-AID
+IPSL-AID
+========
 
 |PyPI version| |Python versions| |License| |Documentation Status|
 
@@ -23,7 +24,8 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
 
 ---
 
-## Authors & Affiliation
+Authors & Affiliation
+---------------------
 
 - **Kazem Ardaneh**
 - **Kishanthan Kingston**
@@ -32,7 +34,8 @@ Developed at **IPSL / CNRS / Sorbonne University** (2026)
 
 ---
 
-## License
+License
+~~~~~~~
 
 This software is licensed under the **Apache License, Version 2.0**.
 You may not use this software except in compliance with the License.

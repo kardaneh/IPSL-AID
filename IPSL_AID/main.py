@@ -466,13 +466,19 @@ def setup_directories_and_logging(args):
     """
     # now = datetime.datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    current_dir = os.getcwd()
+    parent_dir = os.path.dirname(current_dir)
 
     paths = EasyDict()
-    paths.logs = os.path.join("logs", args.main_folder, args.sub_folder)
-    paths.results = os.path.join("results", args.main_folder, args.sub_folder)
-    paths.runs = os.path.join("runs", args.main_folder, args.sub_folder)
-    paths.checkpoints = os.path.join("checkpoints", args.main_folder, args.sub_folder)
-    paths.stats = os.path.join("stats", args.main_folder, args.sub_folder)
+    paths.logs = os.path.join(parent_dir, "logs", args.main_folder, args.sub_folder)
+    paths.results = os.path.join(
+        parent_dir, "results", args.main_folder, args.sub_folder
+    )
+    paths.runs = os.path.join(parent_dir, "runs", args.main_folder, args.sub_folder)
+    paths.checkpoints = os.path.join(
+        parent_dir, "checkpoints", args.main_folder, args.sub_folder
+    )
+    paths.stats = os.path.join(parent_dir, "stats", args.main_folder, args.sub_folder)
     paths.datadir = args.datadir
     paths.constants = os.path.join(paths.datadir, args.constant_varnames_file)
 

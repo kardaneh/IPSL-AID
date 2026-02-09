@@ -1,6 +1,11 @@
 IPSL-AID
 ========
 
+.. image:: ./images/AID.png
+   :alt: IPSL-AID Logo
+   :width: 300px
+   :align: center
+
 |PyPI version| |Python versions| |License| |Documentation Status|
 
 **IPSL-AID** is a high-performance research framework for **climate data downscaling**

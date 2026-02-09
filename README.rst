@@ -1,10 +1,12 @@
 IPSL-AID
 ========
 
-.. image:: ./images/AID.png
+.. figure:: ./images/AID.png
    :alt: IPSL-AID Logo
    :width: 300px
    :align: center
+
+   IPSL-AID Framework Logo
 
 |PyPI version| |Python versions| |License| |Documentation Status|
 

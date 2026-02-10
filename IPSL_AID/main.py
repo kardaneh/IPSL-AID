@@ -28,13 +28,17 @@ from IPSL_AID.model import load_model_and_loss
 from IPSL_AID.model_utils import ModelUtils
 import torch.optim as optim
 import xarray as xr
-from IPSL_AID.evaluater import MetricTracker, run_validation
 
 from IPSL_AID.diagnostics import (
     plot_metric_histories,
     plot_loss_histories,
     plot_average_metrics,
     plot_spatiotemporal_histograms,
+)
+
+from IPSL_AID.evaluater import (
+    MetricTracker,
+    run_validation,
 )
 
 
@@ -309,7 +313,7 @@ def parse_args():
         "--precond",
         type=str,
         default="edm",
-        choices=["vp", "ve", "edm"],
+        choices=["vp", "ve", "edm", "unet"],
         help="Diffusion preconditioner",
     )
     parser.add_argument(
@@ -466,19 +470,21 @@ def setup_directories_and_logging(args):
     """
     # now = datetime.datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    current_dir = os.getcwd()
+    current_dir = os.path.abspath(__file__)
     parent_dir = os.path.dirname(current_dir)
+    project_root = os.path.dirname(parent_dir)
 
     paths = EasyDict()
-    paths.logs = os.path.join(parent_dir, "logs", args.main_folder, args.sub_folder)
+    paths.logs = os.path.join(project_root, "logs", args.main_folder, args.sub_folder)
     paths.results = os.path.join(
-        parent_dir, "results", args.main_folder, args.sub_folder
+        project_root, "results", args.main_folder, args.sub_folder
     )
-    paths.runs = os.path.join(parent_dir, "runs", args.main_folder, args.sub_folder)
+    paths.runs = os.path.join(project_root, "runs", args.main_folder, args.sub_folder)
     paths.checkpoints = os.path.join(
-        parent_dir, "checkpoints", args.main_folder, args.sub_folder
+        project_root, "checkpoints", args.main_folder, args.sub_folder
     )
-    paths.stats = os.path.join(parent_dir, "stats", args.main_folder, args.sub_folder)
+    paths.stats = os.path.join(project_root, "stats", args.main_folder, args.sub_folder)
+    paths.stats_dir = os.path.join(project_root, "stats")
     paths.datadir = args.datadir
     paths.constants = os.path.join(paths.datadir, args.constant_varnames_file)
 
@@ -606,6 +612,7 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── TensorBoard runs: '{paths.runs}'")
     logger.info(f" └── Model checkpoints: '{paths.checkpoints}'")
     logger.info(f" └── Statistics: '{paths.stats}'")
+    logger.info(f" └── Statistics: '{paths.stats_dir}'")
     logger.info(f" └── Data directory: '{paths.datadir}'")
     logger.info(f" └── Constants file: '{paths.constants}'")
 
@@ -796,7 +803,7 @@ def setup_data_paths(args, paths, logger):
     logger.info(f"Validation dataset concatenated: {valid_ds.sizes}")
 
     # norm_mapping, steps = stats(train_ds, logger, paths.stats)
-    norm_mapping, steps = stats(valid_ds, logger, paths.stats)
+    norm_mapping, steps = stats(valid_ds, logger, paths.stats_dir)
     assert hasattr(steps, "time"), "steps does not contain a 'time' attribute"
 
     # Setup normalization types
@@ -1291,8 +1298,8 @@ def main():
         logger.info("GradScaler disabled (AMP not supported on CPU)")
 
     # Setup metrics tracking
-    metric_names = ["MAE", "NMAE"]
-    # metric_funcs = {"MAE": mae_all, "NMAE": nmae_all}
+    metric_names = ["MAE", "NMAE", "RMSE", "R2"]
+    #metric_funcs = {"MAE": mae_all, "NMAE": nmae_all, "RMSE": rmse_all, "R2": r2_all}
 
     # Initialize validation metrics with ALL expected keys from run_validation
     valid_metrics_keys = []
@@ -1462,7 +1469,9 @@ def main():
             plot_every_n_epochs=1,  # Always plot for inference
             edm_sampler_steps=20,
             paths=paths,
-            compute_crps=False,  # True
+            compute_crps=False,  # True for diffusion models, False for unet
+            # crps_batch_size=2,
+            # crps_ensemble_size=10,
         )
         logger.info("Inference completed successfully!")
         exit(0)

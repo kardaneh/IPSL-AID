@@ -994,6 +994,10 @@ def reconstruct_original_layout(
             total_reconstructed += 1
             dataset_idx += 1
 
+        # Free memory for this batch
+        for key in ("predictions", "coarse", "fine", "lat", "lon"):
+            all_data[key][batch_idx] = None
+
         # Break if we've reached dataset limit
         if dataset_idx >= total_dataset_samples:
             break
@@ -1508,11 +1512,22 @@ def generate_denorm_residuals(
     if inference_type == "direct":
         if args.debug:
             logger.info("Using direct inference/evaluation mode (deterministic)")
-        rnd_normal = torch.randn([targets.shape[0], 1, 1, 1], device=targets.device)
-        sigma = (rnd_normal * loss_fn.P_std + loss_fn.P_mean).exp()
-        noisy_targets = targets + torch.randn_like(targets) * sigma
-        generated_residuals = model(noisy_targets, sigma, features, labels)
+
+        # To verify with Kazem
+        if args.precond == "unet":
+            # Direct prediction for unet
+            generated_residuals = model(
+                features, class_labels=labels
+            )  # same format as direct inference, maybe we have to move it to direct
+        else:
+            rnd_normal = torch.randn([targets.shape[0], 1, 1, 1], device=targets.device)
+            sigma = (rnd_normal * loss_fn.P_std + loss_fn.P_mean).exp()
+            noisy_targets = targets + torch.randn_like(targets) * sigma
+            generated_residuals = model(noisy_targets, sigma, features, labels)
+
     elif inference_type == "sampler":
+        if args.precond == "unet":
+            raise ValueError("UNet does not support sampler inference")
         if args.debug:
             logger.info("Using sampler inference/evaluation mode (stochastic)")
             logger.info(f"Starting EDM sampler with {edm_sampler_steps} steps")
@@ -1723,7 +1738,9 @@ def run_validation(
             # Calculate validation loss
             with torch.amp.autocast(device_type=device.type, dtype=features.dtype):
                 loss = loss_fn(model, targets, features, labels)
-                loss = loss.mean()
+                # unet loss is a scalar, so no need for mean
+                if args.precond != "unet":
+                    loss = loss.mean()
 
             val_loss.update(loss.item(), targets.shape[0])
 
@@ -1744,7 +1761,7 @@ def run_validation(
                 m: {"pred": MetricTracker(), "coarse": MetricTracker()}
                 for m in deterministic_metrics
             }
-            # batch_var_count = 0
+            #batch_var_count = 0
 
             generated_residual_denorm = generate_denorm_residuals(
                 model=model,
@@ -1765,6 +1782,7 @@ def run_validation(
             )
 
             batch_predictions = []
+
             # Reconstruct final images
             for var_name in args.varnames_list:
                 # Get the correct channel index for this variable
@@ -1776,10 +1794,10 @@ def run_validation(
                     coarse_var + generated_residual_denorm[:, iv : iv + 1]
                 )
 
-                batch_predictions.append(final_prediction)
-
                 # Calculate metrics against ground truth fine data
                 fine_var = fine[:, iv : iv + 1]
+
+                batch_predictions.append(final_prediction)
 
                 # Calculate all metrics for this variable
                 for metric_name in deterministic_metrics:
@@ -1810,6 +1828,7 @@ def run_validation(
                     )
 
             final_prediction_batch = torch.cat(batch_predictions, dim=1)  # [B, C, H, W]
+
             # Store only needed data for reconstruction
             # Validation outputs are accumulated and immediately moved to CPU
             # to avoid CUDA out-of-memory errors.
@@ -1893,6 +1912,7 @@ def run_validation(
 
                     coarse_var = batch["coarse"][:, iv : iv + 1].to(device)
                     final_pred = coarse_var + generated_residual_denorm[:, iv : iv + 1]
+
                     reconstructed_vars.append(final_pred)
 
                 # Final reconstructed prediction for this ensemble member

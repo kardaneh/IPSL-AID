@@ -22,9 +22,11 @@ from IPSL_AID.utils import EasyDict
 from torch.utils.data import Dataset
 import torchvision
 import glob
+import os
+import json
 
 
-def stats(ds, logger, output_dir, norm_mapping=dict()):
+def stats(ds, logger, input_dir, norm_mapping=dict()):
     """
     Compute statistics and histograms for variables across a NetCDF dataset.
 
@@ -39,8 +41,9 @@ def stats(ds, logger, output_dir, norm_mapping=dict()):
         NetCDF dataset to process.
     logger : logging.Logger
         Logger instance for logging messages and statistics.
-    output_dir : str
-        Directory to save histogram plots and statistics file.
+    input_dir : str
+        Directory containing a statistics.json file with precomputed
+        normalization statistics.
     norm_mapping : dict, optional
         Dictionary to store computed statistics. If empty, will be populated.
         Default is empty dict.
@@ -68,6 +71,71 @@ def stats(ds, logger, output_dir, norm_mapping=dict()):
 
     logger.info("Starting statistics computation...")
     steps = EasyDict()
+
+    stats_loaded = False
+    # Load stats from JSON if available
+    if input_dir is not None:
+        stats_path = os.path.join(input_dir, "statistics.json")
+        if os.path.isfile(stats_path):
+            logger.info(f"Loading normalization statistics from {stats_path}")
+
+            with open(stats_path, "r") as f:
+                raw_stats = json.load(f)
+
+            # Load all statistics from JSON into norm_mapping
+            for key, values in raw_stats.items():
+                norm_mapping[key] = EasyDict(values)
+
+            stats_loaded = True
+
+    # Use manual stats
+    if not stats_loaded:
+        logger.info("No statistics.json found, using manual constants")
+
+        RAW_CONSTANTS = {
+            "VAR_2T": {"mean": 2.8504e02, "std": 12.7438},
+            "VAR_10U": {"mean": 4.4536e-01, "std": 3.4649},
+            "VAR_10V": {"mean": -1.1892e-01, "std": 3.7420},
+            "VAR_TP": {"mean": 9.4189e-05, "std": 2.6393e-04},
+            "VAR_D2M": {"mean": 2.8250e02, "std": 5.5930},
+            "VAR_SSTK": {"mean": 2.92517e02, "std": 8.79515},
+            "VAR_SKT": {"mean": 2.86780e02, "std": 13.4919},
+            "VAR_ST": {"mean": 2.86905e02, "std": 13.4027},
+            "VAR_TCWV": {"mean": 1.97549e01, "std": 13.4064},
+        }
+
+        RESID_CONSTANTS = {
+            "VAR_2T_residual": {"mean": -9.4627e-05, "std": 1.6042},
+            "VAR_10U_residual": {"mean": -1.3833e-03, "std": 1.0221},
+            "VAR_10V_residual": {"mean": -1.5548e-03, "std": 1.0384},
+            "VAR_TP_residual": {"mean": -4.0417e-08, "std": 2.8678e-04},
+            "VAR_D2M_residual": {"mean": 4.6380e-01, "std": 1.0602},
+            "VAR_SSTK_residual": {"mean": -3.50143e-02, "std": 7.58565e-01},
+            "VAR_SKT_residual": {"mean": 3.11868e-02, "std": 2.04542},
+            "VAR_ST_residual": {"mean": 3.21775e-02, "std": 2.27347},
+            "VAR_TCWV_residual": {"mean": 3.90753e-02, "std": 1.73849},
+        }
+
+        for var_name in ds.data_vars:
+            var_name_residual = f"{var_name}_residual"
+            var_name_coarse = f"{var_name}_coarse"
+
+            norm_mapping[var_name_residual] = EasyDict()
+            norm_mapping[var_name_coarse] = EasyDict()
+
+            if var_name in RAW_CONSTANTS:
+                norm_mapping[var_name_coarse].vmean = RAW_CONSTANTS[var_name]["mean"]
+                norm_mapping[var_name_coarse].vstd = RAW_CONSTANTS[var_name]["std"]
+
+            if var_name_residual in RESID_CONSTANTS:
+                norm_mapping[var_name_residual].vmean = RESID_CONSTANTS[
+                    var_name_residual
+                ]["mean"]
+                norm_mapping[var_name_residual].vstd = RESID_CONSTANTS[
+                    var_name_residual
+                ]["std"]
+
+    logger.info("------------------------------------------")
 
     for cname in ds.coords:
         cdata = ds[cname].values
@@ -102,38 +170,6 @@ def stats(ds, logger, output_dir, norm_mapping=dict()):
     for key, value in steps.items():
         logger.info(f" └── {key}: {value}")
     logger.info("------------------------------------------")
-
-    RAW_CONSTANTS = {
-        "VAR_2T": {"mean": 2.8504e02, "std": 12.7438},
-        "VAR_10U": {"mean": 4.4536e-01, "std": 3.4649},
-        "VAR_10V": {"mean": -1.1892e-01, "std": 3.7420},
-        "VAR_TP": {"mean": 9.4189e-05, "std": 2.6393e-04},
-    }
-
-    RESID_CONSTANTS = {
-        "VAR_2T_residual": {"mean": -9.4627e-05, "std": 1.6042},
-        "VAR_10U_residual": {"mean": -1.3833e-03, "std": 1.0221},
-        "VAR_10V_residual": {"mean": -1.5548e-03, "std": 1.0384},
-        "VAR_TP_residual": {"mean": -4.0417e-08, "std": 2.8678e-04},
-    }
-
-    for var_name in ds.data_vars:
-        var_name_residual = f"{var_name}_residual"
-        var_name_coarse = f"{var_name}_coarse"
-        norm_mapping[var_name_residual] = EasyDict()
-        norm_mapping[var_name_coarse] = EasyDict()
-
-        if var_name in RAW_CONSTANTS:
-            norm_mapping[var_name_coarse].vmean = RAW_CONSTANTS[var_name]["mean"]
-            norm_mapping[var_name_coarse].vstd = RAW_CONSTANTS[var_name]["std"]
-
-        if var_name_residual in RESID_CONSTANTS:
-            norm_mapping[var_name_residual].vmean = RESID_CONSTANTS[var_name_residual][
-                "mean"
-            ]
-            norm_mapping[var_name_residual].vstd = RESID_CONSTANTS[var_name_residual][
-                "std"
-            ]
 
     return norm_mapping, steps
 
@@ -658,7 +694,7 @@ class DataPreprocessor(Dataset):
         # Load dynamic covariates if specified
         self.dynamic_covariate_data = None
         if self.dynamic_covariates:
-            self.load_dynamic_covariates()
+            self._load_dynamic_covariates()
         """
         # Cache for loaded data
         self.loaded_dfs = loaded_dfs

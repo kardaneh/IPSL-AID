@@ -51,6 +51,12 @@ The model is conditioned on:
 2. **Geographical variables**: Latitude, longitude, topography (:math:`z`), land-sea mask (LSM)
 3. **Temporal information**: Cosine-sine representations of day of year and hour of day
 
+.. figure:: ../../images/workflow.png
+   :width: 100%
+   :align: center
+
+   Workflow of IPSL-AID's training process.
+
 Training Schedule
 -----------------
 

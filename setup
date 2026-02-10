@@ -35,16 +35,19 @@ per_var_datadir=(
   "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
   "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
   "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp")
+  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
+  "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
+  "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
+  )
 
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") # "VAR_TP"
+varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
 constant_varnames_list=("z" "lsm")
 constant_varnames_file="ERA5_const_sfc_variables.nc"
-normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=standard") # "VAR_TP=standard"
-units_list=("K" "m/s" "m/s" "m/h") # "m/h"
+normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=standard" "VAR_D2M=standard" "VAR_ST=standard")
+units_list=("K" "m/s" "m/s" "m/h" "K" "K")
 dynamic_covariates=()
 dynamic_covariates_dir="../data_covariates/"
 
@@ -62,11 +65,12 @@ model_name=""
 
 dtype="fp32"
 arch="adm"
-precond="edm"
-in_channels=4 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
-cond_channels=8 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm
-out_channels=4 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
-inference_type="sampler" # "direct" or  "sampler"
+precond="unet" # edm for edm (default model), unet for unet,
+# for diffusion in_channels= numbers of variables, for unet in_channels=numbers of variables + constents
+in_channels=10
+#cond_channels=10 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm, no cond_channels for unet
+out_channels=6 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
+inference_type="direct" # "direct" for unet, "sampler" for diffusion
 # NEW: Add apply_filter parameter
 apply_filter=false
 
@@ -99,7 +103,7 @@ base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
 base_parts+=("in${in_channels}")
-base_parts+=("cond${cond_channels}")
+#base_parts+=("cond${cond_channels}") # need to be commented for unet
 base_parts+=("out${out_channels}")
 filter_str=$([[ "$apply_filter" == true ]] && echo "filter" || echo "nofilter")
 base_parts+=("${filter_str}")
@@ -183,7 +187,7 @@ echo "    --inference_type \"$inference_type\" \\" >> $run_script
 echo "    --arch \"$arch\" \\" >> $run_script
 echo "    --precond \"$precond\" \\" >> $run_script
 echo "    --in_channels \"$in_channels\" \\" >> $run_script
-echo "    --cond_channels \"$cond_channels\" \\" >> $run_script
+#echo "    --cond_channels \"$cond_channels\" \\" >> $run_script
 echo "    --out_channels \"$out_channels\" \\" >> $run_script
 
 # NEW: Add apply_filter parameter
@@ -254,12 +258,13 @@ cat >> $sbatch_script <<EOF
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-##SBATCH --mail-user=kkingston@ipsl.fr
-##SBATCH --mail-type=END,FAIL
+###SBATCH --mail-user=kkingston@ipsl.fr
+###SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge
-source ../arch-nvhpc_LEONARDO.env
+source .venv/bin/activate
+#source ../arch-nvhpc_LEONARDO.env
 ##module load cuda/12.1
 ##source ~/torch_test/bin/activate
 
@@ -275,7 +280,7 @@ echo "Output main folder: $main_folder"
 echo "Output sub folder: $sub_folder"
 echo "====================="
 
-.$run_script
+$run_script
 
 exit \$?
 EOF
@@ -297,6 +302,6 @@ echo "Tag: $tag"
 echo "Main folder: $main_folder"
 echo "Sub folder: $sub_folder"
 echo "Prefix: $prefix"
-echo "Run script: .$run_script"
-echo "SBATCH: .$sbatch_script"
-echo "To submit: sbatch .$sbatch_script"
+echo "Run script: $run_script"
+echo "SBATCH: $sbatch_script"
+echo "To submit: sbatch $sbatch_script"

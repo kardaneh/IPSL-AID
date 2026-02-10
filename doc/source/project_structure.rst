@@ -89,6 +89,12 @@ Key Modules Explained
    power spectra, and extreme value statistics. Supports both deterministic
    and probabilistic evaluation.
 
+.. figure:: ../../images/flowchart.png
+   :width: 100%
+   :align: center
+
+   Flowchart of IPSL-AID's architecture and data flow.
+
 Data Flow
 ---------
 

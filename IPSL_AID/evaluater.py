@@ -689,22 +689,17 @@ def sampler(
     )
 
     # Helper functions for VP & VE noise level schedules.
-    vp_sigma = (
-        lambda beta_d, beta_min: lambda t: (
-            np.e ** (0.5 * beta_d * (t**2) + beta_min * t) - 1
-        )
-        ** 0.5
+    vp_sigma = lambda beta_d, beta_min: (
+        lambda t: (np.e ** (0.5 * beta_d * (t**2) + beta_min * t) - 1) ** 0.5
     )
-    vp_sigma_deriv = (
-        lambda beta_d, beta_min: lambda t: 0.5
-        * (beta_min + beta_d * t)
-        * (sigma(t) + 1 / sigma(t))
+    vp_sigma_deriv = lambda beta_d, beta_min: (
+        lambda t: 0.5 * (beta_min + beta_d * t) * (sigma(t) + 1 / sigma(t))
     )
-    vp_sigma_inv = (
-        lambda beta_d, beta_min: lambda sigma: (
-            (beta_min**2 + 2 * beta_d * (sigma**2 + 1).log()).sqrt() - beta_min
+    vp_sigma_inv = lambda beta_d, beta_min: (
+        lambda sigma: (
+            ((beta_min**2 + 2 * beta_d * (sigma**2 + 1).log()).sqrt() - beta_min)
+            / beta_d
         )
-        / beta_d
     )
     ve_sigma = lambda t: t.sqrt()
     ve_sigma_deriv = lambda t: 0.5 / t.sqrt()
@@ -964,7 +959,7 @@ def reconstruct_original_layout(
         batch_size = batch.shape[0]
 
         logger.info(
-            f"Processing batch {batch_idx+1}/{len(all_data['predictions'])} with size {batch_size}"
+            f"Processing batch {batch_idx + 1}/{len(all_data['predictions'])} with size {batch_size}"
         )
 
         for i_in_batch in range(batch_size):
@@ -1151,8 +1146,8 @@ def reconstruct_original_layout(
 
                 error_msg = (
                     f"CRITICAL ERROR: Grid coverage incomplete!\n"
-                    f"Missing {uncovered_cells}/{covered_H*covered_W} grid cells.\n"
-                    f"Coverage: {coverage_mask.sum().item()/(covered_H*covered_W)*100:.1f}%\n"
+                    f"Missing {uncovered_cells}/{covered_H * covered_W} grid cells.\n"
+                    f"Coverage: {coverage_mask.sum().item() / (covered_H * covered_W) * 100:.1f}%\n"
                     f"First 10 missing positions (lat, lon): {missing_positions[:10].cpu().numpy().tolist()}"
                 )
                 logger.error(error_msg)
@@ -1761,7 +1756,7 @@ def run_validation(
                 m: {"pred": MetricTracker(), "coarse": MetricTracker()}
                 for m in deterministic_metrics
             }
-            #batch_var_count = 0
+            # batch_var_count = 0
 
             generated_residual_denorm = generate_denorm_residuals(
                 model=model,

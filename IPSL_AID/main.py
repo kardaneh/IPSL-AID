@@ -1299,7 +1299,7 @@ def main():
 
     # Setup metrics tracking
     metric_names = ["MAE", "NMAE", "RMSE", "R2"]
-    #metric_funcs = {"MAE": mae_all, "NMAE": nmae_all, "RMSE": rmse_all, "R2": r2_all}
+    # metric_funcs = {"MAE": mae_all, "NMAE": nmae_all, "RMSE": rmse_all, "R2": r2_all}
 
     # Initialize validation metrics with ALL expected keys from run_validation
     valid_metrics_keys = []

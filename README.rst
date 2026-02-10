@@ -2,7 +2,7 @@ IPSL-AID
 ========
 
 .. image:: ./images/AID.png
-   :width: 50%
+   :width: 30%
    :align: center
 
 |PyPI version| |Python versions| |License| |Documentation Status|

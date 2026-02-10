@@ -26,7 +26,6 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib as mpl
-import matplotlib.colors as mcolors
 from scipy import stats
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -102,6 +101,10 @@ class PlotConfig:
         "tp": "Blues",
         "TP": "Blues",
         "precipitation": "Blues",
+        "dewpoint": "rainbow",
+        "d2m": "rainbow",
+        "surface temperature": "rainbow",
+        "st": "rainbow",
         "pressure": "viridis",
         "pres": "viridis",
         "humidity": "Greens",
@@ -128,6 +131,8 @@ class PlotConfig:
         "TP": (-0.5, 0.5),  # mm/h
         "tp": (-0.5, 0.5),
         "VAR_TP": (-0.5, 0.5),
+        "VAR_D2M": (-5.0, 5.0),  # K
+        "VAR_ST": (-5.0, 5.0),  # K
     }
 
     FIXED_MAE_RANGES = {
@@ -145,6 +150,8 @@ class PlotConfig:
         "TP": (0.0, 1.0),
         "tp": (0.0, 1.0),
         "VAR_TP": (0.0, 1.0),
+        "VAR_D2M": (0.0, 3.0),
+        "VAR_ST": (0.0, 3.0),
     }
 
     # Geographic features
@@ -676,7 +683,8 @@ def plot_metric_histories(
             ax.plot(coarse_hist, label="Coarse vs Fine", **next(linestyles))
 
             ax.set_yscale("log")
-            ax.set_ylabel(rf"$\mathrm{{{metric}\ ({var})}}$")
+            # ax.set_ylabel(rf"$\mathrm{{{metric}\ ({var})}}$")
+            ax.set_ylabel(f"{metric} ({var})")
 
             ax.grid(True, alpha=0.3)
             ax.legend()
@@ -1819,11 +1827,6 @@ def plot_validation_pdfs(
     fig, axes = plt.subplots(
         nrows, ncols, figsize=(ncols * figsize_multiplier, figsize_multiplier)
     )
-    for ax in axes:
-        ax.set_box_aspect(1)
-    plt.subplots_adjust(
-        hspace=0.1, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
-    )
 
     # Handle single subplot case
     if num_vars == 1:
@@ -1831,6 +1834,14 @@ def plot_validation_pdfs(
     if axes.ndim == 0:
         axes = np.array([axes])
     axes = axes.flatten()
+
+    for ax in axes:
+        ax.set_box_aspect(1)
+    plt.subplots_adjust(
+        hspace=0.1, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
+    )
+
+    # pdf_npz_data = {}
 
     # Plot PDF for each variable
     for i, (var_name, ax) in enumerate(zip(variable_names, axes)):
@@ -1975,9 +1986,29 @@ def plot_validation_pdfs(
         if data_range > 1000:
             ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 
+        # key = f"{var_name}__pdf__"
+
+        # pdf_npz_data[key + "bin_centers"] = bin_centers
+        # pdf_npz_data[key + "log_pred"] = log_hist_pred
+        # pdf_npz_data[key + "log_truth"] = log_hist_target
+
+        # pdf_npz_data[key + "mean_pred"] = pred_mean
+        # pdf_npz_data[key + "std_pred"] = pred_std
+        # pdf_npz_data[key + "mean_truth"] = target_mean
+        # pdf_npz_data[key + "std_truth"] = target_std
+        # pdf_npz_data[key + "kl"] = kl_divergence
+        # pdf_npz_data[key + "corr"] = correlation
+
+        # if coarse_inputs is not None:
+        #    pdf_npz_data[key + "log_coarse"] = log_hist_coarse
+        #    pdf_npz_data[key + "mean_coarse"] = coarse_mean
+        #    pdf_npz_data[key + "std_coarse"] = coarse_std
+
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
+    # npz_path = os.path.splitext(save_path)[0] + ".npz"
+    # np.savez_compressed(npz_path, **pdf_npz_data)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()
     return save_path
@@ -2036,7 +2067,7 @@ def plot_power_spectra(
     if variable_names is None:
         variable_names = [f"Variable {i+1}" for i in range(num_vars)]
 
-    # plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
+    #plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
 
     # Calculate wavenumbers
     # FFT frequencies are in cycles per grid spacing
@@ -2067,7 +2098,7 @@ def plot_power_spectra(
         ncols,
         figsize=(ncols * figsize_multiplier, nrows * figsize_multiplier),
         squeeze=False,
-    )
+    )  # nrows * figsize_multiplier
     plt.subplots_adjust(
         hspace=0.2, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
     )
@@ -2083,6 +2114,11 @@ def plot_power_spectra(
     elif axes.ndim == 1:
         axes = axes.reshape(nrows, ncols)
     """
+    # spectra_npz_data = {}
+
+    # spectra_npz_data["__meta__dlat"] = dlat
+    # spectra_npz_data["__meta__dlon"] = dlon
+    # spectra_npz_data["__meta__variables"] = np.array(variable_names)
 
     # Process each variable
     for i, var_name in enumerate(variable_names):
@@ -2130,6 +2166,15 @@ def plot_power_spectra(
         if coarse_inputs is not None:
             psd1d_coarse = radial_average_psd(psd2d_coarse_avg, k_mag, k_bins)
 
+        # key = f"{var_name}__spectra__"
+
+        # spectra_npz_data[key + "k"] = k_centers
+        # spectra_npz_data[key + "psd_pred"] = psd1d_pred
+        # spectra_npz_data[key + "psd_truth"] = psd1d_target
+
+        # if coarse_inputs is not None:
+        #    spectra_npz_data[key + "psd_coarse"] = psd1d_coarse
+
         """
         # --- Plot 2D PSD (top row) ---
         ax_top = axes[0, i] if num_vars > 1 else axes[0]
@@ -2139,7 +2184,7 @@ def plot_power_spectra(
         k_lat_min, k_lat_max = fft_freq_lat_shifted[0], fft_freq_lat_shifted[-1]
 
         im = ax_top.imshow(np.log10(psd2d_pred_avg + 1e-12),
-                          cmap="viridis",
+                          cmap=cmap_white_jet,
                           aspect='auto',
                           origin='lower',
                           extent=[k_lon_min, k_lon_max, k_lat_min, k_lat_max])
@@ -2173,7 +2218,6 @@ def plot_power_spectra(
         ax_bottom = axes[i]
 
         # Plot all spectra
-        np.save
         ax_bottom.loglog(k_centers, psd1d_pred, label="Pred", **next(linestyles))
         ax_bottom.loglog(k_centers, psd1d_target, label="Truth", **next(linestyles))
 
@@ -2189,7 +2233,7 @@ def plot_power_spectra(
             ax_bottom.set_ylabel("")
 
         # Always show x-axis label
-        ax_bottom.set_xlabel("Wavenumber k (cycles/°)")
+        ax_bottom.set_xlabel("Wavenumber k [cycles/°]")
 
         ax_bottom.legend()
         ax_bottom.grid(True, alpha=0.3, which="both")
@@ -2211,6 +2255,8 @@ def plot_power_spectra(
     # Save figure
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
+    # npz_path = os.path.splitext(save_path)[0] + ".npz"
+    # np.savez_compressed(npz_path, **spectra_npz_data)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()
     return save_path
@@ -2325,9 +2371,23 @@ def plot_qq_quantiles(
         constrained_layout=True,
     )
 
+    plt.subplots_adjust(
+        hspace=0.2, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
+    )
+
+    if num_vars > 1:
+        axes = axes.ravel()
     # Handle single subplot case
-    if num_vars == 1:
+    else:
         axes = np.array([axes])
+
+    for ax in axes:
+        ax.set_box_aspect(1)
+
+    # qq_npz_data = {}
+
+    # qq_npz_data["__meta__variables"] = np.array(variable_names)
+    # qq_npz_data["__meta__quantiles"] = np.array(quantiles)
 
     for i, var_name in enumerate(variable_names):
         linestyles = mpltex.linestyle_generator(lines=[])
@@ -2347,15 +2407,20 @@ def plot_qq_quantiles(
         qs_pred = np.quantile(pred_vals, quantiles)
         qs_coarse = np.quantile(coarse_vals, quantiles)
 
+        # key = f"{var_name}__qq__"
+
+        # qq_npz_data[key + "quantiles"] = np.array(quantiles)
+        # qq_npz_data[key + "truth"] = qs_target
+        # qq_npz_data[key + "pred"] = qs_pred
+        # qq_npz_data[key + "coarse"] = qs_coarse
+
         print(f"[QQ Quantiles] {plot_name}")
         for q, qt, qp, qc in zip(quantiles, qs_target, qs_pred, qs_coarse):
             print(
                 f"  q={q:.3f} | "
                 f"Truth={qt:.4f} | "
                 f"Pred={qp:.4f} | "
-                f"Coarse={qc:.4f} | "
-                f"ΔPred={qp - qt:+.4f} | "
-                f"ΔCoarse={qc - qt:+.4f}"
+                f"Coarse={qc:.4f} "
             )
 
         # ---- Plot predicted quantiles ----
@@ -2418,241 +2483,8 @@ def plot_qq_quantiles(
     # Save figure
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.close(fig)
-    return save_path
-
-
-def dry_frequency_map(array, threshold):
-    """
-    Compute spatial dry pixels proportion maps. Value of each pixel corresponds to the frequency of dry weather for this pixel.
-
-    Parameters
-    ----------
-    array : torch.Tensor or np.array
-        Model predictions of shape [batch_size, h, w]
-    threshold : float
-        threshold for precipitation (expressed in mm): under it, pixel is considered dry.
-    Returns
-    -------
-    np.ndarray(np.float64) of shape [h,w]
-    """
-    # convert to numpy if tensor :
-    if hasattr(array, "detach"):
-        array = array.detach().cpu().numpy()
-    dry_array = (array < threshold).astype(np.float64)
-    dry_array_map = np.mean(dry_array, axis=0)
-
-    return dry_array_map
-
-
-def plot_dry_frequency_map(
-    predictions,  # Model predictions precipitation (fine predicted)
-    targets,  # Ground truth precipitation (fine true)
-    threshold,  # threshold to define dry and wet (in mm)
-    lat_1d,
-    lon_1d,
-    filename="validation_dry_frequency_map.png",
-    save_dir=None,
-    figsize_multiplier=None,  # Base size per subplot
-):
-    """
-    Plot spatial dry pixels proportion maps. Value of each pixel corresponds to the frequency of dry weather for this pixel.
-
-    Parameters
-    ----------
-    predictions : torch.Tensor or np.array
-        Model predictions of shape [batch_size, h, w]
-    targets : torch.Tensor or np.array
-        Ground truth of shape [batch_size, h, w]
-    threshold : float
-        threshold for precipitation (expressed in mm): under it, pixel is considered dry.
-    lat_1d : array-like
-        1D array of latitude coordinates with shape [H].
-    lon_1d : array-like
-        1D array of longitude coordinates with shape [W].
-    filename : str, optional
-        Output filename for saving the plot.
-    save_dir : str, optional
-        Directory to save the plot.
-    figsize_multiplier : int, optional
-        Base size multiplier for subplots.
-
-    Returns
-    -------
-    None
-    """
-    if save_dir is None:
-        save_dir = PlotConfig.DEFAULT_SAVE_DIR
-    if figsize_multiplier is None:
-        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
-
-    # Convert tensors to numpy
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if hasattr(lat_1d, "detach"):
-        lat_1d = lat_1d.detach().cpu().numpy()
-    if hasattr(lon_1d, "detach"):
-        lon_1d = lon_1d.detach().cpu().numpy()
-
-    lat_min, lat_max = lat_1d.min(), lat_1d.max()
-    lon_min, lon_max = lon_1d.min(), lon_1d.max()
-
-    T, h, w = targets.shape
-
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
-    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
-
-    lon_center = float((lon_min + lon_max) / 2)
-
-    cmap = PlotConfig.get_colormap("dry frequency")
-
-    # convert units :
-    predictions = PlotConfig.convert_units("precipitation", predictions)
-    targets = PlotConfig.convert_units("precipitation", targets)
-
-    dry_freq_pred_map = dry_frequency_map(predictions, threshold)
-    # dry_freq_pred = np.mean(dry_freq_pred_map)
-
-    dry_freq_targ_map = dry_frequency_map(targets, threshold)
-    # dry_freq_targ = np.mean(dry_freq_targ_map)
-
-    vmin = 0
-    vmax = 1
-
-    base_width_per_panel = 4.5
-    base_height_per_panel = 3.0
-
-    fig_width = 3 * base_width_per_panel
-    fig_height = base_height_per_panel
-
-    fig, axes = plt.subplots(
-        3,
-        figsize=(fig_width, fig_height),
-        subplot_kw={
-            "projection": ccrs.PlateCarree(central_longitude=lon_center)
-        },  # ccrs.Mercator(central_longitude=lon_center)
-        gridspec_kw={"wspace": 0.1},
-    )
-    im = axes[0].pcolormesh(
-        lon,
-        lat,
-        dry_freq_pred_map,
-        vmin=vmin,
-        vmax=vmax,
-        cmap=cmap,
-        transform=ccrs.PlateCarree(),
-        shading="auto",
-    )
-    axes[0].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-    axes[0].coastlines(linewidth=0.6)
-    axes[0].add_feature(
-        cfeature.BORDERS.with_scale("50m"),
-        linewidth=0.6,
-        linestyle="--",
-        edgecolor="black",
-        zorder=11,
-    )
-    axes[0].add_feature(
-        cfeature.LAKES.with_scale("50m"),
-        edgecolor="black",
-        facecolor="none",
-        linewidth=0.6,
-        zorder=9,
-    )
-    # ax.set_aspect("auto")
-    axes[0].set_xticks([])
-    axes[0].set_yticks([])
-    axes[0].set_title("Predicted")
-
-    im = axes[1].pcolormesh(
-        lon,
-        lat,
-        dry_freq_targ_map,
-        vmin=vmin,
-        vmax=vmax,
-        cmap=cmap,
-        transform=ccrs.PlateCarree(),
-        shading="auto",
-    )
-    axes[1].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-    axes[1].coastlines(linewidth=0.6)
-    axes[1].add_feature(
-        cfeature.BORDERS.with_scale("50m"),
-        linewidth=0.6,
-        linestyle="--",
-        edgecolor="black",
-        zorder=11,
-    )
-    axes[1].add_feature(
-        cfeature.LAKES.with_scale("50m"),
-        edgecolor="black",
-        facecolor="none",
-        linewidth=0.6,
-        zorder=9,
-    )
-    # ax.set_aspect("auto")
-    axes[1].set_xticks([])
-    axes[1].set_yticks([])
-    axes[1].set_title("Target")
-
-    fig.colorbar(
-        im,
-        ax=axes[0:2],
-        location="right",
-        orientation="vertical",
-        label="frequency",
-    )
-
-    # vmax_diff = max(
-    #     np.abs(np.max(dry_freq_pred_map - dry_freq_targ_map)),
-    #     np.abs(np.min(dry_freq_pred_map - dry_freq_targ_map)),
-    # )
-    # norm_diff = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax = 1)
-
-    im = axes[2].pcolormesh(
-        lon,
-        lat,
-        dry_freq_pred_map - dry_freq_targ_map,
-        norm=mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax=vmax),
-        cmap="seismic",
-        transform=ccrs.PlateCarree(),
-        shading="auto",
-    )
-    axes[2].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-    axes[2].coastlines(linewidth=0.6)
-    axes[2].add_feature(
-        cfeature.BORDERS.with_scale("50m"),
-        linewidth=0.6,
-        linestyle="--",
-        edgecolor="black",
-        zorder=11,
-    )
-    axes[2].add_feature(
-        cfeature.LAKES.with_scale("50m"),
-        edgecolor="black",
-        facecolor="none",
-        linewidth=0.6,
-        zorder=9,
-    )
-    # ax.set_aspect("auto")
-    axes[2].set_xticks([])
-    axes[2].set_yticks([])
-    axes[2].set_title("Predicted frequency - Target frequency")
-
-    fig.colorbar(
-        im,
-        ax=axes[2],
-        location="right",
-        orientation="vertical",
-        label="frequency",
-    )
-
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, filename)
+    # npz_path = os.path.splitext(save_path)[0] + ".npz"
+    # np.savez_compressed(npz_path, **qq_npz_data)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
     return save_path
@@ -2726,7 +2558,8 @@ class TestPlottingFunctions(unittest.TestCase):
 
         self.variable_names = [
             "Temperature (K)",
-            "Pressure (hPa)",
+            # "Pressure (hPa)",
+            "VAR_D2M (K)",
             "Humidity (%)",
             "Wind Speed (m/s)",
         ]
@@ -3261,64 +3094,6 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All MAE map plot tests passed")
-
-    def test_plot_dry_frequency_map_comprehensive(self):
-        """Comprehensive test for dry frequency map plots."""
-        if self.logger:
-            self.logger.info("Testing dry frequency map plots comprehensively")
-
-        # Regional lat/lon
-        lat_1d = np.linspace(30, 50, 48)
-        lon_1d = np.linspace(-120, -80, 68)
-
-        # Matching spatial resolution
-        predictions = self.predictions[:, :, :48, :68]
-        targets = self.targets[:, :, :48, :68]
-
-        # Test 1: Standard numpy inputs
-        expected_path = plot_dry_frequency_map(
-            predictions=predictions[:, 0, :, :],
-            targets=targets[:, 0, :, :],
-            threshold=1,
-            lat_1d=lat_1d,
-            lon_1d=lon_1d,
-            save_dir=self.output_dir,
-            filename="validation_dry_frequency_map_standard.png",
-        )
-        self.assertTrue(
-            os.path.exists(expected_path), f"File not found: {expected_path}"
-        )
-
-        # Test 2: PyTorch tensors
-        expected_path = plot_dry_frequency_map(
-            predictions=torch.from_numpy(predictions[:, 0, :, :]),
-            targets=torch.from_numpy(targets[:, 0, :, :]),
-            threshold=1,
-            lat_1d=lat_1d,
-            lon_1d=lon_1d,
-            save_dir=self.output_dir,
-            filename="validation_dry_frequency_map_torch.png",
-        )
-        self.assertTrue(
-            os.path.exists(expected_path), f"File not found: {expected_path}"
-        )
-        if self.logger:
-            self.logger.info("✅ All dry frequency map plot tests passed")
-
-    def test_dry_frequency_map(self):
-        if self.logger:
-            self.logger.info(
-                "Testing dry frequency map compute function comprehensively"
-            )
-        predictions = self.predictions[:, :, :48, :68]
-        # Test 1 : standard numpy inputs
-        arr = dry_frequency_map(predictions[:, 0, :, :], 1)
-        self.assertTrue(arr.shape == predictions.shape[-2:])
-        # Test 1 : torch tensors
-        arr = dry_frequency_map(torch.from_numpy(predictions[:, 0, :, :]), 1)
-        self.assertTrue(arr.shape == predictions.shape[-2:])
-        if self.logger:
-            self.logger.info("✅ All dry frequency tests passed")
 
     def test_metric_plots_comprehensive(self):
         """Comprehensive test for metric plots."""

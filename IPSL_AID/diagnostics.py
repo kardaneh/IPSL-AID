@@ -2422,10 +2422,8 @@ def plot_qq_quantiles(
     plt.close(fig)
     return save_path
 
-def dry_frequency_map(
-    array,
-    threshold
-) :
+
+def dry_frequency_map(array, threshold):
     """
     Compute spatial dry pixels proportion maps. Value of each pixel corresponds to the frequency of dry weather for this pixel.
 
@@ -2439,19 +2437,20 @@ def dry_frequency_map(
     -------
     np.ndarray(np.float64) of shape [h,w]
     """
-    #convert to numpy if tensor :
+    # convert to numpy if tensor :
     if hasattr(array, "detach"):
         array = array.detach().cpu().numpy()
     dry_array = (array < threshold).astype(np.float64)
-    dry_array_map = np.mean(dry_array, axis = 0)
+    dry_array_map = np.mean(dry_array, axis=0)
 
     return dry_array_map
+
 
 def plot_dry_frequency_map(
     predictions,  # Model predictions precipitation (fine predicted)
     targets,  # Ground truth precipitation (fine true)
-    threshold, # threshold to define dry and wet (in mm)
-    lat_1d, 
+    threshold,  # threshold to define dry and wet (in mm)
+    lat_1d,
     lon_1d,
     filename="validation_dry_frequency_map.png",
     save_dir=None,
@@ -2487,7 +2486,7 @@ def plot_dry_frequency_map(
         save_dir = PlotConfig.DEFAULT_SAVE_DIR
     if figsize_multiplier is None:
         figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
-    
+
     # Convert tensors to numpy
     if hasattr(predictions, "detach"):
         predictions = predictions.detach().cpu().numpy()
@@ -2506,7 +2505,7 @@ def plot_dry_frequency_map(
     lat_block = np.linspace(lat_max, lat_min, h)
     lon_block = np.linspace(lon_min, lon_max, w)
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
-    
+
     lon_center = float((lon_min + lon_max) / 2)
 
     cmap = PlotConfig.get_colormap("dry frequency")
@@ -2516,10 +2515,10 @@ def plot_dry_frequency_map(
     targets = PlotConfig.convert_units("precipitation", targets)
 
     dry_freq_pred_map = dry_frequency_map(predictions, threshold)
-    dry_freq_pred = np.mean(dry_freq_pred_map)
+    # dry_freq_pred = np.mean(dry_freq_pred_map)
 
     dry_freq_targ_map = dry_frequency_map(targets, threshold)
-    dry_freq_targ = np.mean(dry_freq_targ_map)
+    # dry_freq_targ = np.mean(dry_freq_targ_map)
 
     vmin = 0
     vmax = 1
@@ -2527,7 +2526,7 @@ def plot_dry_frequency_map(
     base_width_per_panel = 4.5
     base_height_per_panel = 3.0
 
-    fig_width = 3* base_width_per_panel
+    fig_width = 3 * base_width_per_panel
     fig_height = base_height_per_panel
 
     fig, axes = plt.subplots(
@@ -2605,20 +2604,20 @@ def plot_dry_frequency_map(
         ax=axes[0:2],
         location="right",
         orientation="vertical",
-        label=f"frequency",
+        label="frequency",
     )
 
     # vmax_diff = max(
     #     np.abs(np.max(dry_freq_pred_map - dry_freq_targ_map)),
     #     np.abs(np.min(dry_freq_pred_map - dry_freq_targ_map)),
     # )
-    norm_diff = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax = 1)
+    # norm_diff = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax = 1)
 
     im = axes[2].pcolormesh(
         lon,
         lat,
         dry_freq_pred_map - dry_freq_targ_map,
-        norm = mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax = vmax),
+        norm=mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax=vmax),
         cmap="seismic",
         transform=ccrs.PlateCarree(),
         shading="auto",
@@ -2649,7 +2648,7 @@ def plot_dry_frequency_map(
         ax=axes[2],
         location="right",
         orientation="vertical",
-        label=f"frequency",
+        label="frequency",
     )
 
     os.makedirs(save_dir, exist_ok=True)
@@ -2657,6 +2656,7 @@ def plot_dry_frequency_map(
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
     return save_path
+
 
 # ============================================================================
 # Plotting Functions Test Suite
@@ -3261,7 +3261,7 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All MAE map plot tests passed")
-    
+
     def test_plot_dry_frequency_map_comprehensive(self):
         """Comprehensive test for dry frequency map plots."""
         if self.logger:
@@ -3277,8 +3277,8 @@ class TestPlottingFunctions(unittest.TestCase):
 
         # Test 1: Standard numpy inputs
         expected_path = plot_dry_frequency_map(
-            predictions=predictions[:,0,:,:],
-            targets=targets[:,0,:,:],
+            predictions=predictions[:, 0, :, :],
+            targets=targets[:, 0, :, :],
             threshold=1,
             lat_1d=lat_1d,
             lon_1d=lon_1d,
@@ -3291,8 +3291,8 @@ class TestPlottingFunctions(unittest.TestCase):
 
         # Test 2: PyTorch tensors
         expected_path = plot_dry_frequency_map(
-            predictions=torch.from_numpy(predictions[:,0,:,:]),
-            targets=torch.from_numpy(targets[:,0,:,:]),
+            predictions=torch.from_numpy(predictions[:, 0, :, :]),
+            targets=torch.from_numpy(targets[:, 0, :, :]),
             threshold=1,
             lat_1d=lat_1d,
             lon_1d=lon_1d,
@@ -3304,25 +3304,21 @@ class TestPlottingFunctions(unittest.TestCase):
         )
         if self.logger:
             self.logger.info("✅ All dry frequency map plot tests passed")
-    
-    def test_dry_frequency_map(self) :
+
+    def test_dry_frequency_map(self):
         if self.logger:
-            self.logger.info("Testing dry frequency map compute function comprehensively")
+            self.logger.info(
+                "Testing dry frequency map compute function comprehensively"
+            )
         predictions = self.predictions[:, :, :48, :68]
         # Test 1 : standard numpy inputs
-        arr = dry_frequency_map(predictions[:,0,:,:], 1)
-        self.assertTrue(
-            arr.shape == predictions.shape[-2:]
-        )
+        arr = dry_frequency_map(predictions[:, 0, :, :], 1)
+        self.assertTrue(arr.shape == predictions.shape[-2:])
         # Test 1 : torch tensors
-        arr = dry_frequency_map(torch.from_numpy(predictions[:,0,:,:]), 1)
-        self.assertTrue(
-            arr.shape == predictions.shape[-2:]
-        )
+        arr = dry_frequency_map(torch.from_numpy(predictions[:, 0, :, :]), 1)
+        self.assertTrue(arr.shape == predictions.shape[-2:])
         if self.logger:
             self.logger.info("✅ All dry frequency tests passed")
-
-
 
     def test_metric_plots_comprehensive(self):
         """Comprehensive test for metric plots."""

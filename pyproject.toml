@@ -60,15 +60,6 @@ version = { attr = "IPSL-AID.version.__version__" }
 [project.urls]
 Source = "https://github.com/kardaneh/IPSL-AID"
 
-[project.optional-dependencies]
-docs = [
-    "myst-parser>=3.0.1",
-    "sphinx>=7.1.2",
-    "sphinx-rtd-theme>=3.1.0",
-    "sphinx-copybutton>=0.5.0",
-    "sphinx-autodoc-typehints>=1.24.0",
-]
-
 [tool.pytest.ini_options]
 markers = ["long: marks tests as long (deselect with '-m \"not long\"')"]
 
@@ -81,4 +72,12 @@ members = [
 dev = [
     "pre-commit>=3.5.0",
     "ruff>=0.15.0",
+]
+
+docs = [
+    "myst-parser>=3.0.1",
+    "sphinx>=7.1.2",
+    "sphinx-rtd-theme>=3.1.0",
+    "sphinx-copybutton>=0.5.0",
+    "sphinx-autodoc-typehints>=1.24.0",
 ]

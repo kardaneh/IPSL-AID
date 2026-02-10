@@ -231,7 +231,7 @@ class Logger:
 
             frame_panel = Panel(
                 header,
-                title=f"[Frame {i+1}]",
+                title=f"[Frame {i + 1}]",
                 border_style="bright_blue",
                 expand=False,
             )

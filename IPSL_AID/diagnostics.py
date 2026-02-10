@@ -1815,7 +1815,7 @@ def plot_validation_pdfs(
 
     # Default variable names if not provided
     if variable_names is None:
-        variable_names = [f"Variable {i+1}" for i in range(num_vars)]
+        variable_names = [f"Variable {i + 1}" for i in range(num_vars)]
 
     plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
 
@@ -2065,9 +2065,9 @@ def plot_power_spectra(
 
     # Default variable names if not provided
     if variable_names is None:
-        variable_names = [f"Variable {i+1}" for i in range(num_vars)]
+        variable_names = [f"Variable {i + 1}" for i in range(num_vars)]
 
-    #plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
+    # plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
 
     # Calculate wavenumbers
     # FFT frequencies are in cycles per grid spacing
@@ -2416,19 +2416,14 @@ def plot_qq_quantiles(
 
         print(f"[QQ Quantiles] {plot_name}")
         for q, qt, qp, qc in zip(quantiles, qs_target, qs_pred, qs_coarse):
-            print(
-                f"  q={q:.3f} | "
-                f"Truth={qt:.4f} | "
-                f"Pred={qp:.4f} | "
-                f"Coarse={qc:.4f} "
-            )
+            print(f"  q={q:.3f} | Truth={qt:.4f} | Pred={qp:.4f} | Coarse={qc:.4f} ")
 
         # ---- Plot predicted quantiles ----
         for q_idx, q in enumerate(quantiles):
             ax.plot(
                 qs_target[q_idx],
                 qs_pred[q_idx],
-                label=f"{q*100:.1f}%",
+                label=f"{q * 100:.1f}%",
                 **next(linestyles),
             )
 

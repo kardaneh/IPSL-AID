@@ -29,6 +29,17 @@ jobs:
       - name: Run pre-commit
         run: uv run pre-commit run --all-files
 
+      - name: Debug - Find problematic files
+        run: |
+          echo "Checking each Python file individually..."
+          find . -name "*.py" -type f | while read file; do
+            if uv run ruff format --check "$file" >/dev/null 2>&1; then
+              echo "✓ $file"
+            else
+              echo "✗ $file - NEEDS FORMATTING"
+            fi
+          done
+
       - name: Check package builds
         run: uv build
 

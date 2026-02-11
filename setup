@@ -20,7 +20,7 @@ save_checkpoint_name="difusion_model"
 load_checkpoint_name="difusion_model"
 save_per_samples=10000
 
-year_start=2019
+year_start=2015
 year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
@@ -65,12 +65,12 @@ model_name=""
 
 dtype="fp32"
 arch="adm"
-precond="unet" # edm for edm (default model), unet for unet,
+precond="edm" # edm for edm (default model), unet for unet,
 # for diffusion in_channels= numbers of variables, for unet in_channels=numbers of variables + constents
-in_channels=10
-#cond_channels=10 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm, no cond_channels for unet
+in_channels=6
+cond_channels=10 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm, no cond_channels for unet
 out_channels=6 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
-inference_type="direct" # "direct" for unet, "sampler" for diffusion
+inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 # NEW: Add apply_filter parameter
 apply_filter=false
 
@@ -103,7 +103,7 @@ base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
 base_parts+=("in${in_channels}")
-#base_parts+=("cond${cond_channels}") # need to be commented for unet
+base_parts+=("cond${cond_channels}") # need to be commented for unet
 base_parts+=("out${out_channels}")
 filter_str=$([[ "$apply_filter" == true ]] && echo "filter" || echo "nofilter")
 base_parts+=("${filter_str}")
@@ -187,7 +187,7 @@ echo "    --inference_type \"$inference_type\" \\" >> $run_script
 echo "    --arch \"$arch\" \\" >> $run_script
 echo "    --precond \"$precond\" \\" >> $run_script
 echo "    --in_channels \"$in_channels\" \\" >> $run_script
-#echo "    --cond_channels \"$cond_channels\" \\" >> $run_script
+echo "    --cond_channels \"$cond_channels\" \\" >> $run_script
 echo "    --out_channels \"$out_channels\" \\" >> $run_script
 
 # NEW: Add apply_filter parameter

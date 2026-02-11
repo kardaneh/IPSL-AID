@@ -468,6 +468,29 @@ def denormalize(
             return torch.zeros_like(data)
         return data * iqr + median
 
+    # ------------------ LOG1P + MIN-MAX ------------------
+    elif norm_type == "log1p_minmax":
+        log_min = torch.tensor(stats.vmin, dtype=data.dtype, device=device)
+        log_max = torch.tensor(stats.vmax, dtype=data.dtype, device=device)
+        denom = log_max - log_min
+
+        if denom == 0:
+            return torch.zeros_like(data)
+
+        log_data = data * denom + log_min
+        return torch.expm1(log_data)
+
+    # ------------------ LOG1P + STANDARD ------------------
+    elif norm_type == "log1p_standard":
+        mean = torch.tensor(stats.vmean, dtype=data.dtype, device=device)
+        std = torch.tensor(stats.vstd, dtype=data.dtype, device=device)
+
+        if std == 0:
+            return torch.zeros_like(data)
+
+        log_data = data * std + mean
+        return torch.expm1(log_data)
+
     else:
         raise ValueError(f"Unsupported norm_type '{norm_type}'")
 
@@ -2709,6 +2732,72 @@ class TestDenormalizeFunction(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ denormalize robust test passed")
+
+    def test_denormalize_log1p_minmax(self):
+        """Test denormalize with log1p_minmax normalization."""
+        if self.logger:
+            self.logger.info("Testing denormalize - log1p_minmax")
+
+        # Normalized data
+        data = torch.tensor([0.0, 0.5, 1.0], dtype=torch.float32).to(self.device)
+
+        # Create stats object
+        class Stats:
+            # log1p(0) = 0
+            vmin = 0.0
+            vmax = torch.log1p(torch.tensor(9.0)).item()  # log1p(9) ≈ 2.3026
+
+        stats = Stats()
+
+        # Denormalize
+        result = denormalize(data, stats, "log1p_minmax", self.device)
+
+        # Expected values:
+        # z=0   → log1p(x)=0, x=0
+        # z=0.5 → log1p(x) = 0.5 * 2.302585 = 1.1513, x = exp(1.151293) - 1 ≈ 2.1623
+        # z=1   → log1p(x)=~2.3026, x=9
+        expected = torch.expm1(data * (stats.vmax - stats.vmin) + stats.vmin)
+
+        torch.testing.assert_close(result, expected, rtol=1e-4, atol=1e-4)
+
+        if self.logger:
+            self.logger.info("✅ denormalize log1p_minmax test passed")
+
+    def test_denormalize_log1p_standard(self):
+        """Test denormalize with log1p_standard normalization."""
+        if self.logger:
+            self.logger.info("Testing denormalize - log1p_standard")
+
+        # Normalized data
+        data = torch.tensor([-1.0, 0.0, 1.0], dtype=torch.float32).to(self.device)
+
+        # Create stats object
+        class Stats:
+            vmean = torch.log1p(torch.tensor(4.0)).item()  # log1p(4) ≈ 1.6094
+            vstd = 0.5
+
+        stats = Stats()
+
+        # Denormalize
+        result = denormalize(data, stats, "log1p_standard", self.device)
+
+        # Expected:
+        # z=-1 → log1p(x)=1.1094, x≈2.03
+        # z=0  → log1p(x)=1.6094, x=4
+        # z=1  → log1p(x)=2.1094, x≈7.24
+        expected = torch.tensor(
+            [
+                torch.expm1(torch.tensor(1.6094 - 0.5)),
+                4.0,
+                torch.expm1(torch.tensor(1.6094 + 0.5)),
+            ],
+            dtype=torch.float32,
+        ).to(self.device)
+
+        torch.testing.assert_close(result, expected, rtol=1e-4, atol=1e-4)
+
+        if self.logger:
+            self.logger.info("✅ denormalize log1p_standard test passed")
 
     def test_denormalize_zero_denominator(self):
         """Test denormalize with zero denominator."""

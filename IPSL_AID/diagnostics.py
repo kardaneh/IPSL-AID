@@ -32,6 +32,8 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import mpltex
 from sklearn.metrics import r2_score
+import seaborn as sns
+import pandas as pd
 
 
 # ---------------------------------------------
@@ -199,6 +201,10 @@ class PlotConfig:
             return "Precipitation [mm/h]"
         elif name == "tp":
             return "Precipitation [mm/h]"
+        elif name == "D2M":
+            return "Dewpoint [K]"
+        elif name == "ST":
+            return "Surface Temperature [K]"
 
         # General conversion
         name = name.replace("_", " ")
@@ -313,7 +319,7 @@ def plot_validation_hexbin(
 
         # Create hexbin plot
         hb = ax.hexbin(
-            target_flat, pred_flat, gridsize=100, cmap="viridis", bins="log", mincnt=1
+            target_flat, pred_flat, gridsize=100, cmap="jet", bins="log", mincnt=1
         )
 
         # Get counts for colorbar scaling
@@ -470,10 +476,10 @@ def plot_comparison_hexbin(
         fig_tmp, ax_tmp = plt.subplots()
 
         hb1 = ax_tmp.hexbin(
-            target_flat, pred_flat, gridsize=100, cmap="viridis", bins="log", mincnt=1
+            target_flat, pred_flat, gridsize=100, cmap="jet", bins="log", mincnt=1
         )
         hb2 = ax_tmp.hexbin(
-            target_flat, coarse_flat, gridsize=100, cmap="viridis", bins="log", mincnt=1
+            target_flat, coarse_flat, gridsize=100, cmap="jet", bins="log", mincnt=1
         )
 
         all_counts.append(hb1.get_array())
@@ -534,7 +540,7 @@ def plot_comparison_hexbin(
             target_flat,
             pred_flat,
             gridsize=100,
-            cmap="viridis",
+            cmap="jet",
             bins="log",
             mincnt=1,
             vmin=global_vmin,
@@ -574,7 +580,7 @@ def plot_comparison_hexbin(
             target_flat,
             coarse_flat,
             gridsize=100,
-            cmap="viridis",
+            cmap="jet",
             bins="log",
             mincnt=1,
             vmin=global_vmin,
@@ -700,6 +706,85 @@ def plot_metric_histories(
         plt.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
         return save_path
+
+
+def plot_metrics_heatmap(
+    valid_metrics_history,
+    variable_names,
+    metric_names,
+    filename="validation_metrics_heatmap",
+    save_dir="./results",
+    figsize_multiplier=4,
+):
+    """
+    Plot a heatmap of validation metrics.
+
+    Parameters
+    ----------
+    valid_metrics_history : dict
+        Dict from validation loop storing metric histories.
+    variable_names : list of str
+        Names of variables.
+    metric_names : list of str
+        List of metric names (["MAE", "NMAE", "RMSE", "R²"]).
+    filename : str
+        Prefix for saved figures.
+    save_dir : str
+        Directory where images are saved.
+    figsize_multiplier : float
+        Controls overall figure size
+    """
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Build DataFrame
+    data = {}
+
+    for metric in metric_names:
+        values = []
+
+        for var in variable_names:
+            key = f"{var}_pred_vs_fine_{metric}"
+
+            if key in valid_metrics_history:
+                tracker = valid_metrics_history[key]
+
+                if tracker.count > 0:
+                    value = tracker.getmean()
+
+                    # Convert only dimensional metrics
+                    if metric.lower() in ["mae", "rmse"]:
+                        value = PlotConfig.convert_units(var, value)
+                else:
+                    value = np.nan
+            else:
+                value = np.nan
+
+            values.append(value)
+
+        data[metric] = values
+
+    df = pd.DataFrame(data, index=variable_names)
+
+    fig_width = figsize_multiplier + len(metric_names)
+    fig_height = 0.6 * len(variable_names) + figsize_multiplier / 2
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    sns.heatmap(
+        df, ax=ax, cmap="viridis", annot=True, fmt=".2f", linewidths=0.8, cbar=True
+    )
+
+    ax.set_title("Validation metrics")
+    ax.set_xlabel("Metric")
+    ax.set_ylabel("Variable")
+
+    plt.tight_layout()
+
+    save_path = os.path.join(save_dir, f"{filename}.png")
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
 
 
 def plot_loss_histories(
@@ -939,7 +1024,7 @@ def plot_spatiotemporal_histograms(
         tindices,
         gridsize=100,  # Number of hexagons in x-direction
         extent=[0, max_lat, min_time, max_time],  # Data limits
-        cmap="viridis",  # Color map (assumed to be defined)
+        cmap="jet",  # Color map (assumed to be defined)
         mincnt=1,  # Only show hexagons with at least 1 count
         edgecolors="none",
     )  # No borders on hexagons
@@ -955,7 +1040,7 @@ def plot_spatiotemporal_histograms(
         tindices,
         gridsize=100,
         extent=[0, max_lon, min_time, max_time],
-        cmap="viridis",
+        cmap="jet",
         mincnt=1,
         edgecolors="none",
     )
@@ -2571,7 +2656,9 @@ def plot_dry_frequency_map(
 
     lon_center = float((lon_min + lon_max) / 2)
 
-    cmap = PlotConfig.get_colormap("dry frequency")
+    cmap = PlotConfig.get_colormap(
+        "dry frequency"
+    )  # need to define the comap in PlotConfig
 
     # convert units :
     predictions = PlotConfig.convert_units("precipitation", predictions)
@@ -2718,6 +2805,400 @@ def plot_dry_frequency_map(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
+    return save_path
+
+
+def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
+    """
+    Calculate Pearson correlation between 2 N-dimensional numpy arrays.
+
+    Parameters:
+    -----------
+    arr1 : numpy.ndarray
+        First N-dimensional array
+    arr2 : numpy.ndarray
+        Second N-dimensional array (must have same shape as arr1)
+    axis : int, default=0
+        Axis along which to compute correlation
+
+    Returns:
+    --------
+    numpy.ndarray
+        Pearson correlation coefficients. Output has N-1 dimensions
+        (input shape with the specified axis removed).
+
+    """
+
+    if arr1.shape != arr2.shape:
+        raise ValueError(
+            f"Arrays must have the same shape. Got {arr1.shape} and {arr2.shape}"
+        )
+
+    if arr1.ndim < 2:
+        raise ValueError(f"Arrays must be at least 2-dimensional. Got {arr1.ndim}D")
+
+    if axis < 0:
+        axis = arr1.ndim + axis
+
+    if axis < 0 or axis >= arr1.ndim:
+        raise ValueError(
+            f"Axis {axis} is out of bounds for array of dimension {arr1.ndim}"
+        )
+
+    # Move the correlation axis to the front for easier processing
+    arr1_moved = np.moveaxis(arr1, axis, 0)
+    arr2_moved = np.moveaxis(arr2, axis, 0)
+
+    # Reshape to 2D: (n_samples, n_features=nlat*nlon)
+    n_samples = arr1_moved.shape[0]
+    arr1_2d = arr1_moved.reshape(n_samples, -1)
+    arr2_2d = arr2_moved.reshape(n_samples, -1)
+
+    # Vectorized Pearson correlation computation
+    # Center the data
+    arr1_centered = arr1_2d - arr1_2d.mean(axis=0, keepdims=True)
+    arr2_centered = arr2_2d - arr2_2d.mean(axis=0, keepdims=True)
+
+    # Compute correlation (output has shape (n_features))
+    numerator = (arr1_centered * arr2_centered).sum(axis=0)
+    denominator = np.sqrt(
+        (arr1_centered**2).sum(axis=0) * (arr2_centered**2).sum(axis=0)
+    )
+
+    # Avoid division by zero (set as 0.0 instead of inf or nan)
+    correlations = np.divide(
+        numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0
+    )
+
+    # Reshape back to original dimensions (without axis used for correlation)
+    output_shape = list(
+        arr1.shape
+    )  # array shape in list format [n_samples, nlat, nlon]
+    output_shape.pop(
+        axis
+    )  # removes axis dimension from list e.g. axis=0: -> [nlat, nlon]
+
+    output_corr = (
+        correlations.reshape(output_shape) if output_shape else correlations.item()
+    )
+
+    return output_corr
+
+
+def plot_validation_mvcorr(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    lat,
+    lon,
+    coarse_inputs=None,  # Coarse inputs for comparison (optional)
+    variable_names=None,  # List of variable names
+    filename="validation_mvcorr.png",
+    save_dir="./results",
+    figsize_multiplier=4,  # Base size per subplot
+):
+    """
+    Create multivariate correlation map plots comparing model predictions vs ground truth,
+    for all combinations of variables.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [batch_size, num_variables, h, w]
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    lat : array-like
+        2D array of latitude coordinates with shape [h, w].
+    lon : array-like
+        2D array of longitude coordinates with shape [h, w].
+    coarse_inputs : torch.Tensor or np.array, optional
+        Coarse inputs of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Names of the variables for subplot titles
+    filename : str, optional
+        Output filename
+    save_dir : str, optional
+        Directory to save the plot
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots
+
+    Returns
+    -------
+    save_path : str
+        Path to the saved figure
+    """
+
+    # Convert to numpy if they're tensors
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
+        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+
+    batch_size, num_vars, h, w = predictions.shape
+
+    if num_vars < 2:
+        print("ERROR: need at least 2 variables but num_vars < 2")
+        return "0"
+
+    # Default variable names if not provided
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(num_vars)]
+
+    # Make list of tuples defining variable combinations
+    list_var_combos = []
+    for ii in range(num_vars - 1):
+        for jj in range(num_vars - 1 - ii):
+            list_var_combos.append((ii, ii + jj + 1))
+
+    # Calculate grid dimensions
+    ncols = 2
+    if coarse_inputs is not None:
+        ncols = 3
+    nrows = int(num_vars * (num_vars - 1) / 2)  # no. distinct pairs of input variables
+    aspect_ratio = 0.7
+    fwidth = ncols * figsize_multiplier  # longitude range
+    fheight = (
+        nrows * figsize_multiplier * aspect_ratio * 1.02
+    )  # latitude range + title and colorbar
+    print("fwidth")
+    print(fwidth)
+    print("fheight")
+    print(fheight)
+
+    spa_cor_out = np.zeros([nrows, ncols - 1])
+    spa_rmse_out = np.zeros([nrows, ncols - 1])
+
+    # Set up figure
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(fwidth, fheight),
+        subplot_kw={"projection": ccrs.PlateCarree()},
+        constrained_layout=True,
+        squeeze=False,
+    )
+
+    # Define geographic features
+    coastline = cfeature.COASTLINE.with_scale("50m")
+    borders = cfeature.BORDERS.with_scale("50m")
+    # lakes = cfeature.LAKES.with_scale("50m")
+
+    var_name_combo_list = []
+
+    # Plot each combination of variables
+    # max_count = 0
+    for i, varComb in enumerate(list_var_combos):
+        var_name_combo = variable_names[varComb[0]] + "_" + variable_names[varComb[1]]
+        var_name_combo_list.append(var_name_combo)
+        print(var_name_combo)
+
+        # Compute Correlation
+        pred_corr = calculate_pearsoncorr_nparray(
+            predictions[:, varComb[0], :, :], predictions[:, varComb[1], :, :], axis=0
+        )
+        target_corr = calculate_pearsoncorr_nparray(
+            targets[:, varComb[0], :, :], targets[:, varComb[1], :, :], axis=0
+        )
+        if coarse_inputs is not None:
+            coarse_corr = calculate_pearsoncorr_nparray(
+                coarse_inputs[:, varComb[0], :, :],
+                coarse_inputs[:, varComb[1], :, :],
+                axis=0,
+            )
+
+        spa_cor_out[i, 0] = np.corrcoef(
+            pred_corr.reshape(pred_corr.size), target_corr.reshape(target_corr.size)
+        )[0, 1]
+        if coarse_inputs is not None:
+            spa_cor_out[i, 1] = np.corrcoef(
+                coarse_corr.reshape(coarse_corr.size),
+                target_corr.reshape(target_corr.size),
+            )[0, 1]
+
+        spa_rmse_out[i, 0] = np.sqrt((np.square(pred_corr - target_corr)).mean())
+        if coarse_inputs is not None:
+            spa_rmse_out[i, 1] = np.sqrt((np.square(coarse_corr - target_corr)).mean())
+
+        # Col 0: Truth
+        ax_target = axes[i, 0]
+        ax_target.pcolormesh(
+            lon,
+            lat,
+            target_corr,
+            vmin=-1.0,
+            vmax=1.0,
+            cmap="RdBu_r",
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        ax_target.add_feature(coastline, linewidth=PlotConfig.COASTLINE_w)
+        ax_target.add_feature(
+            borders,
+            linewidth=PlotConfig.BORDER_w,
+            edgecolor="black",
+            linestyle=PlotConfig.BORDER_STYLE,
+        )
+        ax_target.set_aspect("auto")
+
+        # Col 1: Prediction
+        ax_pred = axes[i, 1]
+        im_pred = ax_pred.pcolormesh(
+            lon,
+            lat,
+            pred_corr,
+            vmin=-1.0,
+            vmax=1.0,
+            cmap="RdBu_r",
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        ax_pred.add_feature(coastline, linewidth=PlotConfig.COASTLINE_w)
+        ax_pred.add_feature(
+            borders,
+            linewidth=PlotConfig.BORDER_w,
+            edgecolor="black",
+            linestyle=PlotConfig.BORDER_STYLE,
+        )
+        ax_pred.set_aspect("auto")
+
+        if coarse_inputs is not None:
+            # Col 2: Coarse input
+            ax_coar = axes[i, 2]
+            ax_coar.pcolormesh(
+                lon,
+                lat,
+                coarse_corr,
+                vmin=-1.0,
+                vmax=1.0,
+                cmap="RdBu_r",
+                transform=ccrs.PlateCarree(),
+                shading="auto",
+            )
+            ax_coar.add_feature(coastline, linewidth=PlotConfig.COASTLINE_w)
+            ax_coar.add_feature(
+                borders,
+                linewidth=PlotConfig.BORDER_w,
+                edgecolor="black",
+                linestyle=PlotConfig.BORDER_STYLE,
+            )
+            ax_coar.set_aspect("auto")
+
+    # Add col labels
+    col_labels = ["Truth", "Prediction"]
+    if coarse_inputs is not None:
+        col_labels = ["Truth", "Prediction", "Coarse"]
+    for col_idx, label in enumerate(col_labels):
+        axes[0, col_idx].text(
+            0.5,
+            1.2,
+            label,
+            transform=axes[0, col_idx].transAxes,
+            va="top",
+            ha="center",
+            fontsize=20.0,
+        )
+
+    # Add row labels
+    for row_idx, label in enumerate(var_name_combo_list):
+        axes[row_idx, 0].text(
+            -0.02,
+            0.5,
+            label,
+            transform=axes[row_idx, 0].transAxes,
+            va="center",
+            ha="right",
+            rotation="vertical",
+            fontsize=8.0,
+        )
+
+    # Add colorbar
+    # cbar_width_per_subplot = 0.02
+    # actual_cbar_width = cbar_width_per_subplot / ncols
+    cbar_ax = fig.add_axes([0.0, -0.02, 1, 0.02])
+    cbar = fig.colorbar(
+        im_pred, cax=cbar_ax, label="correlation", orientation="horizontal"
+    )
+    cbar.ax.tick_params(labelsize=20)
+
+    # Ensure save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close()
+
+    # _________________________________________
+    # Output summary map statistics as heatmaps
+    # Spatial Correlation and Spatial RMSE wrt target
+
+    # Setupt axis labels
+    xLabels = ["Prediction"]
+    if coarse_inputs is not None:
+        xLabels = ["Prediction", "Coarse"]
+
+    yLabels = var_name_combo_list
+
+    fig, (ax1, ax2) = plt.subplots(
+        ncols=2, figsize=((ncols + 2) * 2, 4)
+    )  # , layout='constrained')
+
+    sns.heatmap(
+        spa_cor_out,
+        ax=ax1,
+        cbar=False,
+        linewidth=0.5,
+        annot=True,
+        fmt=".3f",
+        xticklabels=xLabels,
+        yticklabels=yLabels,
+        vmin=0.0,
+        vmax=1.0,
+        cmap=plt.get_cmap("Reds"),
+    )
+    fig.colorbar(
+        ax1.collections[0],
+        ax=ax1,
+        location="left",
+        use_gridspec=False,
+        pad=0.1,
+        label="correlation",
+    )
+    ax1.tick_params(axis="y", pad=90, length=0)
+    ax1.tick_params(axis="x", length=0)
+    ax1.yaxis.set_label_position("left")
+
+    sns.heatmap(
+        spa_rmse_out,
+        ax=ax2,
+        cbar=False,
+        linewidth=0.5,
+        annot=True,
+        fmt=".3f",
+        xticklabels=xLabels,
+        yticklabels=[""] * ncols,
+        vmin=0.0,
+        vmax=0.3,
+        cmap=plt.get_cmap("Reds_r"),
+    )
+    fig.colorbar(
+        ax2.collections[0],
+        ax=ax2,
+        location="right",
+        use_gridspec=False,
+        pad=0.1,
+        label="RMSE",
+    )
+    ax2.tick_params(rotation=0, length=0)
+    ax2.yaxis.set_label_position("right")
+
+    # Ensure save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+    filenameCR = "SpCorrRmse_" + filename
+    save_path = os.path.join(save_dir, filenameCR)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close()
+
+    print(f"Correlation maps plot saved to: '{save_path}'")
     return save_path
 
 
@@ -3427,6 +3908,48 @@ class TestPlottingFunctions(unittest.TestCase):
         if self.logger:
             self.logger.info("✅ All metric plot tests passed")
 
+    def test_plot_metrics_heatmap_comprehensive(self):
+        """Comprehensive test for validation metrics heatmap."""
+
+        if self.logger:
+            self.logger.info("Testing metrics heatmap")
+
+        # Local dummy MetricTracker
+        class DummyMetricTracker:
+            def __init__(self, values):
+                self.values = np.asarray(values)
+                self.count = len(self.values)
+
+            def getmean(self):
+                return float(np.mean(self.values)) if self.count > 0 else np.nan
+
+        # Fake MetricTracker-based metrics dict
+        valid_metrics_trackers = {}
+
+        for var in self.variable_names:
+            var_key = var.split(" ")[0]
+            for metric in ["rmse", "mae", "r2"]:
+                # Reuse the existing synthetic histories
+                history = self.valid_metrics_history[f"{var_key}_pred_vs_fine_{metric}"]
+                valid_metrics_trackers[f"{var_key}_pred_vs_fine_{metric}"] = (
+                    DummyMetricTracker(history)
+                )
+
+        expected_path = plot_metrics_heatmap(
+            valid_metrics_history=valid_metrics_trackers,
+            variable_names=[name.split(" ")[0] for name in self.variable_names],
+            metric_names=["rmse", "mae", "r2"],
+            save_dir=self.output_dir,
+            filename="metrics_heatmap_comprehensive",
+        )
+
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ Metrics heatmap test passed")
+
     def test_qq_quantiles_comprehensive(self):
         """Comprehensive test for QQ-quantiles plots."""
         if self.logger:
@@ -3480,6 +4003,86 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All QQ-quantiles tests passed")
+
+    def test_mv_correlation_comprehensive(self):
+        """Test for temporal correlation between pairs of variables."""
+
+        # Define lat lon grid
+        w = self.predictions.shape[2]
+        h = self.predictions.shape[3]
+        dlat = 20
+        dlon = 40
+        lat1 = 30
+        lon1 = -120
+        lon, lat = np.meshgrid(
+            np.linspace(lon1, lon1 + dlon, w), np.linspace(lat1, lat1 + dlat, h)
+        )
+
+        # Test 1: Standard configuration Numpy arrays
+        expected_path = plot_validation_mvcorr(
+            predictions=self.predictions,
+            targets=self.targets,
+            lat=lat,
+            lon=lon,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_mvcorr_numpy.png",
+            figsize_multiplier=3,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        expected_path = plot_validation_mvcorr(
+            predictions=self.predictions,
+            targets=self.targets,
+            lat=lat,
+            lon=lon,
+            coarse_inputs=self.coarse_inputs,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="comparison_mvcorr_numpy.png",
+            figsize_multiplier=3,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: Standard configuration PyTorch tensors
+        coarse_tensor = torch.from_numpy(self.coarse_inputs.copy())
+        fine_tensor = torch.from_numpy(self.targets.copy())
+        pred_tensor = torch.from_numpy(self.predictions.copy())
+        expected_path = plot_validation_mvcorr(
+            predictions=pred_tensor,
+            targets=fine_tensor,
+            lat=lat,
+            lon=lon,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_mvcorr_torch.png",
+            figsize_multiplier=3,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        expected_path = plot_validation_mvcorr(
+            predictions=pred_tensor,
+            targets=fine_tensor,
+            lat=lat,
+            lon=lon,
+            coarse_inputs=coarse_tensor,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="comparison_mvcorr_torch.png",
+            figsize_multiplier=3,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ All mv correlation tests passed")
 
     def tearDown(self):
         """Clean up after tests."""

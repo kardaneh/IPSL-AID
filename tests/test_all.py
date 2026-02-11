@@ -56,7 +56,6 @@ SKIP_MODULES = {
     "logger",
     "model_utils",
     "utils",
-    "dataset",
 }
 
 

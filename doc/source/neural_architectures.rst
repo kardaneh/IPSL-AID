@@ -11,6 +11,12 @@ IPSL-AID relies on **UNet-based architectures**, adapted for climate data:
 Architectures are selected using runtime parameters, allowing rapid experimentation
 without code changes.
 
+.. figure:: ../../images/unet.png
+   :width: 90%
+   :align: center
+
+   Shematic of the UNet architecture used in IPSL-AID, showing encoder, decoder, and attention components.
+
 Default Configuration
 ---------------------
 
@@ -72,7 +78,7 @@ Input/Output Specification
 
 .. code-block:: python
 
-   class UNet(nn.Module):
+   class DhariwalUNet(nn.Module):
        def __init__(
          self,
          img_resolution,                     # Image resolution as tuple (height, width)
@@ -102,22 +108,34 @@ Climate-Specific Adaptations
 Configuration Examples
 ----------------------
 
-.. code-block:: yaml
+.. code-block:: python
 
-   architecture:
-     type: "DhariwalUNet"
-     base_channels: 128
-     channel_mult: [1, 2, 3, 4]
-     num_res_blocks: 3
-     attention_resolutions: [32, 16, 8]
-     dropout: 0.1
-     use_attention: true
-     conditioning: "concat"
+   opts = dict(
+       arch="adm",
+       precond="edm",
+       img_resolution=[128, 128],
 
-   input:
-     variables: ["t2m", "u10", "v10"]
-     static_features: ["lat", "lon", "z", "lsm"]
-     dynamic_features: ["day_of_year", "hour_of_day"]
+       # --------------------------------------------------
+       # Data channels
+       # --------------------------------------------------
+       in_channels=3,        # ["t2m", "u10", "v10"]
+       cond_channels=7,      # 3 variables + z + LSM + lat + lon
+       out_channels=3,       # same as in_channels
+
+       label_dim=2,          # conditional model
+       use_fp16=True,
+
+       # --------------------------------------------------
+       # Architecture overrides
+       # --------------------------------------------------
+       model_kwargs=dict(
+           model_channels=128,
+           channel_mult=[1, 2, 3, 4],
+           num_blocks=3,
+           dropout=0.1,
+       )
+   )
+
 
 Performance Considerations
 --------------------------

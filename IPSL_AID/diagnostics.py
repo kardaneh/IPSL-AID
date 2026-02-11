@@ -3202,6 +3202,131 @@ def plot_validation_mvcorr(
     return save_path
 
 
+def ranks(
+    predictions,  # Model predictions precipitation (fine predicted)
+    targets,  # Ground truth precipitation (fine true)
+):
+    """
+    Compute ranks of predictions compared to targets.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [ensemble_size, batch_size, h, w]
+    targets : torch.Tensor or np.array
+        Targets of shape [batch_size, h, w]
+    Returns
+    -------
+    np.ndarray(np.float64) of shape [batch_size*h*w,]
+    """
+    # convert to numpy if tensor :
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    nb_ens, T, L, W = predictions.shape
+    predictions_ens = predictions.reshape(nb_ens, T * L * W)
+    targets = targets.reshape(1, T * L * W)
+    diff = predictions_ens - targets
+    mask_leq = (diff <= 0).astype(np.float32)
+    mask_l = (diff < 0).astype(np.float32)
+    mask = (mask_leq + mask_l) / 2
+    return np.sum(mask, axis=0)
+
+
+def plot_ranks(
+    predictions,  # model predictions
+    targets,  # ground truth
+    variable_names=None,  # list of variable names
+    filename="ranks.png",
+    save_dir="./results",
+    figsize_multiplier=4,
+):
+    """
+    Create rank histograms of predictions compared to targets for each variable.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [ensemble_size, batch_size, num_variables, h, w]
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Names of the variables for subplot titles.
+        If None, uses ["VAR_0", "VAR_1", ...]
+    filename : str, optional
+        Output filename
+    save_dir : str, optional
+        Directory to save the plot
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots
+
+    Returns
+    -------
+    save_path : str
+        Path to the saved figure
+    """
+    # Convert tensors → numpy
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+
+    ensemble_size, batch_size, num_vars, h, w = predictions.shape
+
+    # Default variable names if not provided
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(num_vars)]
+    plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
+
+    # Figure setup
+    fig, axes = plt.subplots(
+        1,
+        num_vars,
+        figsize=(num_vars * figsize_multiplier, figsize_multiplier),
+        constrained_layout=True,
+    )
+
+    plt.subplots_adjust(
+        hspace=0.2, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
+    )
+    if num_vars > 1:
+        axes = axes.ravel()
+    # Handle single subplot case
+    else:
+        axes = np.array([axes])
+
+    for ax in axes:
+        ax.set_box_aspect(1)
+
+    for i, var_name in enumerate(variable_names):
+        ax = axes[i]
+        plot_name = plot_variable_names[i]
+
+        ranks_predicted = ranks(
+            predictions=predictions[:, :, i, :, :],
+            targets=targets[:, i, :, :],
+        )
+        ax.hist(ranks_predicted, bins=np.arange(ensemble_size + 2), density=True)
+        ax.plot(
+            [0, ensemble_size + 2],
+            [1 / (ensemble_size + 2), 1 / (ensemble_size + 2)],
+            linestyle="--",
+            color="red",
+        )
+
+        ax.set_title(plot_name)
+        ax.set_xlabel("ranks")
+        ax.set_ylabel("frequency")
+
+    # Save figure
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
+
+
 # ============================================================================
 # Plotting Functions Test Suite
 # ============================================================================
@@ -4083,6 +4208,62 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All mv correlation tests passed")
+
+    def test_ranks(self):
+        if self.logger:
+            self.logger.info("Testing ranks compute function comprehensively")
+        predictions = self.predictions[:, :, :48, :68]
+        targets = self.targets[:, 0, :48, :68]
+        ensemble_size = 10
+        # Test 1 : standard numpy inputs
+        predictions_repeated = np.repeat(
+            predictions[None, :, 0, :, :], axis=0, repeats=ensemble_size
+        )
+        arr = ranks(predictions=predictions_repeated, targets=targets)
+        self.assertTrue(arr.shape == targets.flatten().shape)
+        # Test 2 : torch tensors
+        predictions_repeated_torch = torch.from_numpy(predictions_repeated)
+        targets_torch = torch.from_numpy(targets)
+        arr_torch = ranks(predictions=predictions_repeated_torch, targets=targets_torch)
+        self.assertTrue(arr_torch.shape == targets.flatten().shape)
+
+        if self.logger:
+            self.logger.info("✅ All ranks tests passed")
+
+    def test_plot_ranks(self):
+        if self.logger:
+            self.logger.info("Testing plot_ranks function comprehensively")
+        predictions = self.predictions[:, :, :48, :68]
+        targets = self.targets[:, :, :48, :68]
+        ensemble_size = 10
+        # Test 1 : standard numpy inputs
+        predictions_repeated = np.repeat(
+            predictions[None, :, :, :, :], axis=0, repeats=ensemble_size
+        )
+        expected_path = plot_ranks(
+            predictions=predictions_repeated,
+            targets=targets,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="ranks.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+        # Test 2 : torch inputs
+        expected_path_torch = plot_ranks(
+            predictions=torch.from_numpy(predictions_repeated),
+            targets=torch.from_numpy(targets),
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="ranks_torch.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path_torch), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ All ranks plot tests passed")
 
     def tearDown(self):
         """Clean up after tests."""

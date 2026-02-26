@@ -1241,7 +1241,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             units=None,  # You might want to add units to args
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
-            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:02d}.png",
+            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:03d}.png",
             save_dir=paths.results,
         )
 

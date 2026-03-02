@@ -38,6 +38,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
    quickstart
    testing_philosophy
    project_structure
+   pre_push_workflow
    cartopy_configuration
 
 .. toctree::
@@ -78,6 +79,7 @@ Project Information
 -------------------
 
 * :doc:`project_structure` - Codebase organization
+* :doc:`pre_push_workflow` - Development workflow and contribution guidelines
 * :doc:`cartopy_configuration` - Geospatial visualization setup
 
 API Documentation

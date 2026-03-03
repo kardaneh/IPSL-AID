@@ -1629,9 +1629,8 @@ def reconstruct_original_layout(
             save_dir=paths.results,
         )
 
-        logger.info(
-            f"Saved full domain multivariate correlation map to: {save_path}"
-        )
+
+        logger.info(f"Saved full domain multivariate correlation map to: {save_path}")
 
     return {"data": reconstructions, "metadata": metadata, "device": device}
 

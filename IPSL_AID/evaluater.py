@@ -28,6 +28,7 @@ from IPSL_AID.diagnostics import (
     plot_MAE_map,
     plot_metrics_heatmap,
     plot_validation_mvcorr,
+    plot_temporal_series_comparison,
 )
 import unittest
 from unittest.mock import Mock, patch
@@ -1484,6 +1485,18 @@ def reconstruct_original_layout(
         )
         logger.info(f"Saved surface plot to: {save_path}")
 
+        # 8. Temporal series
+        save_path = plot_temporal_series_comparison(
+            predictions=predictions_block,
+            targets=fine_block,
+            # coarse_inputs=coarse_block,
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_temporal_series_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+            save_dir=paths.results,
+        )
+
+        logger.info(f"Saved temporal series plot to: {save_path}")
+
     # For inference mode, also generate full domain plots
     if args.run_type == "inference":
         assert (
@@ -1630,6 +1643,18 @@ def reconstruct_original_layout(
         )
 
         logger.info(f"Saved full domain multivariate correlation map to: {save_path}")
+
+        # 8. Temporal series
+        save_path = plot_temporal_series_comparison(
+            predictions=predictions_full,
+            targets=fine_full,
+            # coarse_inputs=coarse_full,
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_full_domain_temporal_series_epoch_{epoch}.png",
+            save_dir=paths.results,
+        )
+
+        logger.info(f"Saved full domain temporal series plot to: {save_path}")
 
     return {"data": reconstructions, "metadata": metadata, "device": device}
 

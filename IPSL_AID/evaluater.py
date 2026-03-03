@@ -1614,24 +1614,24 @@ def reconstruct_original_layout(
                 f"Saved full domain surface plot (time {time_idx}) to: {save_path}"
             )
 
-            # 7. Multivariate Correlation Maps
-            # Convert 1D lat/lon to 2D meshgrid
-            lat_2d_full, lon_2d_full = torch.meshgrid(lat_full, lon_full, indexing="ij")
+        # 7. Multivariate Correlation Maps
+        # Convert 1D lat/lon to 2D meshgrid
+        lat_2d_full, lon_2d_full = torch.meshgrid(lat_full, lon_full, indexing="ij")
 
-            save_path = plot_validation_mvcorr(
-                predictions=predictions_full,  # [T, C, H, W]
-                targets=fine_full,  # [T, C, H, W]
-                coarse_inputs=coarse_full,
-                lat=lat_2d_full.numpy(),
-                lon=lon_2d_full.numpy(),
-                variable_names=args.varnames_list,
-                filename=f"{args.run_type}_full_domain_mvcorr_epoch_{epoch}.png",
-                save_dir=paths.results,
-            )
+        save_path = plot_validation_mvcorr(
+            predictions=predictions_full,  # [T, C, H, W]
+            targets=fine_full,  # [T, C, H, W]
+            coarse_inputs=coarse_full,
+            lat=lat_2d_full.numpy(),
+            lon=lon_2d_full.numpy(),
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_full_domain_mvcorr_epoch_{epoch}.png",
+            save_dir=paths.results,
+        )
 
-            logger.info(
-                f"Saved full domain multivariate correlation map to: {save_path}"
-            )
+        logger.info(
+            f"Saved full domain multivariate correlation map to: {save_path}"
+        )
 
     return {"data": reconstructions, "metadata": metadata, "device": device}
 

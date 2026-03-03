@@ -3251,7 +3251,122 @@ def plot_validation_mvcorr(
     plt.close()
     """
 
-    print(f"Correlation maps plot saved to: '{save_path}'")
+    return save_path
+
+
+def plot_temporal_series_comparison(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    coarse_inputs=None,  # Coarse inputs for comparison (optional)
+    variable_names=None,  # List of variable names
+    filename="validation_temp_series.png",
+    save_dir="./results",
+    figsize_multiplier=4,
+):
+    """
+    Plot spatially averaged temporal series for each variable.
+
+    For each variable, a separate subplot is created showing the spatial mean
+    over time of:
+        - Ground truth
+        - Model predictions
+        - Optional coarse inputs
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [batch_size, num_variables, h, w]
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    coarse_inputs : torch.Tensor or np.array, optional
+        Coarse inputs of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Names of the variables for subplot titles
+    filename : str, optional
+        Output filename
+    save_dir : str, optional
+        Directory to save the plot
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots
+
+    Returns
+    -------
+    save_path : str
+        Path to the saved figure
+    """
+
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
+        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+
+    if predictions.shape != targets.shape:
+        raise ValueError(f"Shape mismatch: {predictions.shape} vs {targets.shape}")
+
+    if coarse_inputs is not None and coarse_inputs.shape != targets.shape:
+        raise ValueError(
+            f"Coarse shape mismatch: {coarse_inputs.shape} vs {targets.shape}"
+        )
+
+    batch_size, num_vars, h, w = predictions.shape
+
+    # Default variable names if not provided
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(num_vars)]
+
+    if len(variable_names) != num_vars:
+        raise ValueError(
+            f"{len(variable_names)} variable names but num_vars={num_vars}"
+        )
+
+    fig = plt.figure(figsize=(6, figsize_multiplier * num_vars))
+
+    linestyles = mpltex.linestyle_generator(markers=[])
+
+    style_truth = next(linestyles)
+    style_pred = next(linestyles)
+    style_coarse = next(linestyles) if coarse_inputs is not None else None
+
+    # Loop over variables
+    for i, var in enumerate(variable_names):
+        ax = fig.add_subplot(num_vars, 1, i + 1)
+
+        pred_vals = PlotConfig.convert_units(var, predictions[:, i])
+        true_vals = PlotConfig.convert_units(var, targets[:, i])
+
+        # Spatial mean over H and W dimensions
+        s_pred = pred_vals.mean(axis=(1, 2))
+        s_true = true_vals.mean(axis=(1, 2))
+
+        # Temporal axis
+        time_index = range(batch_size)
+
+        ax.plot(time_index, s_true, label="Truth", linewidth=1.0, **style_truth)
+        ax.plot(time_index, s_pred, label="Prediction", linewidth=1.0, **style_pred)
+
+        if coarse_inputs is not None:
+            coarse_vals = PlotConfig.convert_units(var, coarse_inputs[:, i])
+            s_coarse = coarse_vals.mean(axis=(1, 2))
+            ax.plot(time_index, s_coarse, label="Coarse", linewidth=1.0, **style_coarse)
+
+        ax.set_title(var)
+        ax.grid(True, alpha=0.3)
+        ax.set_ylabel("Spatial mean")
+
+        if i == num_vars - 1:
+            ax.set_xlabel("Time index")
+        else:
+            ax.tick_params(labelbottom=False)
+
+        ax.legend()
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+
     return save_path
 
 
@@ -4260,6 +4375,79 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All mv correlation tests passed")
+
+    def test_temporal_series_comparison_comprehensive(self):
+        """Comprehensive test for spatially averaged temporal series comparison."""
+
+        if self.logger:
+            self.logger.info("Testing temporal series comparison comprehensively")
+
+        # Here we reinterpret batch_size as time dimension T
+        T = 100
+        C = self.num_vars
+        H = self.h
+        W = self.w
+
+        # Create synthetic temporal signal
+        time = np.linspace(0, 4 * np.pi, T)
+
+        predictions = np.zeros((T, C, H, W))
+        targets = np.zeros((T, C, H, W))
+
+        for c in range(C):
+            for t in range(T):
+                seasonal_signal = np.sin(time[t]) * (c + 1)
+
+                spatial_pattern = (
+                    np.sin(np.linspace(0, 2 * np.pi, W))[None, :]
+                    * np.cos(np.linspace(0, 2 * np.pi, H))[:, None]
+                )
+
+                targets[t, c] = seasonal_signal + spatial_pattern
+                predictions[t, c] = (
+                    seasonal_signal + spatial_pattern + np.random.normal(0, 0.1, (H, W))
+                )
+
+        # Test 1: numpy inputs
+        expected_path = plot_temporal_series_comparison(
+            predictions=predictions,
+            targets=targets,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="temporal_series_numpy.png",
+        )
+
+        self.assertTrue(
+            os.path.exists(expected_path),
+            f"File not found: {expected_path}",
+        )
+
+        # Test 2: torch tensors
+        expected_path_torch = plot_temporal_series_comparison(
+            predictions=torch.from_numpy(predictions),
+            targets=torch.from_numpy(targets),
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="temporal_series_torch.png",
+        )
+
+        self.assertTrue(
+            os.path.exists(expected_path_torch),
+            f"File not found: {expected_path_torch}",
+        )
+
+        # Test 3: shape mismatch error
+        with self.assertRaises(ValueError):
+            plot_temporal_series_comparison(
+                predictions=predictions,
+                targets=targets[:, :, :-1, :],  # wrong shape
+                variable_names=self.variable_names,
+                save_dir=self.output_dir,
+                filename="temporal_series_error.png",
+            )
+
+        if self.logger:
+            self.logger.info("✅ All temporal series comparison tests passed")
 
     def test_ranks(self):
         if self.logger:

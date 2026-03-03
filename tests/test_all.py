@@ -54,7 +54,6 @@ SKIP_MODULES = {
     "__init__",
     "main",
     "logger",
-    "model_utils",
     "utils",
 }
 

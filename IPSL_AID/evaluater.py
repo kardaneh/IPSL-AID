@@ -26,6 +26,8 @@ from IPSL_AID.diagnostics import (
     plot_qq_quantiles,
     plot_surface,
     plot_MAE_map,
+    plot_metrics_heatmap,
+    plot_validation_mvcorr,
 )
 import unittest
 from unittest.mock import Mock, patch
@@ -379,6 +381,133 @@ def r2_all(pred, true):
     r2_value = 1.0 - ss_res / (ss_tot + eps)
 
     return num_elements, r2_value
+
+
+def pearson_all(pred, true):
+    """
+    Compute the Pearson correlation coefficient between predicted and
+    ground truth values using torch.corrcoef.
+
+    Parameters
+    ----------
+    pred : torch.Tensor
+        Predicted values from the model.
+    true : torch.Tensor
+        Ground truth values.
+
+    Returns
+    -------
+    tuple
+        (num_elements, pearson_value) where:
+        - num_elements (int): Total number of elements in the tensors.
+        - pearson_value (torch.Tensor): Pearson correlation coefficient.
+
+    Notes
+    -----
+    The Pearson correlation coefficient is defined as:
+
+        rho = Cov(pred, true) / (std(pred) * std(true))
+    """
+
+    if pred.shape != true.shape:
+        raise RuntimeError(f"Shape mismatch: {pred.shape} vs {true.shape}")
+
+    num_elements = pred.numel()
+
+    # Flatten tensors to 1D vectors
+    pred_flat = pred.reshape(-1)
+    true_flat = true.reshape(-1)
+
+    # Stack into a 2 x N matrix required by torch.corrcoef
+    stacked = torch.stack([pred_flat, true_flat], dim=0)
+
+    # Compute correlation matrix
+    corr_matrix = torch.corrcoef(stacked)
+
+    # Extract Pearson correlation coefficient between
+    # predictions (row 0) and truth (row 1)
+    pearson_value = corr_matrix[0, 1]
+
+    return num_elements, pearson_value
+
+
+def kl_divergence_all(pred, true):
+    """
+    Compute the Kullback–Leibler (KL) divergence between predicted and
+    ground truth distributions using histogram-based estimation.
+
+    Parameters
+    ----------
+    pred : torch.Tensor
+        Predicted values from the model.
+    true : torch.Tensor
+        Ground truth values.
+
+    Returns
+    -------
+    tuple
+        (num_elements, kl_value) where:
+        - num_elements (int): Total number of elements in the tensors.
+        - kl_value (torch.Tensor): KL divergence value.
+
+    Notes
+    -----
+    The KL divergence is defined as:
+
+        KL(P|Q) = sum_i P_i * log(P_i / Q_i)
+
+    where:
+        - P represents the true distribution
+        - Q represents the predicted distribution
+    """
+
+    if pred.shape != true.shape:
+        raise RuntimeError(f"Shape mismatch: {pred.shape} vs {true.shape}")
+
+    num_elements = pred.numel()
+
+    n_bins = 100
+    eps = 1e-12
+
+    # Flatten tensors to 1D vectors
+    pred_flat = pred.reshape(-1)
+    true_flat = true.reshape(-1)
+
+    # Shared histogram range (full range)
+    # data_min = torch.min(torch.min(pred_flat), torch.min(true_flat))
+    # data_max = torch.max(torch.max(pred_flat), torch.max(true_flat))
+
+    # Combine for percentile computation
+    all_values = torch.cat([pred_flat, true_flat])
+
+    # Percentile clipping
+    data_min = torch.quantile(all_values, 0.0025)
+    data_max = torch.quantile(all_values, 0.995)
+
+    data_range = data_max - data_min
+
+    x_min = data_min - 0.05 * data_range
+    x_max = data_max + 0.05 * data_range
+
+    # Histogram counts
+    # hist_pred = torch.histc(pred_flat, bins=n_bins, min=data_min.item(), max=data_max.item())
+    # hist_true = torch.histc(true_flat, bins=n_bins, min=data_min.item(), max=data_max.item())
+
+    hist_pred = torch.histc(pred_flat, bins=n_bins, min=x_min.item(), max=x_max.item())
+    hist_true = torch.histc(true_flat, bins=n_bins, min=x_min.item(), max=x_max.item())
+
+    # Add epsilon
+    hist_pred = hist_pred + eps
+    hist_true = hist_true + eps
+
+    # Normalize to probability mass
+    hist_pred = hist_pred / hist_pred.sum()
+    hist_true = hist_true / hist_true.sum()
+
+    # KL divergence
+    kl_value = torch.sum(hist_true * torch.log(hist_true / hist_pred))
+
+    return num_elements, kl_value
 
 
 def denormalize(
@@ -982,7 +1111,7 @@ def reconstruct_original_layout(
         batch_size = batch.shape[0]
 
         logger.info(
-            f"Processing batch {batch_idx + 1}/{len(all_data['predictions'])} with size {batch_size}"
+            f"Processing batch {batch_idx+1}/{len(all_data['predictions'])} with size {batch_size}"
         )
 
         for i_in_batch in range(batch_size):
@@ -1169,8 +1298,8 @@ def reconstruct_original_layout(
 
                 error_msg = (
                     f"CRITICAL ERROR: Grid coverage incomplete!\n"
-                    f"Missing {uncovered_cells}/{covered_H * covered_W} grid cells.\n"
-                    f"Coverage: {coverage_mask.sum().item() / (covered_H * covered_W) * 100:.1f}%\n"
+                    f"Missing {uncovered_cells}/{covered_H*covered_W} grid cells.\n"
+                    f"Coverage: {coverage_mask.sum().item()/(covered_H*covered_W)*100:.1f}%\n"
                     f"First 10 missing positions (lat, lon): {missing_positions[:10].cpu().numpy().tolist()}"
                 )
                 logger.error(error_msg)
@@ -1241,7 +1370,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             units=None,  # You might want to add units to args
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
-            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:03d}.png",
+            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:02d}.png",
             save_dir=paths.results,
         )
 
@@ -1301,8 +1430,10 @@ def reconstruct_original_layout(
 
         # Latitude and longitude coordinates for this spatial block.
         # Coordinates are time-invariant, so we take them from the first time index (t = 0).
-        lat_block = reconstructions["lat"][0, spatial_idx]  # [H]
-        lon_block = reconstructions["lon"][0, spatial_idx]  # [W]
+        first_time_idx = 0
+        # Get coordinates for this spatial block
+        lat_block = reconstructions["lat"][first_time_idx, spatial_idx]  # [H]
+        lon_block = reconstructions["lon"][first_time_idx, spatial_idx]  # [W]
 
         save_path = plot_MAE_map(
             predictions=predictions_block,  # [T, C, H, W]
@@ -1315,11 +1446,24 @@ def reconstruct_original_layout(
         )
         logger.info(f"Saved MAE map to: {save_path}")
 
-        # Take only the first time step
-        first_time_idx = 0
-        # Get coordinates for this spatial block
-        lat_block = reconstructions["lat"][first_time_idx, spatial_idx]  # [H]
-        lon_block = reconstructions["lon"][first_time_idx, spatial_idx]  # [W]
+        # 6. Multivariate Correlation Maps
+        # Convert 1D lat/lon to 2D meshgrid
+        lat_2d, lon_2d = torch.meshgrid(lat_block, lon_block, indexing="ij")
+
+        save_path = plot_validation_mvcorr(
+            predictions=predictions_block,  # [T, C, H, W]
+            targets=fine_block,  # [T, C, H, W]
+            coarse_inputs=coarse_block,  # optional
+            lat=lat_2d.numpy(),
+            lon=lon_2d.numpy(),
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_mvcorr_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+            save_dir=paths.results,
+        )
+
+        logger.info(f"Saved multivariate correlation map to: {save_path}")
+
+        # 7. Surface plot
         coarse = reconstructions["coarse"][
             first_time_idx : first_time_idx + 1, spatial_idx
         ]
@@ -1373,6 +1517,7 @@ def reconstruct_original_layout(
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
             filename=f"{args.run_type}_full_domain_qq_epoch_{epoch}.png",
             save_dir=paths.results,
+            save_npz=True,
         )
         logger.info(f"Saved full domain QQ plot to {save_path}")
 
@@ -1405,6 +1550,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_validation_pdfs_epoch_{epoch}.png",
             save_dir=paths.results,
+            save_npz=True,
         )
         logger.info(f"Saved full domain validation PDFs plot to: {save_path}")
 
@@ -1423,6 +1569,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_power_spectra_epoch_{epoch}.png",
             save_dir=paths.results,
+            save_npz=True,
         )
         logger.info(f"Saved full domain power spectra plot to: {save_path}")
 
@@ -1467,18 +1614,34 @@ def reconstruct_original_layout(
                 f"Saved full domain surface plot (time {time_idx}) to: {save_path}"
             )
 
+            # 7. Multivariate Correlation Maps
+            # Convert 1D lat/lon to 2D meshgrid
+            lat_2d_full, lon_2d_full = torch.meshgrid(lat_full, lon_full, indexing="ij")
+
+            save_path = plot_validation_mvcorr(
+                predictions=predictions_full,  # [T, C, H, W]
+                targets=fine_full,  # [T, C, H, W]
+                coarse_inputs=coarse_full,
+                lat=lat_2d_full.numpy(),
+                lon=lon_2d_full.numpy(),
+                variable_names=args.varnames_list,
+                filename=f"{args.run_type}_full_domain_mvcorr_epoch_{epoch}.png",
+                save_dir=paths.results,
+            )
+
+            logger.info(
+                f"Saved full domain multivariate correlation map to: {save_path}"
+            )
+
     return {"data": reconstructions, "metadata": metadata, "device": device}
 
 
-def generate_denorm_residuals(
+def generate_residuals_norm(
     model,
     features,
     labels,
     targets,
     loss_fn,
-    norm_mapping,
-    normalization_type,
-    index_mapping,
     args,
     device,
     logger,
@@ -1488,7 +1651,7 @@ def generate_denorm_residuals(
     inference_type="sampler",
 ):
     """
-    Generate denormalized residuals for all variables.
+    Generate normalized residuals for all variables.
 
     Parameters
     ----------
@@ -1502,10 +1665,6 @@ def generate_denorm_residuals(
         Ground truth target tensor used for noise injection in direct inference
     loss_fn : callable
         Loss function
-    norm_mapping : dict
-        Normalization statistics
-    normalization_type : EasyDict
-        Normalization types for each variable
     args : argparse.Namespace
         Command line arguments
     device : torch.device
@@ -1523,7 +1682,7 @@ def generate_denorm_residuals(
     Returns
     -------
     torch.Tensor
-        [B, C, H, W] denormalized residuals
+        [B, C, H, W] residuals in normalized space
     """
     # Generate samples for metrics calculation
     # Choose direct for rapid evaluation, sampler for full quality
@@ -1531,12 +1690,9 @@ def generate_denorm_residuals(
         if args.debug:
             logger.info("Using direct inference/evaluation mode (deterministic)")
 
-        # To verify with Kazem
         if args.precond == "unet":
             # Direct prediction for unet
-            generated_residuals = model(
-                features, class_labels=labels
-            )  # same format as direct inference, maybe we have to move it to direct
+            generated_residuals = model(features, class_labels=labels)
         else:
             rnd_normal = torch.randn([targets.shape[0], 1, 1, 1], device=targets.device)
             sigma = (rnd_normal * loss_fn.P_std + loss_fn.P_mean).exp()
@@ -1546,7 +1702,7 @@ def generate_denorm_residuals(
     elif inference_type == "sampler":
         if args.precond == "unet":
             raise ValueError("UNet does not support sampler inference")
-        if args.debug:
+        if args.debug and logger is not None:
             logger.info("Using sampler inference/evaluation mode (stochastic)")
             logger.info(f"Starting EDM sampler with {edm_sampler_steps} steps")
         generated_residuals = sampler(
@@ -1565,33 +1721,7 @@ def generate_denorm_residuals(
         logger.error(f"Unknown inference_type: {inference_type}")
         raise
 
-    generated_residual_denorm = torch.zeros_like(generated_residuals)
-    # Denormalize and reconstruct final images
-    for var_name in args.varnames_list:
-        # Get the correct channel index for this variable
-        iv = index_mapping[var_name]
-
-        # Select the correct channel from generated residuals [B, C, H, W] -> [B, 1, H, W]
-        residual_channel = generated_residuals[:, iv : iv + 1]
-
-        # Get normalization statistics for this variable's residual
-        stats_residual = norm_mapping[f"{var_name}_residual"]
-        norm_type = normalization_type[var_name]
-
-        residual_denorm = denormalize(
-            residual_channel,
-            stats_residual,
-            norm_type,
-            device,
-            var_name=var_name,  # Add variable name
-            data_type="residual",  # Add data type
-            debug=args.debug,  # Pass debug flag
-            logger=logger,  # Pass logger
-        )
-
-        generated_residual_denorm[:, iv : iv + 1] = residual_denorm
-
-    return generated_residual_denorm
+    return generated_residuals
 
 
 def run_validation(
@@ -1613,7 +1743,7 @@ def run_validation(
     paths=None,
     compute_crps=False,
     crps_batch_size=2,
-    crps_ensemble_size=5,
+    crps_ensemble_size=10,
 ):
     """
     Run validation on the model.
@@ -1664,18 +1794,24 @@ def run_validation(
         "NMAE",
         "RMSE",
         "R2",
-        "CRPS",
+        "PEARSON",
+        "KL",
     ]  # You can add more metrics here like ["MAE", "MSE", "RMSE"]
     metric_funcs = {
         "MAE": mae_all,
         "NMAE": nmae_all,
         "RMSE": rmse_all,
         "R2": r2_all,
-        "CRPS": crps_ensemble_all,
+        "PEARSON": pearson_all,
+        "KL": kl_divergence_all,
         # You can add more metrics here:
         # "MSE": mse_all,
-        # "RMSE": rmse_all,
     }
+
+    # Add CRPS only if requested
+    if compute_crps:
+        metric_names.append("CRPS")
+        metric_funcs["CRPS"] = crps_ensemble_all
 
     # Separate deterministic metrics from CRPS.
     # CRPS is handled separately due to its stochastic and expensive nature.
@@ -1698,13 +1834,15 @@ def run_validation(
             val_metrics[f"{k}_coarse_vs_fine_{m}"] = (
                 MetricTracker()
             )  # Coarse vs true fine (baseline)
-        val_metrics[f"{k}_pred_vs_fine_CRPS"] = MetricTracker()
+        if compute_crps:
+            val_metrics[f"{k}_pred_vs_fine_CRPS"] = MetricTracker()
 
     # Add average metrics across all variables for each metric type
     for m in deterministic_metrics:
         val_metrics[f"average_pred_vs_fine_{m}"] = MetricTracker()
         val_metrics[f"average_coarse_vs_fine_{m}"] = MetricTracker()
-    val_metrics["average_pred_vs_fine_CRPS"] = MetricTracker()
+    if compute_crps:
+        val_metrics["average_pred_vs_fine_CRPS"] = MetricTracker()
 
     all_data = {"predictions": [], "coarse": [], "fine": [], "lat": [], "lon": []}
 
@@ -1725,6 +1863,11 @@ def run_validation(
             features = batch["inputs"].to(device)
             targets = batch["targets"].to(device)
             coarse = batch["coarse"].to(device)
+            # coarse_norm = batch["coarse_norm"].to(device)
+            # Number of variables (channels)
+            n_vars = len(args.varnames_list)
+            # Extract normalized coarse field from model inputs
+            coarse_norm = features[:, :n_vars]
             fine = batch["fine"].to(device)
             lat_batch = batch["corrdinates"]["lat"].to(device)
             lon_batch = batch["corrdinates"]["lon"].to(device)
@@ -1779,17 +1922,13 @@ def run_validation(
                 m: {"pred": MetricTracker(), "coarse": MetricTracker()}
                 for m in deterministic_metrics
             }
-            # batch_var_count = 0
 
-            generated_residual_denorm = generate_denorm_residuals(
+            generated_residual = generate_residuals_norm(
                 model=model,
                 features=features,
                 labels=labels,
                 targets=targets,
                 loss_fn=loss_fn,
-                norm_mapping=norm_mapping,
-                normalization_type=normalization_type,
-                index_mapping=index_mapping,
                 args=args,
                 device=device,
                 logger=logger,
@@ -1807,13 +1946,31 @@ def run_validation(
                 iv = index_mapping[var_name]
 
                 # Reconstruct final image: coarse + residual
-                coarse_var = coarse[:, iv : iv + 1]
-                final_prediction = (
-                    coarse_var + generated_residual_denorm[:, iv : iv + 1]
+                coarse_var_norm = coarse_norm[:, iv : iv + 1]
+                final_prediction_norm = (
+                    coarse_var_norm + generated_residual[:, iv : iv + 1]
                 )
 
                 # Calculate metrics against ground truth fine data
                 fine_var = fine[:, iv : iv + 1]
+                coarse_var = coarse[:, iv : iv + 1]
+
+                norm_type = normalization_type[var_name]
+                if norm_type.startswith("log1p"):
+                    stats_fine = norm_mapping[f"{var_name}_fine_log"]
+                else:
+                    stats_fine = norm_mapping[f"{var_name}_fine"]
+
+                final_prediction = denormalize(
+                    final_prediction_norm,
+                    stats_fine,
+                    norm_type,
+                    device,
+                    var_name=var_name,
+                    data_type="fine",
+                    debug=args.debug,
+                    logger=logger,
+                )
 
                 batch_predictions.append(final_prediction)
 
@@ -1904,15 +2061,12 @@ def run_validation(
             ens_preds = []
 
             for _ in tqdm(range(crps_ensemble_size), desc="CRPS ensemble", leave=False):
-                generated_residual_denorm = generate_denorm_residuals(
+                generated_residual = generate_residuals_norm(
                     model=model,
                     features=features,
                     labels=labels,
                     targets=batch["targets"].to(device),
                     loss_fn=loss_fn,
-                    norm_mapping=norm_mapping,
-                    normalization_type=normalization_type,
-                    index_mapping=index_mapping,
                     args=args,
                     device=device,
                     logger=None,
@@ -1925,11 +2079,36 @@ def run_validation(
                 # Reconstruct final prediction
                 reconstructed_vars = []
 
+                # Extract normalized coarse field from inputs
+                n_vars = len(args.varnames_list)
+                coarse_norm = features[:, :n_vars]
+
                 for var_name in args.varnames_list:
                     iv = index_mapping[var_name]
 
-                    coarse_var = batch["coarse"][:, iv : iv + 1].to(device)
-                    final_pred = coarse_var + generated_residual_denorm[:, iv : iv + 1]
+                    # coarse_var_norm = batch["coarse_norm"][:, iv:iv+1].to(device)
+                    coarse_var_norm = coarse_norm[:, iv : iv + 1]
+
+                    final_pred_norm = (
+                        coarse_var_norm + generated_residual[:, iv : iv + 1]
+                    )
+
+                    norm_type = normalization_type[var_name]
+                    if norm_type.startswith("log1p"):
+                        stats_fine = norm_mapping[f"{var_name}_fine_log"]
+                    else:
+                        stats_fine = norm_mapping[f"{var_name}_fine"]
+
+                    final_pred = denormalize(
+                        final_pred_norm,
+                        stats_fine,
+                        norm_type,
+                        device,
+                        var_name=var_name,
+                        data_type="fine",
+                        debug=args.debug,
+                        logger=logger,
+                    )
 
                     reconstructed_vars.append(final_pred)
 
@@ -2037,6 +2216,21 @@ def run_validation(
                 logger.info(
                     f"       └── Coarse vs Fine:     {coarse_metric:.4f} ± {coarse_std:.4f}"
                 )
+
+    # To verify with Kazem
+    # Global heatmap of validation metrics (per variable × metric)
+    if paths is not None:
+        try:
+            heatmap_path = plot_metrics_heatmap(
+                valid_metrics_history=val_metrics,
+                variable_names=args.varnames_list,
+                metric_names=metric_names,
+                filename=f"{args.run_type}_validation_metrics_epoch_{epoch}",
+                save_dir=paths.results,
+            )
+            logger.info(f"Saved validation metrics heatmap to: {heatmap_path}")
+        except Exception as e:
+            logger.warning(f"Could not generate metrics heatmap: {e}")
 
     # Check if we should create plots for this batch
     should_plot = (
@@ -2349,26 +2543,38 @@ class TestErrorMetrics(unittest.TestCase):
             "NMAE": nmae_all,
             "RMSE": rmse_all,
             "R2": r2_all,
+            "PEARSON": pearson_all,
         }
 
     def _compute_expected(self, metric_name, pred, true):
         mae = torch.mean(torch.abs(pred - true))
         if metric_name == "MAE":
             return mae
+
         elif metric_name == "NMAE":
             denom = torch.mean(torch.abs(true))
             return mae / denom if denom != 0 else torch.zeros_like(mae)
+
         elif metric_name == "RMSE":
             diff = pred - true
             return torch.sqrt(torch.mean(diff**2))
+
         elif metric_name == "R2":
             true_flat = true.reshape(-1)
             pred_flat = pred.reshape(-1)
 
             ss_res = torch.sum((true_flat - pred_flat) ** 2)
             ss_tot = torch.sum((true_flat - torch.mean(true_flat)) ** 2)
-
             return 1.0 - ss_res / (ss_tot + 1e-12)
+
+        elif metric_name == "PEARSON":
+            pred_flat = pred.reshape(-1)
+            true_flat = true.reshape(-1)
+
+            stacked = torch.stack([pred_flat, true_flat], dim=0)
+            corr = torch.corrcoef(stacked)[0, 1]
+            return corr
+
         else:
             raise ValueError(metric_name)
 
@@ -2405,8 +2611,8 @@ class TestErrorMetrics(unittest.TestCase):
                 self.assertEqual(num_elements, 4)
 
                 # R2 behaves differently from error-based metrics:
-                # for a perfect prediction, R2 = 1.0 whereas error metrics equal 0.0.
-                if name == "R2":
+                # for a perfect prediction, R2 = PEARSON = 1.0 whereas error metrics equal 0.0.
+                if name == "R2" or name == "PEARSON":
                     self.assertAlmostEqual(value.item(), 1.0, places=6)
                 else:
                     self.assertEqual(value.item(), 0.0)
@@ -2497,6 +2703,100 @@ class TestErrorMetrics(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ Error metrics docstring example tests passed")
+
+    # KL is estimated via histograms (numerical approximation),
+    # so no exact analytical expected value can be computed.
+    def test_kl_divergence_basic(self):
+        """Test KL divergence properties."""
+        if self.logger:
+            self.logger.info("Testing KL divergence basic properties")
+
+        torch.manual_seed(0)
+
+        # Identical distributions → KL ≈ 0
+        true = torch.randn(1000)
+        pred_same = true.clone()
+
+        num_elements, kl_same = kl_divergence_all(pred_same, true)
+
+        self.assertEqual(num_elements, true.numel())
+        self.assertTrue(torch.isfinite(kl_same))
+        self.assertAlmostEqual(kl_same.item(), 0.0, places=4)
+
+        # Different distributions → KL > 0
+        pred_shifted = true + 2.0  # shift distribution
+
+        _, kl_diff = kl_divergence_all(pred_shifted, true)
+
+        self.assertTrue(torch.isfinite(kl_diff))
+        self.assertGreaterEqual(kl_diff.item(), 0.0)
+        self.assertGreater(kl_diff.item(), kl_same.item())
+
+        if self.logger:
+            self.logger.info("✅ KL divergence basic test passed")
+
+    def test_kl_different_shapes(self):
+        """
+        KL divergence should raise RuntimeError if tensor shapes differ.
+        """
+
+        if self.logger:
+            self.logger.info("Testing KL divergence shape mismatch")
+
+        pred = torch.randn(10)
+        true = torch.randn(5)
+
+        with self.assertRaises(RuntimeError):
+            kl_divergence_all(pred, true)
+
+        if self.logger:
+            self.logger.info("✅ KL shape mismatch test passed")
+
+    def test_kl_dtype_preservation(self):
+        """
+        Ensure KL divergence preserves the input tensor dtype.
+        """
+
+        if self.logger:
+            self.logger.info("Testing KL divergence dtype preservation")
+
+        true_f32 = torch.randn(500, dtype=torch.float32)
+        pred_f32 = true_f32 + 0.1
+
+        _, kl_f32 = kl_divergence_all(pred_f32, true_f32)
+        self.assertEqual(kl_f32.dtype, torch.float32)
+
+        true_f64 = true_f32.double()
+        pred_f64 = pred_f32.double()
+
+        _, kl_f64 = kl_divergence_all(pred_f64, true_f64)
+        self.assertEqual(kl_f64.dtype, torch.float64)
+
+        if self.logger:
+            self.logger.info("✅ KL dtype preservation test passed")
+
+    def test_kl_multi_dimensional(self):
+        """
+        KL divergence should correctly handle multi-dimensional tensors
+        by flattening them internally.
+        """
+
+        if self.logger:
+            self.logger.info("Testing KL divergence with multi-dimensional tensors")
+
+        torch.manual_seed(0)
+
+        pred = torch.randn(2, 3, 4, 5)
+        true = torch.randn(2, 3, 4, 5)
+
+        num_elements, kl_value = kl_divergence_all(pred, true)
+
+        self.assertEqual(num_elements, pred.numel())
+        self.assertTrue(torch.isfinite(kl_value))
+        self.assertGreaterEqual(kl_value.item(), 0.0)
+
+        if self.logger:
+            self.logger.info("✅ KL multi-dimensional test passed")
 
 
 class TestCRPSFunction(unittest.TestCase):
@@ -2975,6 +3275,10 @@ class TestRunValidation(unittest.TestCase):
             },
         }
 
+        batch1["inputs"][:, :num_vars] = batch1["coarse"]
+        batch2["inputs"][:, :num_vars] = batch2["coarse"]
+        batch3["inputs"][:, :num_vars] = batch3["coarse"]
+
         mock_valid_loader = [batch1, batch2, batch3]
 
         # Mock args
@@ -3075,9 +3379,11 @@ class TestRunValidation(unittest.TestCase):
         class MockStats:
             vmin = 0.0
             vmax = 1.0
+            vmean = 0.0
+            vstd = 1.0
 
-        mock_norm_mapping["temp_residual"] = MockStats()
-        mock_norm_mapping["pressure_residual"] = MockStats()
+        mock_norm_mapping["temp_fine"] = MockStats()
+        mock_norm_mapping["pressure_fine"] = MockStats()
         mock_normalization_type["temp"] = "minmax"
         mock_normalization_type["pressure"] = "minmax"
         mock_index_mapping["temp"] = 0
@@ -3346,14 +3652,17 @@ class TestRunValidation(unittest.TestCase):
             if tracker.count > 0:
                 value = tracker.getmean()
                 # R2 can be negative when the model performs worse than predicting the mean.
+                # # PEARSON can be negative or undefined (NaN when variance is zero).
                 # Therefore, we only enforce non-negativity for error-based metrics.
-                if "R2" not in key:
+                if "R2" not in key and "PEARSON" not in key:
                     self.assertGreaterEqual(
                         value, 0.0, f"{key} should be non-negative, got {value}"
                     )
 
         if self.logger:
-            self.logger.info("✅ All metric values (except R2) are non-negative")
+            self.logger.info(
+                "✅ All error-based metric values (except R2 and PEARSON) are non-negative"
+            )
 
         # ========================================================================
         # VERIFICATION 7: Verify function call counts
@@ -3445,7 +3754,8 @@ class TestRunValidation(unittest.TestCase):
             vmin = 0.0
             vmax = 1.0
 
-        mock_norm_mapping = {"var_residual": MockStats()}
+        # mock_norm_mapping = {"var_residual": MockStats()}
+        mock_norm_mapping = {"var_fine": MockStats()}
         mock_normalization_type = {"var": "minmax"}
         mock_index_mapping = {"var": 0}
 
@@ -3489,9 +3799,9 @@ class TestRunValidation(unittest.TestCase):
         if self.logger:
             self.logger.info("✅ CRPS test passed (predictions == fine, CRPS = 0)")
 
-    def test_generate_denorm_residuals_matches_fine(self):
+    def test_generate_residuals_matches_fine(self):
         """
-        Final prediction (coarse + denormalized residuals) should exactly
+        Final prediction (coarse + residuals) should exactly
         match fine when residuals = fine - coarse.
         """
         batch_size = 2
@@ -3515,39 +3825,17 @@ class TestRunValidation(unittest.TestCase):
         mock_loss_fn.P_mean = 0.0
         mock_loss_fn.P_std = 1.0
 
-        class Stats:
-            vmin = 0.0
-            vmax = 1.0
-
-        norm_mapping = {
-            "var1_residual": Stats(),
-            "var2_residual": Stats(),
-        }
-
-        normalization_type = {
-            "var1": "minmax",
-            "var2": "minmax",
-        }
-
-        index_mapping = {
-            "var1": 0,
-            "var2": 1,
-        }
-
         args = Mock()
         args.varnames_list = ["var1", "var2"]
         args.debug = False
 
         with patch(__name__ + ".sampler", side_effect=mock_sampler):
-            denorm_residuals = generate_denorm_residuals(
+            generated_residuals = generate_residuals_norm(
                 model=mock_model,
                 features=features,
                 labels=labels,
                 targets=targets,
                 loss_fn=mock_loss_fn,
-                norm_mapping=norm_mapping,
-                normalization_type=normalization_type,
-                index_mapping=index_mapping,
                 args=args,
                 device=device,
                 logger=Mock(),
@@ -3555,10 +3843,10 @@ class TestRunValidation(unittest.TestCase):
             )
 
         # Shape check (residuals)
-        self.assertEqual(denorm_residuals.shape, fine.shape)
+        self.assertEqual(generated_residuals.shape, fine.shape)
 
         # Reconstruct final prediction
-        final_pred = coarse + denorm_residuals
+        final_pred = coarse + generated_residuals
 
         # Exact reconstruction
         self.assertTrue(torch.allclose(final_pred, fine, atol=1e-6))

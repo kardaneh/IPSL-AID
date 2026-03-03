@@ -20,7 +20,7 @@ save_checkpoint_name="difusion_model"
 load_checkpoint_name="difusion_model"
 save_per_samples=10000
 
-year_start=2015
+year_start=2019
 year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
@@ -33,21 +33,23 @@ num_workers=8
 datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
 per_var_datadir=(
   "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
   "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
-  "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
-  "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
   )
+
+#"VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+#"VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+#"VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
+#"VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
+#"VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
 
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
+varnames_list=("VAR_2T" "VAR_TP") # "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST"
 constant_varnames_list=("z" "lsm")
 constant_varnames_file="ERA5_const_sfc_variables.nc"
-normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=standard" "VAR_D2M=standard" "VAR_ST=standard")
-units_list=("K" "m/s" "m/s" "m/h" "K" "K")
+normalization_types=("VAR_2T=standard" "VAR_TP=log1p_standard") # "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard"
+units_list=("K" "m/h") # "m/s" "m/s" "m/h" "K" "K"
 dynamic_covariates=()
 dynamic_covariates_dir="../data_covariates/"
 
@@ -66,10 +68,10 @@ model_name=""
 dtype="fp32"
 arch="adm"
 precond="edm" # edm for edm (default model), unet for unet,
-# for diffusion in_channels= numbers of variables, for unet in_channels=numbers of variables + constents
-in_channels=6
-cond_channels=10 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm, no cond_channels for unet
-out_channels=6 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
+# for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
+in_channels=2
+cond_channels=6 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm, no cond_channels for unet
+out_channels=2 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
 inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 # NEW: Add apply_filter parameter
 apply_filter=false
@@ -258,8 +260,8 @@ cat >> $sbatch_script <<EOF
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-###SBATCH --mail-user=kkingston@ipsl.fr
-###SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge

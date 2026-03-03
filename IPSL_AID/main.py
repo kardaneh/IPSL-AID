@@ -79,10 +79,10 @@ def parse_args():
 
     parser.add_argument(
         "--region",
-        type=str,
+        type=lambda x: x.lower(),
         default=None,
-        choices=["US", "Europe"],
-        help="Region (only used if mode=regional)",
+        choices=["us", "europe", "asia"],
+        help="region (only used if run_type=inference_regional)",
     )
 
     # Run configuration
@@ -90,8 +90,8 @@ def parse_args():
         "--run_type",
         type=str,
         default="train",
-        choices=["train", "resume_train", "inference"],
-        help="Run type: 'train', 'resume_train', or 'inference'",
+        choices=["train", "resume_train", "inference", "inference_regional"],
+        help="Run type: 'train', 'resume_train', 'inference' or 'inference_regional'",
     )
 
     parser.add_argument(
@@ -357,6 +357,15 @@ def parse_args():
         type=str,
         default="model.pth.tar",
         help="Checkpoint file to load",
+    )
+
+    parser.add_argument(
+        "--region_center",
+        type=float,
+        nargs=2,
+        default=None,
+        help="Latitude and longitude center for regional inference "
+        "(used only when run_type=inference_regional)",
     )
 
     return parser.parse_args()
@@ -634,6 +643,9 @@ def log_configuration(args, paths, logger):
     elif args.run_type == "inference":
         logger.info(" └── Mode: Inference only")
         logger.info(f" └── Inference type: {args.inference_type}")
+    elif args.run_type == "inference_regional":
+        logger.info(" └── Mode: Regional inference")
+        logger.info(f" └── Region center: {args.region_center}")
 
     # Checkpoint saving strategy
     if args.save_model:
@@ -733,7 +745,8 @@ def setup_data_paths(args, paths, logger):
     # --------------------------
     train_ds = None
 
-    if args.run_type != "inference":
+    # if args.run_type != "inference":
+    if args.run_type not in ["inference", "inference_regional"]:
         logger.info("Pre-loading training datasets...")
 
         train_var_datasets = []
@@ -1057,6 +1070,7 @@ def create_data_loaders(
         margin=args.margin,
         dtype=(torch_dtype, np_dtype),  # Same dtype for consistency
         apply_filter=args.apply_filter,
+        region_center=args.region_center,
         logger=logger,
     )
 
@@ -1141,6 +1155,76 @@ def setup_model(args, img_res, use_fp16, device, logger):
     return model, loss_fn
 
 
+def resolve_region_center(args):
+    """
+    Resolve the regional inference center coordinates.
+
+    This function enforces the logic for regional inference:
+    - user can provide either --region or --region_center
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command line arguments.
+
+    Returns
+    -------
+    tuple or None
+        (lat, lon) if inference_regional,
+        None otherwise.
+    Raises
+    ------
+    ValueError
+        If:
+        - both --region and --region_center are provided,
+        - neither is provided in inference_regional mode,
+        - an unknown region name is specified,
+        - --region_center does not contain exactly two values.
+
+    Notes
+    -----
+    - Predefined regions map to fixed center coordinates.
+    - Longitude follows the convention [0, 360].
+    """
+
+    if args.run_type != "inference_regional":
+        return None
+
+    # predefined region center coordinates (lat, lon)
+    # longitude convention: [0, 360]
+    region_coords = {
+        "us": (39.0, 262.0),
+        "europe": (50.0, 10.0),
+        "asia": (35.0, 100.0),
+    }
+
+    # case 1: both provided (error)
+    if args.region is not None and args.region_center is not None:
+        raise ValueError("provide either --region or --region_center, not both.")
+
+    # case 2: predefined region
+    if args.region is not None:
+        if args.region not in region_coords:
+            raise ValueError(
+                f"invalid region '{args.region}'. "
+                f"available regions: {list(region_coords.keys())}"
+            )
+
+        return region_coords[args.region]
+
+    # case 3: explicit coordinates
+    if args.region_center is not None:
+        if len(args.region_center) != 2:
+            raise ValueError("--region_center must contain exactly two values: lat lon")
+        return tuple(args.region_center)
+
+    # case 4: nothing provided (error)
+    raise ValueError(
+        "for run_type='inference_regional', you must provide "
+        "either --region (us, europe, asia) or --region_center lat lon."
+    )
+
+
 def main():
     """
     Main training and inference pipeline for IPSL-AID diffusion models.
@@ -1200,6 +1284,8 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
+    args.region_center = resolve_region_center(args)
+
     # Setup directories and logging
     paths, logger = setup_directories_and_logging(args)
 
@@ -1220,7 +1306,8 @@ def main():
     device, torch_dtype, np_dtype, use_fp16 = setup_training_environment(args, logger)
 
     # Setup TensorBoard for visualization
-    if args.run_type != "inference":
+    # if args.run_type != "inference":
+    if args.run_type not in ["inference", "inference_regional"]:
         writer = SummaryWriter(f"runs/{args.main_folder}/{args.sub_folder}/")
         logger.info(
             f"TensorBoard enabled at: runs/{args.main_folder}/{args.sub_folder}/"
@@ -1230,7 +1317,8 @@ def main():
         logger.info("TensorBoard disabled for inference mode")
 
     # Create data loaders
-    if args.run_type != "inference":
+    # if args.run_type != "inference":
+    if args.run_type not in ["inference", "inference_regional"]:
         train_loader, img_res, train_dataset = create_data_loaders(
             args,
             paths,
@@ -1265,7 +1353,8 @@ def main():
             valid_loaded_dfs=valid_loaded_dfs,
         )
         logger.info(f"Validation dataset loaded with image resolution: {valid_img_res}")
-        if args.run_type == "inference":
+        # if args.run_type == "inference":
+        if args.run_type in ["inference", "inference_regional"]:
             img_res = valid_img_res  # Use validation image resolution for inference
     else:
         valid_loader, valid_img_res, valid_dataset = None, None, None
@@ -1298,7 +1387,7 @@ def main():
         logger.info("GradScaler disabled (AMP not supported on CPU)")
 
     # Setup metrics tracking
-    metric_names = ["MAE", "NMAE", "RMSE", "R2"]
+    metric_names = ["MAE", "NMAE", "RMSE", "R2", "PEARSON", "KL"]
     # metric_funcs = {"MAE": mae_all, "NMAE": nmae_all, "RMSE": rmse_all, "R2": r2_all}
 
     # Initialize validation metrics with ALL expected keys from run_validation
@@ -1331,7 +1420,8 @@ def main():
     best_epoch = 0
 
     # Handle checkpoint loading if needed
-    if args.run_type in ["resume_train", "inference"]:
+    # if args.run_type in ["resume_train", "inference"]:
+    if args.run_type in ["resume_train", "inference", "inference_regional"]:
         checkpoint_path = os.path.join(paths.checkpoints, args.load_checkpoint_name)
         if args.debug:
             logger.info("=" * 60)
@@ -1437,7 +1527,8 @@ def main():
     # ============================================================================
     # INFERENCE MODE - Run validation directly
     # ============================================================================
-    if args.run_type == "inference":
+    # if args.run_type == "inference":
+    if args.run_type in ["inference", "inference_regional"]:
         logger.info("=" * 60)
         logger.info("RUNNING INFERENCE/VALIDATION")
         logger.info("=" * 60)
@@ -1489,7 +1580,7 @@ def main():
         loop = tqdm(
             enumerate(train_loader),
             total=len(train_loader),
-            desc=f"Traning Epoch {epoch}",
+            desc=f"Training Epoch {epoch}",
         )
 
         for batch_idx, batch in loop:

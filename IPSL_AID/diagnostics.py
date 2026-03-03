@@ -753,7 +753,7 @@ def plot_metrics_heatmap(
                     value = tracker.getmean()
 
                     # Convert only dimensional metrics
-                    if metric.lower() in ["mae", "rmse"]:
+                    if metric.lower() in ["mae", "rmse", "crps"]:
                         value = PlotConfig.convert_units(var, value)
                 else:
                     value = np.nan
@@ -772,7 +772,7 @@ def plot_metrics_heatmap(
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 
     sns.heatmap(
-        df, ax=ax, cmap="viridis", annot=True, fmt=".2f", linewidths=0.8, cbar=True
+        df, ax=ax, cmap="viridis", annot=True, fmt=".3f", linewidths=0.8, cbar=True
     )
 
     ax.set_title("Validation metrics")
@@ -1246,6 +1246,7 @@ def plot_surface(
             "projection": ccrs.PlateCarree(central_longitude=lon_center)
         },  # ccrs.Mercator(central_longitude=lon_center)
         gridspec_kw={"wspace": 0.1, "hspace": 0.1},  # Keep spacing
+        squeeze=False,
     )
 
     # Main title
@@ -1848,6 +1849,7 @@ def plot_validation_pdfs(
     filename="validation_pdfs.png",
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
+    save_npz=False,
 ):
     """
     Create PDF (Probability Density Function) plots comparing distributions of
@@ -1869,6 +1871,8 @@ def plot_validation_pdfs(
         Directory to save the plot
     figsize_multiplier : int, optional
         Base size multiplier for subplots
+    save_npz : bool, optional
+        If True, saves the PDF diagnostics to a compressed .npz file.
 
     Returns
     -------
@@ -1927,7 +1931,8 @@ def plot_validation_pdfs(
         hspace=0.1, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
     )
 
-    # pdf_npz_data = {}
+    if save_npz:
+        pdf_npz_data = {}
 
     # Plot PDF for each variable
     for i, (var_name, ax) in enumerate(zip(variable_names, axes)):
@@ -2072,29 +2077,33 @@ def plot_validation_pdfs(
         if data_range > 1000:
             ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 
-        # key = f"{var_name}__pdf__"
+        if save_npz:
+            key = f"{var_name}__pdf__"
 
-        # pdf_npz_data[key + "bin_centers"] = bin_centers
-        # pdf_npz_data[key + "log_pred"] = log_hist_pred
-        # pdf_npz_data[key + "log_truth"] = log_hist_target
+            pdf_npz_data[key + "bin_centers"] = bin_centers
+            pdf_npz_data[key + "log_pred"] = log_hist_pred
+            pdf_npz_data[key + "log_truth"] = log_hist_target
 
-        # pdf_npz_data[key + "mean_pred"] = pred_mean
-        # pdf_npz_data[key + "std_pred"] = pred_std
-        # pdf_npz_data[key + "mean_truth"] = target_mean
-        # pdf_npz_data[key + "std_truth"] = target_std
-        # pdf_npz_data[key + "kl"] = kl_divergence
-        # pdf_npz_data[key + "corr"] = correlation
+            pdf_npz_data[key + "mean_pred"] = pred_mean
+            pdf_npz_data[key + "std_pred"] = pred_std
+            pdf_npz_data[key + "mean_truth"] = target_mean
+            pdf_npz_data[key + "std_truth"] = target_std
+            pdf_npz_data[key + "kl"] = kl_divergence
+            pdf_npz_data[key + "corr"] = correlation
 
-        # if coarse_inputs is not None:
-        #    pdf_npz_data[key + "log_coarse"] = log_hist_coarse
-        #    pdf_npz_data[key + "mean_coarse"] = coarse_mean
-        #    pdf_npz_data[key + "std_coarse"] = coarse_std
+            if coarse_inputs is not None:
+                pdf_npz_data[key + "log_coarse"] = log_hist_coarse
+                pdf_npz_data[key + "mean_coarse"] = coarse_mean
+                pdf_npz_data[key + "std_coarse"] = coarse_std
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
-    # npz_path = os.path.splitext(save_path)[0] + ".npz"
-    # np.savez_compressed(npz_path, **pdf_npz_data)
+
+    if save_npz:
+        npz_path = os.path.splitext(save_path)[0] + ".npz"
+        np.savez_compressed(npz_path, **pdf_npz_data)
+
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()
     return save_path
@@ -2110,6 +2119,7 @@ def plot_power_spectra(
     filename="power_spectra_physical.png",
     save_dir="./results",
     figsize_multiplier=4,
+    save_npz=False,
 ):
     """
     Calculate and plot power spectra with proper physical wavenumbers.
@@ -2134,6 +2144,8 @@ def plot_power_spectra(
         Directory to save the plot
     figsize_multiplier : int, optional
         Base size multiplier for subplots
+    save_npz : bool, optional
+        If True, saves the PDF diagnostics to a compressed .npz file.
 
     Returns
     -------
@@ -2200,11 +2212,12 @@ def plot_power_spectra(
     elif axes.ndim == 1:
         axes = axes.reshape(nrows, ncols)
     """
-    # spectra_npz_data = {}
+    if save_npz:
+        spectra_npz_data = {}
 
-    # spectra_npz_data["__meta__dlat"] = dlat
-    # spectra_npz_data["__meta__dlon"] = dlon
-    # spectra_npz_data["__meta__variables"] = np.array(variable_names)
+        spectra_npz_data["__meta__dlat"] = dlat
+        spectra_npz_data["__meta__dlon"] = dlon
+        spectra_npz_data["__meta__variables"] = np.array(variable_names)
 
     # Process each variable
     for i, var_name in enumerate(variable_names):
@@ -2252,14 +2265,15 @@ def plot_power_spectra(
         if coarse_inputs is not None:
             psd1d_coarse = radial_average_psd(psd2d_coarse_avg, k_mag, k_bins)
 
-        # key = f"{var_name}__spectra__"
+        if save_npz:
+            key = f"{var_name}__spectra__"
 
-        # spectra_npz_data[key + "k"] = k_centers
-        # spectra_npz_data[key + "psd_pred"] = psd1d_pred
-        # spectra_npz_data[key + "psd_truth"] = psd1d_target
+            spectra_npz_data[key + "k"] = k_centers
+            spectra_npz_data[key + "psd_pred"] = psd1d_pred
+            spectra_npz_data[key + "psd_truth"] = psd1d_target
 
-        # if coarse_inputs is not None:
-        #    spectra_npz_data[key + "psd_coarse"] = psd1d_coarse
+            if coarse_inputs is not None:
+                spectra_npz_data[key + "psd_coarse"] = psd1d_coarse
 
         """
         # --- Plot 2D PSD (top row) ---
@@ -2341,8 +2355,11 @@ def plot_power_spectra(
     # Save figure
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
-    # npz_path = os.path.splitext(save_path)[0] + ".npz"
-    # np.savez_compressed(npz_path, **spectra_npz_data)
+
+    if save_npz:
+        npz_path = os.path.splitext(save_path)[0] + ".npz"
+        np.savez_compressed(npz_path, **spectra_npz_data)
+
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()
     return save_path
@@ -2392,6 +2409,7 @@ def plot_qq_quantiles(
     filename="qq_quantiles.png",
     save_dir="./results",
     figsize_multiplier=4,
+    save_npz=False,
 ):
     """
     Create QQ-plats at different quantiles comparing model predictions and
@@ -2422,6 +2440,8 @@ def plot_qq_quantiles(
         Directory to save the plot
     figsize_multiplier : int, optional
         Base size multiplier for subplots
+    save_npz : bool, optional
+        If True, saves the PDF diagnostics to a compressed .npz file.
 
     Returns
     -------
@@ -2470,10 +2490,11 @@ def plot_qq_quantiles(
     for ax in axes:
         ax.set_box_aspect(1)
 
-    # qq_npz_data = {}
+    if save_npz:
+        qq_npz_data = {}
 
-    # qq_npz_data["__meta__variables"] = np.array(variable_names)
-    # qq_npz_data["__meta__quantiles"] = np.array(quantiles)
+        qq_npz_data["__meta__variables"] = np.array(variable_names)
+        qq_npz_data["__meta__quantiles"] = np.array(quantiles)
 
     for i, var_name in enumerate(variable_names):
         linestyles = mpltex.linestyle_generator(lines=[])
@@ -2493,12 +2514,13 @@ def plot_qq_quantiles(
         qs_pred = np.quantile(pred_vals, quantiles)
         qs_coarse = np.quantile(coarse_vals, quantiles)
 
-        # key = f"{var_name}__qq__"
+        if save_npz:
+            key = f"{var_name}__qq__"
 
-        # qq_npz_data[key + "quantiles"] = np.array(quantiles)
-        # qq_npz_data[key + "truth"] = qs_target
-        # qq_npz_data[key + "pred"] = qs_pred
-        # qq_npz_data[key + "coarse"] = qs_coarse
+            qq_npz_data[key + "quantiles"] = np.array(quantiles)
+            qq_npz_data[key + "truth"] = qs_target
+            qq_npz_data[key + "pred"] = qs_pred
+            qq_npz_data[key + "coarse"] = qs_coarse
 
         print(f"[QQ Quantiles] {plot_name}")
         for q, qt, qp, qc in zip(quantiles, qs_target, qs_pred, qs_coarse):
@@ -2564,8 +2586,11 @@ def plot_qq_quantiles(
     # Save figure
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
-    # npz_path = os.path.splitext(save_path)[0] + ".npz"
-    # np.savez_compressed(npz_path, **qq_npz_data)
+
+    if save_npz:
+        npz_path = os.path.splitext(save_path)[0] + ".npz"
+        np.savez_compressed(npz_path, **qq_npz_data)
+
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
     return save_path
@@ -2927,6 +2952,11 @@ def plot_validation_mvcorr(
         Path to the saved figure
     """
 
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
     # Convert to numpy if they're tensors
     if hasattr(predictions, "detach"):
         predictions = predictions.detach().cpu().numpy()
@@ -2934,6 +2964,21 @@ def plot_validation_mvcorr(
         targets = targets.detach().cpu().numpy()
     if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
         coarse_inputs = coarse_inputs.detach().cpu().numpy()
+    if hasattr(lat, "detach"):
+        lat = lat.detach().cpu().numpy()
+    if hasattr(lon, "detach"):
+        lon = lon.detach().cpu().numpy()
+
+    lat_min, lat_max = lat.min(), lat.max()
+    lon_min, lon_max = lon.min(), lon.max()
+
+    T, n_vars, h, w = predictions.shape
+
+    lat_block = np.linspace(lat_max, lat_min, h)
+    lon_block = np.linspace(lon_min, lon_max, w)
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
 
     batch_size, num_vars, h, w = predictions.shape
 
@@ -2956,15 +3001,12 @@ def plot_validation_mvcorr(
     if coarse_inputs is not None:
         ncols = 3
     nrows = int(num_vars * (num_vars - 1) / 2)  # no. distinct pairs of input variables
-    aspect_ratio = 0.7
-    fwidth = ncols * figsize_multiplier  # longitude range
-    fheight = (
-        nrows * figsize_multiplier * aspect_ratio * 1.02
-    )  # latitude range + title and colorbar
-    print("fwidth")
-    print(fwidth)
-    print("fheight")
-    print(fheight)
+
+    base_width_per_panel = 4.5
+    base_height_per_panel = 3.0
+
+    fig_width = base_width_per_panel * ncols
+    fig_height = base_height_per_panel * nrows
 
     spa_cor_out = np.zeros([nrows, ncols - 1])
     spa_rmse_out = np.zeros([nrows, ncols - 1])
@@ -2973,10 +3015,10 @@ def plot_validation_mvcorr(
     fig, axes = plt.subplots(
         nrows,
         ncols,
-        figsize=(fwidth, fheight),
-        subplot_kw={"projection": ccrs.PlateCarree()},
-        constrained_layout=True,
+        figsize=(fig_width, fig_height),
+        subplot_kw={"projection": ccrs.PlateCarree(central_longitude=lon_center)},
         squeeze=False,
+        gridspec_kw={"wspace": 0.1},
     )
 
     # Define geographic features
@@ -3039,7 +3081,10 @@ def plot_validation_mvcorr(
             edgecolor="black",
             linestyle=PlotConfig.BORDER_STYLE,
         )
-        ax_target.set_aspect("auto")
+        # ax_target.set_aspect("auto")
+        ax_target.set_extent(
+            [lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree()
+        )
 
         # Col 1: Prediction
         ax_pred = axes[i, 1]
@@ -3060,7 +3105,8 @@ def plot_validation_mvcorr(
             edgecolor="black",
             linestyle=PlotConfig.BORDER_STYLE,
         )
-        ax_pred.set_aspect("auto")
+        # ax_pred.set_aspect("auto")
+        ax_pred.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
 
         if coarse_inputs is not None:
             # Col 2: Coarse input
@@ -3082,22 +3128,17 @@ def plot_validation_mvcorr(
                 edgecolor="black",
                 linestyle=PlotConfig.BORDER_STYLE,
             )
-            ax_coar.set_aspect("auto")
+            # ax_coar.set_aspect("auto")
+            ax_coar.set_extent(
+                [lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree()
+            )
 
     # Add col labels
     col_labels = ["Truth", "Prediction"]
     if coarse_inputs is not None:
         col_labels = ["Truth", "Prediction", "Coarse"]
     for col_idx, label in enumerate(col_labels):
-        axes[0, col_idx].text(
-            0.5,
-            1.2,
-            label,
-            transform=axes[0, col_idx].transAxes,
-            va="top",
-            ha="center",
-            fontsize=20.0,
-        )
+        axes[0, col_idx].set_title(label)
 
     # Add row labels
     for row_idx, label in enumerate(var_name_combo_list):
@@ -3109,17 +3150,27 @@ def plot_validation_mvcorr(
             va="center",
             ha="right",
             rotation="vertical",
-            fontsize=8.0,
+            fontsize=12,
         )
 
     # Add colorbar
-    # cbar_width_per_subplot = 0.02
-    # actual_cbar_width = cbar_width_per_subplot / ncols
-    cbar_ax = fig.add_axes([0.0, -0.02, 1, 0.02])
     cbar = fig.colorbar(
-        im_pred, cax=cbar_ax, label="correlation", orientation="horizontal"
+        im_pred,
+        # cax=cbar_ax,
+        ax=axes.ravel(),
+        orientation="horizontal",
+        label="correlation",
+        # fraction=0.04,
+        pad=0.04,
+        aspect=50,
+        use_gridspec=True,
     )
-    cbar.ax.tick_params(labelsize=20)
+
+    cbar.ax.tick_params()
+
+    fig.subplots_adjust(
+        top=0.85, bottom=0.25, left=0.08, right=0.97, wspace=0.1, hspace=0.15
+    )
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
@@ -3127,6 +3178,7 @@ def plot_validation_mvcorr(
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()
 
+    """
     # _________________________________________
     # Output summary map statistics as heatmaps
     # Spatial Correlation and Spatial RMSE wrt target
@@ -3197,6 +3249,7 @@ def plot_validation_mvcorr(
     save_path = os.path.join(save_dir, filenameCR)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()
+    """
 
     print(f"Correlation maps plot saved to: '{save_path}'")
     return save_path
@@ -3395,8 +3448,7 @@ class TestPlottingFunctions(unittest.TestCase):
 
         self.variable_names = [
             "Temperature (K)",
-            # "Pressure (hPa)",
-            "VAR_D2M (K)",
+            "Pressure (hPa)",
             "Humidity (%)",
             "Wind Speed (m/s)",
         ]

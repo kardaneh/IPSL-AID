@@ -182,8 +182,7 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
     Downscale and then upscale fine-resolution data to compute coarse approximation.
 
     This function performs a downscaling-upscaling operation to create a coarse
-    resolution approximation of fine data, then computes the residual between
-    the original fine data and this approximation. This is commonly used in
+    resolution approximation of fine data. This is commonly used in
     multi-scale analysis, image processing, and super-resolution tasks.
 
     Parameters
@@ -207,10 +206,6 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
     coarse_up : torch.Tensor
         Upscaled coarse approximation of the fine data. Same shape as input
         `fine_filtered` without batch dimension.
-    residual : torch.Tensor
-        Residual difference between the fine target and upscaled coarse
-        approximation. Computed as: residual = fine_batch - coarse_up.
-        Same shape as input `fine_batch` without batch dimension.
 
     Notes
     -----
@@ -218,7 +213,6 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
       adding one if missing.
     - Uses bilinear interpolation for both downscaling and upscaling operations.
     - The antialias parameter is set to True for better quality resampling.
-    - The residual computation is performed after removing batch dimensions.
     - Useful for creating multi-scale representations in image processing and
       computer vision tasks.
     """
@@ -249,11 +243,11 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
     coarse_up = interp_transform(coarsen_transform(fine_filtered))
     # Remove batch dimension
     coarse_up = coarse_up.squeeze(0)
-    fine_squeezed = fine_batch.squeeze(0)
+    # fine_squeezed = fine_batch.squeeze(0)
 
-    residual = fine_squeezed - coarse_up
+    # residual = fine_squeezed - coarse_up
 
-    return coarse_up, residual
+    return coarse_up
 
 
 def gaussian_filter(
@@ -510,6 +504,7 @@ class DataPreprocessor(Dataset):
         margin=8,
         dtype=(torch.float32, np.float32),
         apply_filter=False,
+        region_center=None,  # (lat_value, lon_value)
         logger=None,
     ):
         """
@@ -567,6 +562,8 @@ class DataPreprocessor(Dataset):
             Data types for torch and numpy.
         apply_filter : bool, optional
             Apply Gaussian filtering.
+        region_center : tuple of float or None
+            Fixed geographic center (lat, lon) for spatial sampling.
         logger : logging.Logger, optional
             Logger instance.
         """
@@ -612,6 +609,8 @@ class DataPreprocessor(Dataset):
         self.dH = steps.d_latitude
         self.W = steps.longitude
         self.dW = steps.d_longitude
+
+        self.region_center = region_center
 
         self.tbatch = tbatch
         self.sbatch = sbatch
@@ -697,7 +696,7 @@ class DataPreprocessor(Dataset):
         # Load dynamic covariates if specified
         self.dynamic_covariate_data = None
         if self.dynamic_covariates:
-            self._load_dynamic_covariates()
+            self.load_dynamic_covariates()
         """
         # Cache for loaded data
         self.loaded_dfs = loaded_dfs
@@ -773,6 +772,42 @@ class DataPreprocessor(Dataset):
             # To Do: set time batches for validation (if inference is active or not)
             if self.run_type == "inference":
                 self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
+                # self.time_batchs = np.linspace(
+                #    self.etime // 3, self.etime * 2 // 3, self.tbatch, dtype=int
+                # ) # 2 for debug, self.tbatch
+
+            elif self.run_type == "inference_regional":
+                # Regional inference mode:
+                # Instead of tiling the full spatial domain (as in global validation),
+                # we extract a single spatial window centered on a user-defined
+                # geographical location (latitude, longitude).
+
+                # Ensure that a target region center is provided
+                assert (
+                    self.region_center is not None
+                ), "region_center must be provided for inference_regional mode"
+
+                # Convert the requested (lat, lon) in degrees
+                # to the nearest grid point indices,
+                # because the dataset works with indices, not exact coordinates.
+                lat_val, lon_val = self.region_center
+                lat_idx, lon_idx = self.get_center_indices_from_latlon(lat_val, lon_val)
+
+                # This center will be passed to extract_batch, which handles cyclic longitude
+                self.inference_center = (lat_idx, lon_idx)
+
+                # Only one spatial batch is needed (single regional window)
+                # To Do: set sbatch if we use also n blocks for regional case
+                self.sbatch = 1
+                self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
+                # self.time_batchs = np.linspace(
+                #    self.etime // 3, self.etime * 2 // 3, self.tbatch, dtype=int
+                # ) # 2 for debug, self.tbatch
+
+                self.logger.info(
+                    f"Inference region mode activated at lat={lat_val}, lon={lon_val}"
+                )
+
             else:
                 self.time_batchs = np.linspace(
                     self.etime // 3, self.etime * 2 // 3, self.tbatch, dtype=int
@@ -871,6 +906,43 @@ class DataPreprocessor(Dataset):
                 # Close individual datasets
                 for ds in datasets:
                     ds.close()
+
+    def get_center_indices_from_latlon(self, lat_value, lon_value):
+        """
+        Convert geographic coordinates (latitude, longitude) to nearest grid indices.
+
+        Parameters
+        ----------
+        lat_value : float
+            Latitude in degrees.
+        lon_value : float
+            Longitude in degrees.
+
+        Returns
+        -------
+        lat_idx : int
+            Index of the closest latitude grid point.
+        lon_idx : int
+            Index of the closest longitude grid point.
+
+        Notes
+        -----
+        - The dataset is defined on a discrete latitude–longitude grid.
+        - Since spatial extraction operates on grid indices, the requested
+          physical coordinates are mapped to the nearest available grid point.
+        - This ensures consistency between user-defined locations and
+          internal batch extraction logic.
+        """
+
+        # Retrieve latitude and longitude arrays from the dataset
+        lat_array = self.loaded_dfs.latitude.values
+        lon_array = self.loaded_dfs.longitude.values
+
+        # Find the index of the grid point closest to the requested lat/lon
+        lat_idx = np.abs(lat_array - lat_value).argmin()
+        lon_idx = np.abs(lon_array - lon_value).argmin()
+
+        return lat_idx, lon_idx
 
     def generate_random_batch_centers(self, n_batches):
         """
@@ -1113,7 +1185,8 @@ class DataPreprocessor(Dataset):
             Statistics object with attributes: vmin, vmax, vmean, vstd,
             median, iqr, q1, q3.
         norm_type : str
-            Normalization type: "minmax", "minmax_11", "standard", "robust".
+            Normalization type: "minmax", "minmax_11", "standard", "robust",
+            "log1p_minmax", "log1p_standard".
         var_name : str, optional
             Variable name for logging.
         data_type : str, optional
@@ -1187,6 +1260,33 @@ class DataPreprocessor(Dataset):
                 self.logger.warning("iqr == 0, returning zeros.")
                 return torch.zeros_like(data)
             return (data - median) / iqr
+
+        # ------------------ LOG1P + MIN-MAX ------------------
+        elif norm_type == "log1p_minmax":
+            data = torch.log1p(data)
+
+            log_min = torch.tensor(stats.vmin, dtype=data.dtype, device=data.device)
+            log_max = torch.tensor(stats.vmax, dtype=data.dtype, device=data.device)
+            denom = log_max - log_min
+
+            if denom == 0:
+                self.logger.warning("log_max == log_min, returning zeros.")
+                return torch.zeros_like(data)
+
+            return (data - log_min) / denom
+
+        # ------------------ LOG1P + STANDARD ------------------
+        elif norm_type == "log1p_standard":
+            data = torch.log1p(data)
+
+            mean = torch.tensor(stats.vmean, dtype=data.dtype, device=data.device)
+            std = torch.tensor(stats.vstd, dtype=data.dtype, device=data.device)
+
+            if std == 0:
+                self.logger.warning("log_std == 0, returning zeros.")
+                return torch.zeros_like(data)
+
+            return (data - mean) / std
 
         else:
             self.logger.error(f"Unsupported norm_type '{norm_type}'")
@@ -1317,55 +1417,93 @@ class DataPreprocessor(Dataset):
 
         # Determine spatial sampling based on mode
         if self.mode == "validation":
-            # Ensure evaluation slices are available
-            assert (
-                hasattr(self, "eval_slices") and self.eval_slices is not None
-            ), "eval_slices not initialized for validation mode"
-            assert len(self.eval_slices) > 0, "eval_slices is empty for validation mode"
+            if self.run_type == "inference_regional":
+                # Use a fixed geographic center instead of evaluation slices.
+                # The region is centered on the user-defined inference location.
 
-            # Deterministic spatial sampling for evaluation
-            lat_start, lat_end, lon_start, lon_end = self.eval_slices[sindex]
-            lat_center = lat_start + self.batch_size_lat // 2
-            lon_center = lon_start + self.batch_size_lon // 2
+                # Retrieve the precomputed grid indices of the requested region center
+                lat_center, lon_center = self.inference_center
+                self.center_tracker.append((lat_center, lon_center))
 
-            self.center_tracker.append((lat_center, lon_center))
+                # Extract coordinate batches centered on the specified region
+                lat_batch, lat_indices = self.extract_batch(
+                    lat_grid, lat_center, lon_center
+                )
+                lat_start, lat_end, lon_start, lon_end = lat_indices
 
-            # Extract normalized coordinates for the batch
-            lat_batch = lat_grid[lat_start:lat_end, lon_start:lon_end]
-            lon_batch = lon_grid[lat_start:lat_end, lon_start:lon_end]
-
-            # Extract data for all variables into the WHOLE spatial domain first (same as training)
-            npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
-            for i, var_name in enumerate(self.varnames_list):
-                npfeatures_full[i, :, :] = full_data_org[var_name].values
-
-            # Extract the target batch for scaling determination
-            fine_block = npfeatures_full[:, lat_start:lat_end, lon_start:lon_end]
-
-            if self.apply_filter:
-                # Apply filter to the WHOLE domain (same as training logic)
-                fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
-
-                assert fine_filtered_full.shape == npfeatures_full.shape, (
-                    f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
-                    f"but npfeatures has shape {npfeatures_full.shape}."
+                lon_batch, lon_indices = self.extract_batch(
+                    lon_grid, lat_center, lon_center
                 )
 
-                # Now extract the batch from filtered data
-                fine_filtered_block = fine_filtered_full[
-                    :, lat_start:lat_end, lon_start:lon_end
-                ]
-                assert fine_filtered_block.shape == fine_block.shape, (
-                    f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
-                    f"but fine_block has shape {fine_block.shape}."
+                # Extract data for all variables into a NumPy array
+                npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+                for var_name in self.varnames_list:
+                    iv = self.index_mapping[var_name]
+                    npfeatures_full[iv, :, :] = full_data_org[var_name].values
+
+                # Extract spatial block centered on requested region
+                fine_block, fine_indices = self.extract_batch(
+                    npfeatures_full, lat_center, lon_center
                 )
 
-            if self.debug:
-                self.logger.info(
-                    f"  Evaluation mode: slice lat[{lat_start}:{lat_end}], lon[{lon_start}:{lon_end}]\n"
-                    f"  Full domain shape: {npfeatures_full.shape}\n"
-                    f"  Batch shape: {fine_block.shape}"
-                )
+                if self.apply_filter:
+                    fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
+                    fine_filtered_block, _ = self.extract_batch(
+                        fine_filtered_full, lat_center, lon_center
+                    )
+
+            else:  # validation, global inference
+                # Ensure evaluation slices are available
+                assert (
+                    hasattr(self, "eval_slices") and self.eval_slices is not None
+                ), "eval_slices not initialized for validation mode"
+                assert (
+                    len(self.eval_slices) > 0
+                ), "eval_slices is empty for validation mode"
+
+                # Deterministic spatial sampling for evaluation
+                lat_start, lat_end, lon_start, lon_end = self.eval_slices[sindex]
+                lat_center = lat_start + self.batch_size_lat // 2
+                lon_center = lon_start + self.batch_size_lon // 2
+
+                self.center_tracker.append((lat_center, lon_center))
+
+                # Extract normalized coordinates for the batch
+                lat_batch = lat_grid[lat_start:lat_end, lon_start:lon_end]
+                lon_batch = lon_grid[lat_start:lat_end, lon_start:lon_end]
+
+                # Extract data for all variables into the WHOLE spatial domain first (same as training)
+                npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+                for i, var_name in enumerate(self.varnames_list):
+                    npfeatures_full[i, :, :] = full_data_org[var_name].values
+
+                # Extract the target batch for scaling determination
+                fine_block = npfeatures_full[:, lat_start:lat_end, lon_start:lon_end]
+
+                if self.apply_filter:
+                    # Apply filter to the WHOLE domain (same as training logic)
+                    fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
+
+                    assert fine_filtered_full.shape == npfeatures_full.shape, (
+                        f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
+                        f"but npfeatures has shape {npfeatures_full.shape}."
+                    )
+
+                    # Now extract the batch from filtered data
+                    fine_filtered_block = fine_filtered_full[
+                        :, lat_start:lat_end, lon_start:lon_end
+                    ]
+                    assert fine_filtered_block.shape == fine_block.shape, (
+                        f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
+                        f"but fine_block has shape {fine_block.shape}."
+                    )
+
+                if self.debug:
+                    self.logger.info(
+                        f"  Evaluation mode: slice lat[{lat_start}:{lat_end}], lon[{lon_start}:{lon_end}]\n"
+                        f"  Full domain shape: {npfeatures_full.shape}\n"
+                        f"  Batch shape: {fine_block.shape}"
+                    )
 
         else:
             # Random spatial sampling for training
@@ -1435,9 +1573,77 @@ class DataPreprocessor(Dataset):
 
         # Common processing for both modes
         if self.apply_filter:
-            coarse, residual = coarse_down_up(fine_filtered_block, fine_block)
+            coarse = coarse_down_up(fine_filtered_block, fine_block)
         else:
-            coarse, residual = coarse_down_up(fine_block, fine_block)
+            coarse = coarse_down_up(fine_block, fine_block)
+
+        # Convert fine data to torch tensor and initialize normalized container
+        fine_block = torch.from_numpy(fine_block).to(self.torch_dtype)
+        fine_block_norm = torch.zeros_like(fine_block)
+
+        #  Ensure coarse are torch tensors with correct dtype
+        if isinstance(coarse, np.ndarray):
+            coarse = torch.from_numpy(coarse)
+        elif not torch.is_tensor(coarse):
+            raise TypeError(f"Unexpected type for coarse: {type(coarse)}")
+
+        coarse = coarse.to(self.torch_dtype)
+
+        coarse_norm = torch.zeros_like(coarse)
+
+        # If filtering is enabled, also prepare the filtered fine field
+        if self.apply_filter:
+            fine_filtered_block = torch.from_numpy(fine_filtered_block).to(
+                self.torch_dtype
+            )
+            fine_filtered_block_norm = torch.zeros_like(fine_filtered_block)
+
+        # Normalize fine and coarse fields using variable-specific statistics.
+        # Statistics are read from the JSON file and are independent for fine and coarse data.
+        # For log-based normalizations, the stored statistics correspond to log1p(fine)/log1p(coarse).
+        for var_name in self.varnames_list:
+            iv = self.index_mapping[var_name]
+            norm_type = self.normalization_type[var_name]
+            # Select appropriate statistics depending on the normalization type
+            if norm_type.startswith("log1p"):
+                stats_fine = self.norm_mapping[f"{var_name}_fine_log"]
+                stats_coarse = self.norm_mapping[f"{var_name}_coarse_log"]
+            else:
+                stats_fine = self.norm_mapping[f"{var_name}_fine"]
+                stats_coarse = self.norm_mapping[f"{var_name}_coarse"]
+
+            # Normalize fine field
+            fine_block_norm[iv] = self.normalize(
+                fine_block[iv],
+                stats_fine,
+                norm_type,
+                var_name=var_name,
+                data_type="fine",
+            )
+            # Normalize coarse field
+            coarse_norm[iv] = self.normalize(
+                coarse[iv],
+                stats_coarse,
+                norm_type,
+                var_name=var_name,
+                data_type="coarse",
+            )
+
+            # Normalize filtered fine field if applicable
+            if self.apply_filter:
+                fine_filtered_block_norm[iv] = self.normalize(
+                    fine_filtered_block[iv],
+                    stats_fine,
+                    norm_type,
+                    var_name=var_name,
+                    data_type="fine",
+                )
+
+        # residual is defined in normalized space
+        if self.apply_filter:
+            residual = fine_filtered_block_norm - coarse_norm
+        else:
+            residual = fine_block_norm - coarse_norm
 
         expected_shape = (
             len(self.varnames_list),
@@ -1450,29 +1656,6 @@ class DataPreprocessor(Dataset):
         assert (
             residual.shape == expected_shape
         ), f"residual shape {residual.shape} != expected {expected_shape}"
-
-        coarse_norm = torch.zeros_like(coarse)
-        residual_norm = torch.zeros_like(residual)
-
-        for var_name in self.varnames_list:
-            iv = self.index_mapping[var_name]
-            stats_coarse = self.norm_mapping[f"{var_name}_coarse"]
-            stats_residual = self.norm_mapping[f"{var_name}_residual"]
-            norm_type = self.normalization_type[var_name]
-            coarse_norm[iv] = self.normalize(
-                coarse[iv],
-                stats_coarse,
-                norm_type,
-                var_name=var_name,
-                data_type="coarse",
-            )
-            residual_norm[iv] = self.normalize(
-                residual[iv],
-                stats_residual,
-                norm_type,
-                var_name=var_name,
-                data_type="residual",
-            )
 
         # Ensure spatial batches are torch tensors with correct dtype
         lat_batch = (
@@ -1488,27 +1671,33 @@ class DataPreprocessor(Dataset):
         lat_batch = lat_batch.to(self.torch_dtype)
         lon_batch = lon_batch.to(self.torch_dtype)
 
-        # Ensure coarse/residual are torch tensors with correct dtype
-        coarse = torch.from_numpy(coarse) if isinstance(coarse, np.ndarray) else coarse
+        # Ensure residual are torch tensors with correct dtype
         residual = (
             torch.from_numpy(residual) if isinstance(residual, np.ndarray) else residual
         )
-        coarse = coarse.to(self.torch_dtype)
         residual = residual.to(self.torch_dtype)
 
-        # Ensure coarse_norm/residual_norm are torch tensors with correct dtype
+        # Ensure coarse_norm/fine_norm are torch tensors with correct dtype
         coarse_norm = (
             torch.from_numpy(coarse_norm)
             if isinstance(coarse_norm, np.ndarray)
             else coarse_norm
         )
-        residual_norm = (
-            torch.from_numpy(residual_norm)
-            if isinstance(residual_norm, np.ndarray)
-            else residual_norm
+        fine_block_norm = (
+            torch.from_numpy(fine_block_norm)
+            if isinstance(fine_block_norm, np.ndarray)
+            else fine_block_norm
         )
         coarse_norm = coarse_norm.to(self.torch_dtype)
-        residual_norm = residual_norm.to(self.torch_dtype)
+        fine_block_norm = fine_block_norm.to(self.torch_dtype)
+
+        if self.apply_filter:
+            fine_filtered_block_norm = (
+                torch.from_numpy(fine_filtered_block_norm)
+                if isinstance(fine_filtered_block_norm, np.ndarray)
+                else fine_filtered_block_norm
+            )
+            fine_filtered_block_norm = fine_filtered_block_norm.to(self.torch_dtype)
 
         feature = torch.cat(
             [coarse_norm, lat_batch.unsqueeze(0), lon_batch.unsqueeze(0)], dim=0
@@ -1524,8 +1713,22 @@ class DataPreprocessor(Dataset):
             )
 
             if self.mode == "validation":
-                # For evaluation, use direct slicing
-                const_batch = self.const_vars[:, lat_start:lat_end, lon_start:lon_end]
+                if self.run_type == "inference_regional":
+                    # For inference_regional, use extract_batch
+                    const_batch, const_indices = self.extract_batch(
+                        self.const_vars, lat_center, lon_center
+                    )
+                    assert const_indices == lat_indices, (
+                        f"Indices mismatch for constant variables:\n"
+                        f"  coordinate indices: {lat_indices}\n"
+                        f"  constant var indices: {const_indices}"
+                    )
+
+                else:  # validation, inference_global
+                    # For evaluation, use direct slicing
+                    const_batch = self.const_vars[
+                        :, lat_start:lat_end, lon_start:lon_end
+                    ]
             else:
                 # For training, use extract_batch
                 const_batch, const_indices = self.extract_batch(
@@ -1554,19 +1757,34 @@ class DataPreprocessor(Dataset):
                     f"  Feature shape after adding constants: {feature.shape}"
                 )
 
+        if self.run_type == "inference_regional":
+            # In regional inference mode, we extract a spatial window centered
+            # on a user-defined (lat_center, lon_center)
+            # Therefore, longitude requires special handling to avoid
+            # discontinuities when crossing the dateline
+
+            lat_vals = lat[lat_start:lat_end]
+
+            # Recompute the same shift used inside extract_batch
+            shift = self.W // 2 - lon_center
+            lon_rolled = np.roll(lon, shift=shift)
+            lon_vals = lon_rolled[lon_start:lon_end]
+            lon_vals = ((lon_vals + 180) % 360) - 180
+
+        else:
+            lat_vals = lat[lat_start:lat_end]
+            lon_vals = lon[lon_start:lon_end]
+
         sample.update(
             {
-                "inputs": feature,
-                "targets": residual_norm,
-                "fine": torch.from_numpy(fine_block).to(self.torch_dtype),
-                "coarse": coarse,
+                "inputs": feature,  # model inputs (coarse_norm + coordinates + constants)
+                "targets": residual,  # residual in normalized space (model target)
+                "fine": fine_block,  # fine-resolution physical data (for diagnostics)
+                "coarse": coarse,  # coarse physical data (baselinefor diagnostics)
+                # "coarse_norm": coarse_norm, # coarse normalized data (for reconstruction at validation)
                 "corrdinates": {
-                    "lat": torch.from_numpy(lat[lat_start:lat_end]).to(
-                        self.torch_dtype
-                    ),
-                    "lon": torch.from_numpy(lon[lon_start:lon_end]).to(
-                        self.torch_dtype
-                    ),
+                    "lat": torch.from_numpy(lat_vals).to(self.torch_dtype),
+                    "lon": torch.from_numpy(lon_vals).to(self.torch_dtype),
                 },
             }
         )
@@ -1642,12 +1860,16 @@ def create_dummy_statistics_json(temp_dir):
     stats_dict = {
         "VAR_2T_coarse": {"vmean": 285.04, "vstd": 12.7438},
         "VAR_2T_residual": {"vmean": -0.000094627, "vstd": 1.6042},
+        "VAR_2T_fine": {"vmean": 286.31, "vstd": 12.6325},
         "VAR_10U_coarse": {"vmean": 0.44536, "vstd": 3.4649},
         "VAR_10U_residual": {"vmean": -0.0013833, "vstd": 1.0221},
+        "VAR_10U_fine": {"vmean": 0.36626, "vstd": 3.4527},
         "VAR_10V_coarse": {"vmean": -0.11892, "vstd": 3.7420},
         "VAR_10V_residual": {"vmean": -0.0015548, "vstd": 1.0384},
+        "VAR_10V_fine": {"vmean": -0.05726, "vstd": 3.6996},
         "VAR_TP_coarse": {"vmean": 0.000094189, "vstd": 0.00026393},
         "VAR_TP_residual": {"vmean": -0.000000040417, "vstd": 0.00028678},
+        "VAR_TP_fine": {"vmean": 0.000097360, "vstd": 0.00044533},
     }
 
     stats_path = os.path.join(temp_dir, "statistics.json")
@@ -1784,20 +2006,13 @@ class TestDataPreprocessor(unittest.TestCase):
         fine_filtered = torch.randn(channels, h_fine, w_fine)
         fine_batch = torch.randn(channels, h_fine, w_fine)
 
-        coarse_up, residual = coarse_down_up(
-            fine_filtered, fine_batch, input_shape=coarse_shape
-        )
+        coarse_up = coarse_down_up(fine_filtered, fine_batch, input_shape=coarse_shape)
 
         self.assertEqual(coarse_up.shape, (channels, h_fine, w_fine))
-        self.assertEqual(residual.shape, (channels, h_fine, w_fine))
-
-        # Verify residual calculation
-        expected_residual = fine_batch - coarse_up
-        torch.testing.assert_close(residual, expected_residual)
 
         if self.logger:
             self.logger.info(
-                f"✅ Coarse_down_up test passed - output shapes: {coarse_up.shape}, {residual.shape}"
+                f"✅ Coarse_down_up test passed - output shapes: {coarse_up.shape}"
             )
 
     def test_coarse_down_up_with_numpy_arrays(self):
@@ -1811,10 +2026,9 @@ class TestDataPreprocessor(unittest.TestCase):
         fine_filtered = np.random.randn(channels, h_fine, w_fine).astype(np.float32)
         fine_batch = np.random.randn(channels, h_fine, w_fine).astype(np.float32)
 
-        coarse_up, residual = coarse_down_up(fine_filtered, fine_batch)
+        coarse_up = coarse_down_up(fine_filtered, fine_batch)
 
         self.assertIsInstance(coarse_up, torch.Tensor)
-        self.assertIsInstance(residual, torch.Tensor)
         self.assertEqual(coarse_up.shape, (channels, h_fine, w_fine))
 
         if self.logger:

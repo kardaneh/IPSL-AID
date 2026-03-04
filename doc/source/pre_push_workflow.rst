@@ -211,7 +211,7 @@ Example resolution combining both approaches:
 Step 4 — Mark as Resolved
 -------------------------
 
-After fixing each file:
+After fixing each file, and passing the pre-commit hooks (see next section), stage the resolved files:
 
 .. code-block:: bash
 

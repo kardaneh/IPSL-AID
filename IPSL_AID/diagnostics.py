@@ -3266,12 +3266,6 @@ def plot_temporal_series_comparison(
     """
     Plot spatially averaged temporal series for each variable.
 
-    For each variable, a separate subplot is created showing the spatial mean
-    over time of:
-        - Ground truth
-        - Model predictions
-        - Optional coarse inputs
-
     Parameters
     ----------
     predictions : torch.Tensor or np.array

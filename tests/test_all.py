@@ -50,12 +50,7 @@ from IPSL_AID.logger import Logger  # noqa: E402
 # ---------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------
-SKIP_MODULES = {
-    "__init__",
-    "main",
-    "logger",
-    "utils",
-}
+SKIP_MODULES = {"__init__", "main", "logger"}
 
 
 def load_module_tests(module_name, logger):

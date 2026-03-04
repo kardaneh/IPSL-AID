@@ -564,7 +564,7 @@ class ModelUtils:
 # ============================================================================
 
 
-class BalancedModel(nn.Module):
+class TestModel(nn.Module):
     """
     A model for testing purposes that includes a mix of convolutional and linear layers,
     as well as some non-trainable parameters (buffers). This model is designed to have a
@@ -573,7 +573,7 @@ class BalancedModel(nn.Module):
     """
 
     def __init__(self):
-        super(BalancedModel, self).__init__()
+        super(TestModel, self).__init__()
 
         # Convolutional part
         self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
@@ -628,10 +628,10 @@ class TestModelUtils(unittest.TestCase):
             self.logger.info(f"Test setup - created temp directory: {self.temp_dir}")
 
         # Create a single balanced model for all tests
-        self.model = BalancedModel()
+        self.model = TestModel()
 
         # Create a version with frozen layers for specific tests
-        self.model_with_frozen = BalancedModel()
+        self.model_with_frozen = TestModel()
         # Freeze first conv layer
         for param in self.model_with_frozen.conv1.parameters():
             param.requires_grad = False
@@ -822,7 +822,7 @@ class TestModelUtils(unittest.TestCase):
         loaded_checkpoint = torch.load(checkpoint_path, map_location=self.device)
 
         # Create new model
-        new_model = BalancedModel().to(self.device)
+        new_model = TestModel().to(self.device)
         new_optimizer = torch.optim.Adam(new_model.parameters(), lr=0.001)
 
         # Load state
@@ -855,7 +855,7 @@ class TestModelUtils(unittest.TestCase):
         torch.save(original_state, checkpoint_path)
         loaded_checkpoint = torch.load(checkpoint_path, map_location=self.device)
 
-        new_model = BalancedModel().to(self.device)
+        new_model = TestModel().to(self.device)
         ModelUtils.load_checkpoint(
             loaded_checkpoint, new_model, optimizer=None, logger=self.logger
         )
@@ -894,7 +894,7 @@ class TestModelUtils(unittest.TestCase):
 
         torch.save(checkpoint_state, checkpoint_path)
 
-        new_model = BalancedModel().to(self.device)
+        new_model = TestModel().to(self.device)
         new_optimizer = torch.optim.Adam(new_model.parameters(), lr=0.001)
 
         epoch, samples, batches, best_loss, best_epoch, checkpoint = (
@@ -920,7 +920,7 @@ class TestModelUtils(unittest.TestCase):
 
         nonexistent_path = os.path.join(self.temp_dir, "nonexistent.pth.tar")
 
-        new_model = BalancedModel().to(self.device)
+        new_model = TestModel().to(self.device)
         new_optimizer = torch.optim.Adam(new_model.parameters(), lr=0.001)
 
         epoch, samples, batches, best_loss, best_epoch, checkpoint = (
@@ -1232,7 +1232,7 @@ class TestModelUtils(unittest.TestCase):
         self.assertTrue(os.path.exists(full_model_file))
 
         # Create new model and optimizer for loading
-        new_model = BalancedModel().to(self.device)
+        new_model = TestModel().to(self.device)
         new_optimizer = torch.optim.Adam(new_model.parameters(), lr=0.001)
 
         # Load checkpoint

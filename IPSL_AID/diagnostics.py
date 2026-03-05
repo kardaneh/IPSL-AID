@@ -2835,7 +2835,8 @@ def plot_dry_frequency_map(
 
 def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
     """
-    Calculate Pearson correlation between 2 N-dimensional numpy arrays.
+    Calculate Pearson correlation between 2 N-dimensional numpy arrays
+    Added by Rosie Eade, Mar 2025.
 
     Parameters:
     -----------
@@ -2843,14 +2844,14 @@ def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
         First N-dimensional array
     arr2 : numpy.ndarray
         Second N-dimensional array (must have same shape as arr1)
-    axis : int, default=0
-        Axis along which to compute correlation
+    axis : int or type of int, default=0
+        Axis or tuple of axes over which to compute correlation
 
     Returns:
     --------
     numpy.ndarray
-        Pearson correlation coefficients. Output has N-1 dimensions
-        (input shape with the specified axis removed).
+        Pearson correlation coefficients. Output has N - len(axis) dimensions
+        (input shape with the specified axis/axes removed).
 
     """
 
@@ -2859,35 +2860,14 @@ def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
             f"Arrays must have the same shape. Got {arr1.shape} and {arr2.shape}"
         )
 
-    if arr1.ndim < 2:
-        raise ValueError(f"Arrays must be at least 2-dimensional. Got {arr1.ndim}D")
+    # Center the data over axis/axes specified
+    arr1_centered = arr1 - arr1.mean(axis=axis, keepdims=True)
+    arr2_centered = arr2 - arr2.mean(axis=axis, keepdims=True)
 
-    if axis < 0:
-        axis = arr1.ndim + axis
-
-    if axis < 0 or axis >= arr1.ndim:
-        raise ValueError(
-            f"Axis {axis} is out of bounds for array of dimension {arr1.ndim}"
-        )
-
-    # Move the correlation axis to the front for easier processing
-    arr1_moved = np.moveaxis(arr1, axis, 0)
-    arr2_moved = np.moveaxis(arr2, axis, 0)
-
-    # Reshape to 2D: (n_samples, n_features=nlat*nlon)
-    n_samples = arr1_moved.shape[0]
-    arr1_2d = arr1_moved.reshape(n_samples, -1)
-    arr2_2d = arr2_moved.reshape(n_samples, -1)
-
-    # Vectorized Pearson correlation computation
-    # Center the data
-    arr1_centered = arr1_2d - arr1_2d.mean(axis=0, keepdims=True)
-    arr2_centered = arr2_2d - arr2_2d.mean(axis=0, keepdims=True)
-
-    # Compute correlation (output has shape (n_features))
-    numerator = (arr1_centered * arr2_centered).sum(axis=0)
+    # Compute correlation over axis/axes specified
+    numerator = (arr1_centered * arr2_centered).sum(axis=axis)
     denominator = np.sqrt(
-        (arr1_centered**2).sum(axis=0) * (arr2_centered**2).sum(axis=0)
+        (arr1_centered**2).sum(axis=axis) * (arr2_centered**2).sum(axis=axis)
     )
 
     # Avoid division by zero (set as 0.0 instead of inf or nan)
@@ -2895,19 +2875,159 @@ def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
         numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0
     )
 
-    # Reshape back to original dimensions (without axis used for correlation)
-    output_shape = list(
-        arr1.shape
-    )  # array shape in list format [n_samples, nlat, nlon]
-    output_shape.pop(
-        axis
-    )  # removes axis dimension from list e.g. axis=0: -> [nlat, nlon]
+    return correlations
 
-    output_corr = (
-        correlations.reshape(output_shape) if output_shape else correlations.item()
-    )
 
-    return output_corr
+def plot_validation_mvcorr_space(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    coarse_inputs=None,  # Coarse inputs for comparison (optional)
+    variable_names=None,  # List of variable names
+    filename="validation_mvcorr_space.png",
+    save_dir="./results",
+    figsize_multiplier=4,  # Base size per subplot
+):
+    """
+    Compute multivariate correlation over the space dimensions and plot as time-series,
+    comparing model predictions vs ground truth, for all combinations of variables.
+    Uses Pearson's correlation coefficient.
+    Added by Rosie Eade, Mar 2025.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [batch_size, num_variables, h, w]
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    coarse_inputs : torch.Tensor or np.array, optional
+        Coarse inputs of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Names of the variables for subplot titles
+    filename : str, optional
+        Output filename
+    save_dir : str, optional
+        Directory to save the plot
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots
+
+    Returns
+    -------
+    save_path : str
+        Path to the saved figure
+    """
+
+    # Convert to numpy if they're tensors
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
+        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+
+    batch_size, num_vars, h, w = predictions.shape
+
+    if num_vars < 2:
+        print("ERROR: need at least 2 variables but num_vars < 2")
+        return "0"
+
+    # Default variable names if not provided
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(num_vars)]
+
+    # Make list of tuples defining variable combinations
+    list_var_combos = []
+    for ii in range(num_vars - 1):
+        for jj in range(num_vars - 1 - ii):
+            list_var_combos.append((ii, ii + jj + 1))
+
+    # Calculate grid dimensions
+    ncols = 1
+    nrows = int(num_vars * (num_vars - 1) / 2)  # no. distinct pairs of input variables
+    fwidth = ncols * figsize_multiplier * 2.5  # longitude range
+    fheight = nrows * figsize_multiplier
+
+    # Set up figure
+    fig, axes = plt.subplots(nrows, ncols, figsize=(fwidth, fheight), squeeze=False)
+
+    axes = axes.flatten()
+
+    linestyles = mpltex.linestyle_generator(markers=[])
+
+    style_truth = next(linestyles)
+    style_pred = next(linestyles)
+    style_coarse = next(linestyles) if coarse_inputs is not None else None
+
+    var_name_combo_list = []
+
+    # Plot correlation timeseries for each combination of variables
+    # max_count = 0
+    for i, varComb in enumerate(list_var_combos):
+        var_name_combo = variable_names[varComb[0]] + "_" + variable_names[varComb[1]]
+        var_name_combo_list.append(var_name_combo)
+        print(var_name_combo)
+
+        # Compute Correlation
+        pred_corr = calculate_pearsoncorr_nparray(
+            predictions[:, varComb[0], :, :],
+            predictions[:, varComb[1], :, :],
+            axis=(1, 2),
+        )
+        target_corr = calculate_pearsoncorr_nparray(
+            targets[:, varComb[0], :, :], targets[:, varComb[1], :, :], axis=(1, 2)
+        )
+        if coarse_inputs is not None:
+            coarse_corr = calculate_pearsoncorr_nparray(
+                coarse_inputs[:, varComb[0], :, :],
+                coarse_inputs[:, varComb[1], :, :],
+                axis=(1, 2),
+            )
+
+        ax = axes[i]
+
+        time_index = range(batch_size)
+
+        ax.plot(time_index, target_corr, linewidth=1.0, label="Truth", **style_truth)
+        ax.plot(time_index, pred_corr, linewidth=1.0, label="Prediction", **style_pred)
+
+        if coarse_inputs is not None:
+            ax.plot(
+                time_index, coarse_corr, linewidth=1.0, label="Coarse", **style_coarse
+            )
+
+        ax.grid(True, alpha=0.3)
+
+        if i == 0:
+            ax.legend()
+
+    axes[-1].set_xlabel("Time Step")
+
+    # Add col labels
+    # axes[0].text(
+    #    0.5, 1.2, 'Correlation',
+    #    transform=axes[0].transAxes,
+    #    va='top',
+    #    ha='center',
+    #    fontsize=12)
+
+    # Add row labels
+    for row_idx, label in enumerate(var_name_combo_list):
+        axes[row_idx].text(
+            -0.13,
+            0.5,
+            label,
+            transform=axes[row_idx].transAxes,
+            va="center",
+            ha="right",
+            rotation="vertical",
+            fontsize=12,
+        )
+
+    # Ensure save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close()
+    return save_path
 
 
 def plot_validation_mvcorr(
@@ -2917,13 +3037,15 @@ def plot_validation_mvcorr(
     lon,
     coarse_inputs=None,  # Coarse inputs for comparison (optional)
     variable_names=None,  # List of variable names
-    filename="validation_mvcorr.png",
+    filename="validation_mvcorr_time.png",
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
 ):
     """
-    Create multivariate correlation map plots comparing model predictions vs ground truth,
-    for all combinations of variables.
+    Compute multivariate correlation over the time dimension and plot as maps,
+    comparing model predictions vs ground truth, for all combinations of variables.
+    Uses Pearson's correlation coefficient.
+    Added by Rosie Eade, Dec 2025.
 
     Parameters
     ----------
@@ -3024,7 +3146,7 @@ def plot_validation_mvcorr(
     # Define geographic features
     coastline = cfeature.COASTLINE.with_scale("50m")
     borders = cfeature.BORDERS.with_scale("50m")
-    # lakes = cfeature.LAKES.with_scale("50m")
+    # lakes = cfeature.LAKES.with_scale('50m')
 
     var_name_combo_list = []
 
@@ -3184,70 +3306,29 @@ def plot_validation_mvcorr(
     # Spatial Correlation and Spatial RMSE wrt target
 
     # Setupt axis labels
-    xLabels = ["Prediction"]
-    if coarse_inputs is not None:
-        xLabels = ["Prediction", "Coarse"]
+    xLabels=['Prediction']
+    if coarse_inputs is not None: xLabels=['Prediction','Coarse']
 
-    yLabels = var_name_combo_list
+    yLabels=var_name_combo_list
 
-    fig, (ax1, ax2) = plt.subplots(
-        ncols=2, figsize=((ncols + 2) * 2, 4)
-    )  # , layout='constrained')
+    fig, (ax1,ax2) = plt.subplots(ncols=2, figsize=((ncols+2)*2,4))#, layout='constrained')
 
-    sns.heatmap(
-        spa_cor_out,
-        ax=ax1,
-        cbar=False,
-        linewidth=0.5,
-        annot=True,
-        fmt=".3f",
-        xticklabels=xLabels,
-        yticklabels=yLabels,
-        vmin=0.0,
-        vmax=1.0,
-        cmap=plt.get_cmap("Reds"),
-    )
-    fig.colorbar(
-        ax1.collections[0],
-        ax=ax1,
-        location="left",
-        use_gridspec=False,
-        pad=0.1,
-        label="correlation",
-    )
-    ax1.tick_params(axis="y", pad=90, length=0)
-    ax1.tick_params(axis="x", length=0)
+    sns.heatmap(spa_cor_out, ax=ax1, cbar=False, linewidth=0.5, annot=True, fmt='.3f', xticklabels=xLabels, yticklabels=yLabels, vmin=0.0, vmax=1.0, cmap=plt.get_cmap('Reds'))
+    fig.colorbar(ax1.collections[0], ax=ax1, location="left", use_gridspec=False, pad=0.1, label="correlation")
+    ax1.tick_params(axis='y', pad=90, length=0)
+    ax1.tick_params(axis='x', length=0)
     ax1.yaxis.set_label_position("left")
 
-    sns.heatmap(
-        spa_rmse_out,
-        ax=ax2,
-        cbar=False,
-        linewidth=0.5,
-        annot=True,
-        fmt=".3f",
-        xticklabels=xLabels,
-        yticklabels=[""] * ncols,
-        vmin=0.0,
-        vmax=0.3,
-        cmap=plt.get_cmap("Reds_r"),
-    )
-    fig.colorbar(
-        ax2.collections[0],
-        ax=ax2,
-        location="right",
-        use_gridspec=False,
-        pad=0.1,
-        label="RMSE",
-    )
+    sns.heatmap(spa_rmse_out, ax=ax2, cbar=False, linewidth=0.5, annot=True, fmt='.3f', xticklabels=xLabels, yticklabels=[""]*ncols, vmin=0.0, vmax=0.3, cmap=plt.get_cmap('Reds_r'))
+    fig.colorbar(ax2.collections[0], ax=ax2, location="right", use_gridspec=False, pad=0.1, label="RMSE")
     ax2.tick_params(rotation=0, length=0)
     ax2.yaxis.set_label_position("right")
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
-    filenameCR = "SpCorrRmse_" + filename
+    filenameCR='SpCorrRmse_'+filename
     save_path = os.path.join(save_dir, filenameCR)
-    plt.savefig(save_path, bbox_inches="tight")
+    plt.savefig(save_path, bbox_inches='tight')
     plt.close()
     """
 
@@ -4290,8 +4371,12 @@ class TestPlottingFunctions(unittest.TestCase):
         if self.logger:
             self.logger.info("✅ All QQ-quantiles tests passed")
 
-    def test_mv_correlation_comprehensive(self):
-        """Test for temporal correlation between pairs of variables."""
+    def test_mv_correlation(self):
+        """Test for correlation over the time dimension for pairs of variables.
+        (Added by Rosie Eade, Dec 2025)
+        + Test for correlation over the spatial dimensions.
+        (Added by Rosie Eade, Mar 2026)
+        """
 
         # Define lat lon grid
         w = self.predictions.shape[2]
@@ -4304,7 +4389,7 @@ class TestPlottingFunctions(unittest.TestCase):
             np.linspace(lon1, lon1 + dlon, w), np.linspace(lat1, lat1 + dlat, h)
         )
 
-        # Test 1: Standard configuration Numpy arrays
+        # Test 1: Standard configuration Numpy arrays for correlation over time dimension
         expected_path = plot_validation_mvcorr(
             predictions=self.predictions,
             targets=self.targets,
@@ -4334,23 +4419,10 @@ class TestPlottingFunctions(unittest.TestCase):
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
 
-        # Test 2: Standard configuration PyTorch tensors
+        # Test 2: Standard configuration PyTorch tensors for correlation over time dimension
         coarse_tensor = torch.from_numpy(self.coarse_inputs.copy())
         fine_tensor = torch.from_numpy(self.targets.copy())
         pred_tensor = torch.from_numpy(self.predictions.copy())
-        expected_path = plot_validation_mvcorr(
-            predictions=pred_tensor,
-            targets=fine_tensor,
-            lat=lat,
-            lon=lon,
-            variable_names=self.variable_names,
-            save_dir=self.output_dir,
-            filename="validation_mvcorr_torch.png",
-            figsize_multiplier=3,
-        )
-        self.assertTrue(
-            os.path.exists(expected_path), f"File not found: {expected_path}"
-        )
 
         expected_path = plot_validation_mvcorr(
             predictions=pred_tensor,
@@ -4367,8 +4439,35 @@ class TestPlottingFunctions(unittest.TestCase):
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
 
+        # Test 3: Standard configuration Numpy arrays for correlation over space dimensions
+        expected_path = plot_validation_mvcorr_space(
+            predictions=self.predictions,
+            targets=self.targets,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="comparison_mv_corr_space_numpy.png",
+            figsize_multiplier=3,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 4: Standard configuration Numpy arrays for correlation over space dimensions
+        expected_path = plot_validation_mvcorr_space(
+            predictions=self.predictions,
+            targets=self.targets,
+            coarse_inputs=coarse_tensor,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="comparison_mvcorr_space_torch.png",
+            figsize_multiplier=3,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
         if self.logger:
-            self.logger.info("✅ All mv correlation tests passed")
+            self.logger.info("✅ All correlation plots tests passed")
 
     def test_temporal_series_comparison_comprehensive(self):
         """Comprehensive test for spatially averaged temporal series comparison."""

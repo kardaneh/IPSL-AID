@@ -1596,7 +1596,6 @@ class DataPreprocessor(Dataset):
             fine_filtered_block = torch.from_numpy(fine_filtered_block).to(
                 self.torch_dtype
             )
-            fine_filtered_block_norm = torch.zeros_like(fine_filtered_block)
 
         # Normalize fine and coarse fields using variable-specific statistics.
         # Statistics are read from the JSON file and are independent for fine and coarse data.
@@ -1612,14 +1611,6 @@ class DataPreprocessor(Dataset):
                 stats_fine = self.norm_mapping[f"{var_name}_fine"]
                 stats_coarse = self.norm_mapping[f"{var_name}_coarse"]
 
-            # Normalize fine field
-            fine_block_norm[iv] = self.normalize(
-                fine_block[iv],
-                stats_fine,
-                norm_type,
-                var_name=var_name,
-                data_type="fine",
-            )
             # Normalize coarse field
             coarse_norm[iv] = self.normalize(
                 coarse[iv],
@@ -1631,8 +1622,17 @@ class DataPreprocessor(Dataset):
 
             # Normalize filtered fine field if applicable
             if self.apply_filter:
-                fine_filtered_block_norm[iv] = self.normalize(
+                fine_block_norm[iv] = self.normalize(
                     fine_filtered_block[iv],
+                    stats_fine,
+                    norm_type,
+                    var_name=var_name,
+                    data_type="fine",
+                )
+            # Normalize fine field
+            else:
+                fine_block_norm[iv] = self.normalize(
+                    fine_block[iv],
                     stats_fine,
                     norm_type,
                     var_name=var_name,
@@ -1640,10 +1640,7 @@ class DataPreprocessor(Dataset):
                 )
 
         # residual is defined in normalized space
-        if self.apply_filter:
-            residual = fine_filtered_block_norm - coarse_norm
-        else:
-            residual = fine_block_norm - coarse_norm
+        residual = fine_block_norm - coarse_norm
 
         expected_shape = (
             len(self.varnames_list),
@@ -1690,14 +1687,6 @@ class DataPreprocessor(Dataset):
         )
         coarse_norm = coarse_norm.to(self.torch_dtype)
         fine_block_norm = fine_block_norm.to(self.torch_dtype)
-
-        if self.apply_filter:
-            fine_filtered_block_norm = (
-                torch.from_numpy(fine_filtered_block_norm)
-                if isinstance(fine_filtered_block_norm, np.ndarray)
-                else fine_filtered_block_norm
-            )
-            fine_filtered_block_norm = fine_filtered_block_norm.to(self.torch_dtype)
 
         feature = torch.cat(
             [coarse_norm, lat_batch.unsqueeze(0), lon_batch.unsqueeze(0)], dim=0

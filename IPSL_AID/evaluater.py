@@ -28,6 +28,7 @@ from IPSL_AID.diagnostics import (
     plot_MAE_map,
     plot_metrics_heatmap,
     plot_validation_mvcorr,
+    plot_validation_mvcorr_space,
     plot_temporal_series_comparison,
 )
 import unittest
@@ -474,10 +475,6 @@ def kl_divergence_all(pred, true):
     pred_flat = pred.reshape(-1)
     true_flat = true.reshape(-1)
 
-    # Shared histogram range (full range)
-    # data_min = torch.min(torch.min(pred_flat), torch.min(true_flat))
-    # data_max = torch.max(torch.max(pred_flat), torch.max(true_flat))
-
     # Combine for percentile computation
     all_values = torch.cat([pred_flat, true_flat])
 
@@ -489,10 +486,6 @@ def kl_divergence_all(pred, true):
 
     x_min = data_min - 0.05 * data_range
     x_max = data_max + 0.05 * data_range
-
-    # Histogram counts
-    # hist_pred = torch.histc(pred_flat, bins=n_bins, min=data_min.item(), max=data_max.item())
-    # hist_true = torch.histc(true_flat, bins=n_bins, min=data_min.item(), max=data_max.item())
 
     hist_pred = torch.histc(pred_flat, bins=n_bins, min=x_min.item(), max=x_max.item())
     hist_true = torch.histc(true_flat, bins=n_bins, min=x_min.item(), max=x_max.item())
@@ -1497,6 +1490,20 @@ def reconstruct_original_layout(
 
         logger.info(f"Saved temporal series plot to: {save_path}")
 
+        # 9. Multivariate spatial correlation time series
+        save_path = plot_validation_mvcorr_space(
+            predictions=predictions_block,
+            targets=fine_block,
+            coarse_inputs=coarse_block,
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_mvcorr_space_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+            save_dir=paths.results,
+        )
+
+        logger.info(
+            f"Saved multivariate spatial correlation time series to: {save_path}"
+        )
+
     # For inference mode, also generate full domain plots
     if args.run_type == "inference":
         assert (
@@ -1627,7 +1634,7 @@ def reconstruct_original_layout(
                 f"Saved full domain surface plot (time {time_idx}) to: {save_path}"
             )
 
-        # 7. Multivariate Correlation Maps
+        # 7. Multivariate Correlation Maps for full domain
         # Convert 1D lat/lon to 2D meshgrid
         lat_2d_full, lon_2d_full = torch.meshgrid(lat_full, lon_full, indexing="ij")
 
@@ -1644,7 +1651,7 @@ def reconstruct_original_layout(
 
         logger.info(f"Saved full domain multivariate correlation map to: {save_path}")
 
-        # 8. Temporal series
+        # 8. Temporal series for full domain
         save_path = plot_temporal_series_comparison(
             predictions=predictions_full,
             targets=fine_full,
@@ -1655,6 +1662,20 @@ def reconstruct_original_layout(
         )
 
         logger.info(f"Saved full domain temporal series plot to: {save_path}")
+
+        # 9. Multivariate spatial correlation time series for full domain
+        save_path = plot_validation_mvcorr_space(
+            predictions=predictions_full,
+            targets=fine_full,
+            coarse_inputs=coarse_full,
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_full_domain_mvcorr_space_epoch_{epoch}.png",
+            save_dir=paths.results,
+        )
+
+        logger.info(
+            f"Saved full domain multivariate spatial correlation time series to: {save_path}"
+        )
 
     return {"data": reconstructions, "metadata": metadata, "device": device}
 

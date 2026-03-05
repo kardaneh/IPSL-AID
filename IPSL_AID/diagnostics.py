@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh, Kishanthan Kingston, Rosie Eade
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2835,8 +2835,7 @@ def plot_dry_frequency_map(
 
 def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
     """
-    Calculate Pearson correlation between 2 N-dimensional numpy arrays
-    Added by Rosie Eade, Mar 2025.
+    Calculate Pearson correlation between 2 N-dimensional numpy arrays.
 
     Parameters:
     -----------
@@ -2891,7 +2890,6 @@ def plot_validation_mvcorr_space(
     Compute multivariate correlation over the space dimensions and plot as time-series,
     comparing model predictions vs ground truth, for all combinations of variables.
     Uses Pearson's correlation coefficient.
-    Added by Rosie Eade, Mar 2025.
 
     Parameters
     ----------
@@ -2957,14 +2955,10 @@ def plot_validation_mvcorr_space(
     style_pred = next(linestyles)
     style_coarse = next(linestyles) if coarse_inputs is not None else None
 
-    var_name_combo_list = []
-
     # Plot correlation timeseries for each combination of variables
     # max_count = 0
     for i, varComb in enumerate(list_var_combos):
         var_name_combo = variable_names[varComb[0]] + "_" + variable_names[varComb[1]]
-        var_name_combo_list.append(var_name_combo)
-        print(var_name_combo)
 
         # Compute Correlation
         pred_corr = calculate_pearsoncorr_nparray(
@@ -2986,41 +2980,19 @@ def plot_validation_mvcorr_space(
 
         time_index = range(batch_size)
 
-        ax.plot(time_index, target_corr, linewidth=1.0, label="Truth", **style_truth)
-        ax.plot(time_index, pred_corr, linewidth=1.0, label="Prediction", **style_pred)
+        ax.plot(time_index, target_corr, label="Truth", **style_truth)
+        ax.plot(time_index, pred_corr, label="Prediction", **style_pred)
 
         if coarse_inputs is not None:
-            ax.plot(
-                time_index, coarse_corr, linewidth=1.0, label="Coarse", **style_coarse
-            )
+            ax.plot(time_index, coarse_corr, label="Coarse", **style_coarse)
 
         ax.grid(True, alpha=0.3)
+        ax.set_ylabel(var_name_combo)
 
         if i == 0:
             ax.legend()
 
     axes[-1].set_xlabel("Time Step")
-
-    # Add col labels
-    # axes[0].text(
-    #    0.5, 1.2, 'Correlation',
-    #    transform=axes[0].transAxes,
-    #    va='top',
-    #    ha='center',
-    #    fontsize=12)
-
-    # Add row labels
-    for row_idx, label in enumerate(var_name_combo_list):
-        axes[row_idx].text(
-            -0.13,
-            0.5,
-            label,
-            transform=axes[row_idx].transAxes,
-            va="center",
-            ha="right",
-            rotation="vertical",
-            fontsize=12,
-        )
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
@@ -3045,7 +3017,6 @@ def plot_validation_mvcorr(
     Compute multivariate correlation over the time dimension and plot as maps,
     comparing model predictions vs ground truth, for all combinations of variables.
     Uses Pearson's correlation coefficient.
-    Added by Rosie Eade, Dec 2025.
 
     Parameters
     ----------
@@ -3637,10 +3608,10 @@ class TestPlottingFunctions(unittest.TestCase):
                 )
 
         self.variable_names = [
-            "Temperature (K)",
-            "Pressure (hPa)",
-            "Humidity (%)",
-            "Wind Speed (m/s)",
+            "Temperature",
+            "Pressure",
+            "Humidity",
+            "Wind Speed",
         ]
 
         # Create lat/lon arrays for spatial tests
@@ -4373,9 +4344,7 @@ class TestPlottingFunctions(unittest.TestCase):
 
     def test_mv_correlation(self):
         """Test for correlation over the time dimension for pairs of variables.
-        (Added by Rosie Eade, Dec 2025)
-        + Test for correlation over the spatial dimensions.
-        (Added by Rosie Eade, Mar 2026)
+        Test for correlation over the spatial dimensions.
         """
 
         # Define lat lon grid

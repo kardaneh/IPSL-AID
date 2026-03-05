@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston, Rosie Eade
+# Authors: Kazem Ardaneh, Kishanthan Kingston, Pierre Chapel, Rosie Eade
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

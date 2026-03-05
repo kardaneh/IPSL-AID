@@ -2955,10 +2955,13 @@ def plot_validation_mvcorr_space(
     style_pred = next(linestyles)
     style_coarse = next(linestyles) if coarse_inputs is not None else None
 
+    var_name_combo_list = []
+
     # Plot correlation timeseries for each combination of variables
     # max_count = 0
     for i, varComb in enumerate(list_var_combos):
-        var_name_combo = variable_names[varComb[0]] + "_" + variable_names[varComb[1]]
+        var_name_combo = variable_names[varComb[0]] + " & " + variable_names[varComb[1]]
+        var_name_combo_list.append(var_name_combo)
 
         # Compute Correlation
         pred_corr = calculate_pearsoncorr_nparray(
@@ -2987,12 +2990,25 @@ def plot_validation_mvcorr_space(
             ax.plot(time_index, coarse_corr, label="Coarse", **style_coarse)
 
         ax.grid(True, alpha=0.3)
-        ax.set_ylabel(var_name_combo)
+        ax.set_ylabel("Pearson Correlation")
 
         if i == 0:
             ax.legend()
 
     axes[-1].set_xlabel("Time Step")
+
+    # Add row labels
+    for row_idx, label in enumerate(var_name_combo_list):
+        axes[row_idx].text(
+            1.13,
+            0.5,
+            label,
+            transform=axes[row_idx].transAxes,
+            va="center",
+            ha="right",
+            rotation="vertical",
+            fontsize=12,
+        )
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
@@ -3124,9 +3140,8 @@ def plot_validation_mvcorr(
     # Plot each combination of variables
     # max_count = 0
     for i, varComb in enumerate(list_var_combos):
-        var_name_combo = variable_names[varComb[0]] + "_" + variable_names[varComb[1]]
+        var_name_combo = variable_names[varComb[0]] + " & " + variable_names[varComb[1]]
         var_name_combo_list.append(var_name_combo)
-        print(var_name_combo)
 
         # Compute Correlation
         pred_corr = calculate_pearsoncorr_nparray(

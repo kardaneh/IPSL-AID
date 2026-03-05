@@ -115,6 +115,8 @@ class PlotConfig:
         "wind": "coolwarm",
         "speed": "coolwarm",
         "mae": "Reds",
+        "divergence": "seismic",
+        "curl": "seismic",
         "default": "viridis",
     }
 
@@ -2477,10 +2479,6 @@ def plot_qq_quantiles(
         constrained_layout=True,
     )
 
-    plt.subplots_adjust(
-        hspace=0.2, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
-    )
-
     if num_vars > 1:
         axes = axes.ravel()
     # Handle single subplot case
@@ -3516,9 +3514,6 @@ def plot_ranks(
         constrained_layout=True,
     )
 
-    plt.subplots_adjust(
-        hspace=0.2, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
-    )
     if num_vars > 1:
         axes = axes.ravel()
     # Handle single subplot case
@@ -3549,6 +3544,472 @@ def plot_ranks(
         ax.set_ylabel("frequency")
 
     # Save figure
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
+
+
+def get_divergence(u_tensor, v_tensor, spacing):
+    """
+    Compute the horizontal divergence of a windfield.
+
+    Parameters
+    ----------
+    u_tensor : torch.Tensor or np.array, shape [...,h,w]
+        tensor that stores the zonal component of the windfield. Can have arbitrary number of dimensions, but the last two dimensions have to correspond to longitude and latitude.
+        u_tensor and v_tensor need to have the same shape.
+    v_tensor : torch.Tensor or np.array
+        tensor that stores the meridional component of the windfield. Can have arbitrary number of dimensions, but the last two dimensions have to correspond to longitude and latitude.
+        u_tensor and v_tensor need to have the same shape.
+    spacing : float
+        float that describes the resolution of the windfield. Used to compute the gradients.
+    Returns
+    -------
+    np.ndarray(np.float64) of same shape as u_tensor and v_tensor
+    """
+    # convert to torch if needed
+    if isinstance(u_tensor, np.ndarray):
+        u_tensor = torch.from_numpy(u_tensor)
+    if isinstance(v_tensor, np.ndarray):
+        v_tensor = torch.from_numpy(v_tensor)
+    u_x = torch.gradient(u_tensor, spacing=spacing, dim=-2)[0]
+    v_y = torch.gradient(v_tensor, spacing=spacing, dim=-1)[0]
+    return (u_x + v_y).detach().cpu().numpy()
+
+
+def get_curl(u_tensor, v_tensor, spacing):
+    """
+    Compute the curl of a windfield.
+
+    Parameters
+    ----------
+    u_tensor : torch.Tensor or np.array, shape [...,h,w]
+        tensor that stores the zonal component of the windfield. Can have arbitrary number of dimensions, but the last two dimensions have to correspond to longitude and latitude.
+        u_tensor and v_tensor need to have the same shape.
+    v_tensor : torch.Tensor or np.array
+        tensor that stores the meridional component of the windfield. Can have arbitrary number of dimensions, but the last two dimensions have to correspond to longitude and latitude.
+        u_tensor and v_tensor need to have the same shape.
+    spacing : float
+        spatial resolution of the windfield. Used to compute the gradients.
+    Returns
+    -------
+    np.ndarray(np.float64) of same shape as u_tensor and v_tensor
+    """
+    # convert to torch if needed
+    if isinstance(u_tensor, np.ndarray):
+        u_tensor = torch.from_numpy(u_tensor)
+    if isinstance(v_tensor, np.ndarray):
+        v_tensor = torch.from_numpy(v_tensor)
+    u_y = torch.gradient(u_tensor, spacing=spacing, dim=-1)[0]
+    v_x = torch.gradient(v_tensor, spacing=spacing, dim=-2)[0]
+    return (v_x - u_y).detach().cpu().numpy()
+
+
+def plot_mean_divergence_map(
+    u_prediction,  # Model predictions precipitation (fine predicted)
+    v_prediction,  # Model predictions precipitation (fine predicted)
+    u_target,  # Ground truth precipitation (fine true)
+    v_target,  # Ground truth precipitation (fine true)
+    spacing,
+    lat_1d,
+    lon_1d,
+    filename="mean_divergence.png",
+    save_dir=None,
+    figsize_multiplier=None,  # Base size per subplot
+):
+    """
+    Plot spatial dry pixels proportion maps. Value of each pixel corresponds to the frequency of dry weather for this pixel.
+
+    Parameters
+    ----------
+    u_prediction : torch.Tensor or np.array
+        Model predictions of shape [batch_size, h, w] for zonal component of wind
+        Last two dims have to correspond to longitude and latitude
+        u_prediction and v_prediction need to have the same shape
+    v_prediction : torch.Tensor or np.array
+        Model predictions of shape [batch_size, h, w] for meridional component of wind
+        Last two dims have to correspond to longitude and latitude
+        u_prediction and v_prediction need to have the same shape
+    u_target : torch.Tensor or np.array
+        Ground truth of shape [batch_size, h, w]
+        Last two dims have to correspond to longitude and latitude
+        u_target and v_target need to have the same shape
+    v_target : torch.Tensor or np.array
+        Ground truth of shape [batch_size, h, w]
+        Last two dims have to correspond to longitude and latitude
+        u_target and v_target need to have the same shape
+    spacing : float
+        spatial resolution of the windfield. Used to compute the gradients.
+    lat_1d : array-like
+        1D array of latitude coordinates with shape [H].
+    lon_1d : array-like
+        1D array of longitude coordinates with shape [W].
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots.
+
+    Returns
+    -------
+    None
+    """
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
+    lat_min, lat_max = lat_1d.min(), lat_1d.max()
+    lon_min, lon_max = lon_1d.min(), lon_1d.max()
+
+    _, h, w = u_target.shape
+
+    lat_block = np.linspace(lat_max, lat_min, h)
+    lon_block = np.linspace(lon_min, lon_max, w)
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
+
+    cmap = PlotConfig.get_colormap(
+        "divergence"
+    )  # need to define the comap in PlotConfig
+
+    # convert units :
+    u_prediction = PlotConfig.convert_units("wind", u_prediction)
+    v_prediction = PlotConfig.convert_units("wind", v_prediction)
+    u_target = PlotConfig.convert_units("wind", u_target)
+    v_target = PlotConfig.convert_units("wind", v_target)
+
+    div_prediction = get_divergence(u_prediction, v_prediction, spacing)
+    div_target = get_divergence(u_target, v_target, spacing)
+
+    mean_div_prediction = np.mean(div_prediction, axis=0)
+    mean_div_target = np.mean(div_target, axis=0)
+
+    vmin = min(np.min(mean_div_prediction), np.min(mean_div_target))
+    vmax = max(np.max(mean_div_prediction), np.max(mean_div_target))
+    vmax = max(np.abs(vmax), np.abs(vmin))
+    norm = mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax=vmax)
+    base_width_per_panel = 4.5
+    base_height_per_panel = 3.0
+
+    fig_width = 3 * base_width_per_panel
+    fig_height = 3 * base_height_per_panel
+
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(fig_width, fig_height),
+        subplot_kw={
+            "projection": ccrs.PlateCarree(central_longitude=lon_center)
+        },  # ccrs.Mercator(central_longitude=lon_center)
+        gridspec_kw={"wspace": 0.1},
+    )
+    im = axes[0].pcolormesh(
+        lon,
+        lat,
+        mean_div_target,
+        norm=norm,
+        cmap=cmap,
+        transform=ccrs.PlateCarree(),
+        shading="auto",
+    )
+    axes[0].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    axes[0].coastlines(linewidth=0.6)
+    axes[0].add_feature(
+        cfeature.BORDERS.with_scale("50m"),
+        linewidth=0.6,
+        linestyle="--",
+        edgecolor="black",
+        zorder=11,
+    )
+    axes[0].add_feature(
+        cfeature.LAKES.with_scale("50m"),
+        edgecolor="black",
+        facecolor="none",
+        linewidth=0.6,
+        zorder=9,
+    )
+    # ax.set_aspect("auto")
+    axes[0].set_xticks([])
+    axes[0].set_yticks([])
+    axes[0].set_title("Target")
+
+    im = axes[1].pcolormesh(
+        lon,
+        lat,
+        mean_div_prediction,
+        norm=norm,
+        cmap=cmap,
+        transform=ccrs.PlateCarree(),
+        shading="auto",
+    )
+    axes[1].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    axes[1].coastlines(linewidth=0.6)
+    axes[1].add_feature(
+        cfeature.BORDERS.with_scale("50m"),
+        linewidth=0.6,
+        linestyle="--",
+        edgecolor="black",
+        zorder=11,
+    )
+    axes[1].add_feature(
+        cfeature.LAKES.with_scale("50m"),
+        edgecolor="black",
+        facecolor="none",
+        linewidth=0.6,
+        zorder=9,
+    )
+    # ax.set_aspect("auto")
+    axes[1].set_xticks([])
+    axes[1].set_yticks([])
+    axes[1].set_title("Prediction")
+
+    cax = axes[0].inset_axes([0.85, -0.15, 1.5, 0.10])
+    fig.colorbar(
+        im,
+        cax=cax,
+        orientation="horizontal",
+        label="divergence",
+    )
+
+    im = axes[2].pcolormesh(
+        lon,
+        lat,
+        mean_div_prediction - mean_div_target,
+        norm=norm,
+        cmap=cmap,
+        transform=ccrs.PlateCarree(),
+        shading="auto",
+    )
+    axes[2].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    axes[2].coastlines(linewidth=0.6)
+    axes[2].add_feature(
+        cfeature.BORDERS.with_scale("50m"),
+        linewidth=0.6,
+        linestyle="--",
+        edgecolor="black",
+        zorder=11,
+    )
+    axes[2].add_feature(
+        cfeature.LAKES.with_scale("50m"),
+        edgecolor="black",
+        facecolor="none",
+        linewidth=0.6,
+        zorder=9,
+    )
+    # ax.set_aspect("auto")
+    axes[2].set_xticks([])
+    axes[2].set_yticks([])
+    axes[2].set_title("Predicted - Target")
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
+
+
+def plot_mean_curl_map(
+    u_prediction,  # Model predictions precipitation (fine predicted)
+    v_prediction,  # Model predictions precipitation (fine predicted)
+    u_target,  # Ground truth precipitation (fine true)
+    v_target,  # Ground truth precipitation (fine true)
+    spacing,
+    lat_1d,
+    lon_1d,
+    filename="mean_curl.png",
+    save_dir=None,
+    figsize_multiplier=None,  # Base size per subplot
+):
+    """
+    Plot spatial dry pixels proportion maps. Value of each pixel corresponds to the frequency of dry weather for this pixel.
+
+    Parameters
+    ----------
+    u_prediction : torch.Tensor or np.array
+        Model predictions of shape [batch_size, h, w] for zonal component of wind
+        Last two dims have to correspond to longitude and latitude
+        u_prediction and v_prediction need to have the same shape
+    v_prediction : torch.Tensor or np.array
+        Model predictions of shape [batch_size, h, w] for meridional component of wind
+        Last two dims have to correspond to longitude and latitude
+        u_prediction and v_prediction need to have the same shape
+    u_target : torch.Tensor or np.array
+        Ground truth of shape [batch_size, h, w]
+        Last two dims have to correspond to longitude and latitude
+        u_target and v_target need to have the same shape
+    v_target : torch.Tensor or np.array
+        Ground truth of shape [batch_size, h, w]
+        Last two dims have to correspond to longitude and latitude
+        u_target and v_target need to have the same shape
+    spacing : float
+        spatial resolution of the windfield. Used to compute the gradients.
+    lat_1d : array-like
+        1D array of latitude coordinates with shape [H].
+    lon_1d : array-like
+        1D array of longitude coordinates with shape [W].
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots.
+
+    Returns
+    -------
+    None
+    """
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
+    lat_min, lat_max = lat_1d.min(), lat_1d.max()
+    lon_min, lon_max = lon_1d.min(), lon_1d.max()
+
+    _, h, w = u_target.shape
+
+    lat_block = np.linspace(lat_max, lat_min, h)
+    lon_block = np.linspace(lon_min, lon_max, w)
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
+
+    cmap = PlotConfig.get_colormap("curl")  # need to define the comap in PlotConfig
+
+    # convert units :
+    u_prediction = PlotConfig.convert_units("wind", u_prediction)
+    v_prediction = PlotConfig.convert_units("wind", v_prediction)
+    u_target = PlotConfig.convert_units("wind", u_target)
+    v_target = PlotConfig.convert_units("wind", v_target)
+
+    curl_prediction = get_curl(u_prediction, v_prediction, spacing)
+    curl_target = get_curl(u_target, v_target, spacing)
+
+    mean_curl_prediction = np.mean(curl_prediction, axis=0)
+    mean_curl_target = np.mean(curl_target, axis=0)
+
+    vmin = min(np.min(mean_curl_prediction), np.min(mean_curl_target))
+    vmax = max(np.max(mean_curl_prediction), np.max(mean_curl_target))
+    vmax = max(np.abs(vmax), np.abs(vmin))
+    norm = mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0, vmax=vmax)
+    base_width_per_panel = 4.5
+    base_height_per_panel = 3.0
+
+    fig_width = 3 * base_width_per_panel
+    fig_height = 3 * base_height_per_panel
+
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(fig_width, fig_height),
+        subplot_kw={
+            "projection": ccrs.PlateCarree(central_longitude=lon_center)
+        },  # ccrs.Mercator(central_longitude=lon_center)
+        gridspec_kw={"wspace": 0.1},
+    )
+    im = axes[0].pcolormesh(
+        lon,
+        lat,
+        mean_curl_target,
+        norm=norm,
+        cmap=cmap,
+        transform=ccrs.PlateCarree(),
+        shading="auto",
+    )
+    axes[0].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    axes[0].coastlines(linewidth=0.6)
+    axes[0].add_feature(
+        cfeature.BORDERS.with_scale("50m"),
+        linewidth=0.6,
+        linestyle="--",
+        edgecolor="black",
+        zorder=11,
+    )
+    axes[0].add_feature(
+        cfeature.LAKES.with_scale("50m"),
+        edgecolor="black",
+        facecolor="none",
+        linewidth=0.6,
+        zorder=9,
+    )
+    # ax.set_aspect("auto")
+    axes[0].set_xticks([])
+    axes[0].set_yticks([])
+    axes[0].set_title("Target")
+
+    im = axes[1].pcolormesh(
+        lon,
+        lat,
+        mean_curl_prediction,
+        norm=norm,
+        cmap=cmap,
+        transform=ccrs.PlateCarree(),
+        shading="auto",
+    )
+    axes[1].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    axes[1].coastlines(linewidth=0.6)
+    axes[1].add_feature(
+        cfeature.BORDERS.with_scale("50m"),
+        linewidth=0.6,
+        linestyle="--",
+        edgecolor="black",
+        zorder=11,
+    )
+    axes[1].add_feature(
+        cfeature.LAKES.with_scale("50m"),
+        edgecolor="black",
+        facecolor="none",
+        linewidth=0.6,
+        zorder=9,
+    )
+    # ax.set_aspect("auto")
+    axes[1].set_xticks([])
+    axes[1].set_yticks([])
+    axes[1].set_title("Prediction")
+
+    cax = axes[0].inset_axes([0.85, -0.15, 1.5, 0.10])
+    fig.colorbar(
+        im,
+        cax=cax,
+        orientation="horizontal",
+        label="curl",
+    )
+
+    im = axes[2].pcolormesh(
+        lon,
+        lat,
+        mean_curl_prediction - mean_curl_target,
+        norm=norm,
+        cmap=cmap,
+        transform=ccrs.PlateCarree(),
+        shading="auto",
+    )
+    axes[2].set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+    axes[2].coastlines(linewidth=0.6)
+    axes[2].add_feature(
+        cfeature.BORDERS.with_scale("50m"),
+        linewidth=0.6,
+        linestyle="--",
+        edgecolor="black",
+        zorder=11,
+    )
+    axes[2].add_feature(
+        cfeature.LAKES.with_scale("50m"),
+        edgecolor="black",
+        facecolor="none",
+        linewidth=0.6,
+        zorder=9,
+    )
+    # ax.set_aspect("auto")
+    axes[2].set_xticks([])
+    axes[2].set_yticks([])
+    axes[2].set_title("Predicted - Target")
+
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
@@ -4160,6 +4621,104 @@ class TestPlottingFunctions(unittest.TestCase):
         if self.logger:
             self.logger.info("✅ All MAE map plot tests passed")
 
+    def test_plot_mean_divergence_map_comprehensive(self):
+        """Comprehensive test for mean divergence map plots."""
+        if self.logger:
+            self.logger.info("Testing divergence map plots comprehensively")
+
+        # Regional lat/lon
+        lat_1d = np.linspace(30, 50, 48)
+        lon_1d = np.linspace(-120, -80, 68)
+
+        # Matching spatial resolution
+        u_pred = self.predictions[:, 0, :48, :68]
+        v_pred = self.predictions[:, 1, :48, :68]
+        u_target = self.targets[:, 0, :48, :68]
+        v_target = self.targets[:, 1, :48, :68]
+
+        # Test 1: Standard numpy inputs
+        expected_path = plot_mean_divergence_map(
+            u_pred,
+            v_pred,
+            u_target,
+            v_target,
+            spacing=1,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            save_dir=self.output_dir,
+            filename="validation_mean_divergence_map_standard.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: PyTorch tensors
+        expected_path = plot_mean_divergence_map(
+            torch.from_numpy(u_pred),
+            torch.from_numpy(v_pred),
+            torch.from_numpy(u_target),
+            torch.from_numpy(v_target),
+            spacing=1,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            save_dir=self.output_dir,
+            filename="validation_mean_divergence_map_torch.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+        if self.logger:
+            self.logger.info("✅ All mean divergence map plot tests passed")
+
+    def test_plot_mean_curl_map_comprehensive(self):
+        """Comprehensive test for mean curl map plots."""
+        if self.logger:
+            self.logger.info("Testing curl map plots comprehensively")
+
+        # Regional lat/lon
+        lat_1d = np.linspace(30, 50, 48)
+        lon_1d = np.linspace(-120, -80, 68)
+
+        # Matching spatial resolution
+        u_pred = self.predictions[:, 0, :48, :68]
+        v_pred = self.predictions[:, 1, :48, :68]
+        u_target = self.targets[:, 0, :48, :68]
+        v_target = self.targets[:, 1, :48, :68]
+
+        # Test 1: Standard numpy inputs
+        expected_path = plot_mean_curl_map(
+            u_pred,
+            v_pred,
+            u_target,
+            v_target,
+            spacing=1,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            save_dir=self.output_dir,
+            filename="validation_mean_curl_map_standard.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: PyTorch tensors
+        expected_path = plot_mean_curl_map(
+            torch.from_numpy(u_pred),
+            torch.from_numpy(v_pred),
+            torch.from_numpy(u_target),
+            torch.from_numpy(v_target),
+            spacing=1,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            save_dir=self.output_dir,
+            filename="validation_mean_curl_map_torch.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+        if self.logger:
+            self.logger.info("✅ All mean curl map plot tests passed")
+
     def test_plot_dry_frequency_map_comprehensive(self):
         """Comprehensive test for dry frequency map plots."""
         if self.logger:
@@ -4217,6 +4776,34 @@ class TestPlottingFunctions(unittest.TestCase):
         self.assertTrue(arr.shape == predictions.shape[-2:])
         if self.logger:
             self.logger.info("✅ All dry frequency tests passed")
+
+    def test_divergence(self):
+        if self.logger:
+            self.logger.info("Testing divergence compute function comprehensively")
+        u = self.predictions[:, 0, :48, :68]
+        v = self.predictions[:, 1, :48, :68]
+        # test 1 : standard numpy inputs :
+        div = get_divergence(u, v, spacing=1)
+        self.assertTrue(div.shape == u.shape)
+        # test 2 : torch inputs :
+        div_torch = get_divergence(torch.from_numpy(u), torch.from_numpy(v), spacing=1)
+        self.assertTrue(div_torch.shape == u.shape)
+        if self.logger:
+            self.logger.info("✅ All divergence tests passed")
+
+    def test_curl(self):
+        if self.logger:
+            self.logger.info("Testing curl compute function comprehensively")
+        u = self.predictions[:, 0, :48, :68]
+        v = self.predictions[:, 1, :48, :68]
+        # test 1 : standard numpy inputs :
+        curl = get_curl(u, v, spacing=1)
+        self.assertTrue(curl.shape == u.shape)
+        # test 2 : torch inputs :
+        curl_torch = get_curl(torch.from_numpy(u), torch.from_numpy(v), spacing=1)
+        self.assertTrue(curl_torch.shape == u.shape)
+        if self.logger:
+            self.logger.info("✅ All curl tests passed")
 
     def test_metric_plots_comprehensive(self):
         """Comprehensive test for metric plots."""

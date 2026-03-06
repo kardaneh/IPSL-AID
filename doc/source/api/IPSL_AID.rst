@@ -84,11 +84,3 @@ IPSL_AID.utils module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: IPSL_AID
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -23,35 +23,6 @@ jobs:
           # Install ONLY what's needed for Sphinx
           pip install sphinx sphinx-rtd-theme myst-parser sphinx-copybutton
 
-          # Create mock modules BEFORE Sphinx runs
-          python -c "
-          import sys
-          from types import ModuleType
-
-          # Single mock class that handles everything
-          class MockModule(ModuleType):
-              def __init__(self, name):
-                  super().__init__(name)
-
-              def __getattr__(self, name):
-                  return MockModule(f'{self.__name__}.{name}')
-
-              def __call__(self, *args, **kwargs):
-                  return self
-
-          # Mock all heavy dependencies (including cartopy and seaborn)
-          for dep in ['torch', 'xarray', 'netCDF4', 'h5netcdf', 'matplotlib',
-                     'scipy', 'numpy', 'pandas', 'seaborn', 'cartopy']:
-              sys.modules[dep] = MockModule(dep)
-
-          # Special handling for cartopy.config (common in conf.py)
-          if 'cartopy' in sys.modules:
-              cartopy = sys.modules['cartopy']
-              cartopy.config = {'data_dir': '/tmp/cartopy_data'}
-
-          print('✅ Mocked all heavy dependencies')
-          "
-
       - name: Build documentation
         run: |
           cd doc

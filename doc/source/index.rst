@@ -55,7 +55,6 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
    :caption: API Reference
 
    api/modules
-   api/IPSL_AID
 
 ----
 
@@ -86,7 +85,6 @@ API Documentation
 -----------------
 
 * :doc:`api/modules` - Complete module reference
-* :doc:`api/IPSL_AID` - Package-level documentation
 
 Indices and Tables
 ==================

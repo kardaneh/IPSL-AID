@@ -42,6 +42,7 @@ autodoc_mock_imports = [
     "tqdm",
     "cycler",
     "markupsafe",
+    "seaborn",
 ]
 
 autodoc_default_options = {

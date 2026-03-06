@@ -1160,7 +1160,7 @@ def resolve_region_center(args):
     Resolve the regional inference center coordinates.
 
     This function enforces the logic for regional inference:
-    - user can provide either --region or --region_center
+    user can provide either region or region_center
 
     Parameters
     ----------
@@ -1175,11 +1175,9 @@ def resolve_region_center(args):
     Raises
     ------
     ValueError
-        If:
-        - both --region and --region_center are provided,
-        - neither is provided in inference_regional mode,
-        - an unknown region name is specified,
-        - --region_center does not contain exactly two values.
+        If both region and region_center are provided,
+        neither is provided in inference_regional mode,
+        an unknown region name is specified.
 
     Notes
     -----

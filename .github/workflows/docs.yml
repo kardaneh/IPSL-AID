@@ -26,30 +26,28 @@ jobs:
           # Create mock modules BEFORE Sphinx runs
           python -c "
           import sys
+          from types import ModuleType
 
-          # Mock cartopy
-          class MockCartopy:
-              class config:
-                  data_dir = '/tmp/cartopy_data'
+          # Single mock class that handles everything
+          class MockModule(ModuleType):
+              def __init__(self, name):
+                  super().__init__(name)
 
               def __getattr__(self, name):
-                  return MockCartopy()
+                  return MockModule(f'{self.__name__}.{name}')
 
-          sys.modules['cartopy'] = MockCartopy()
-
-          # Mock other heavy deps
-          class MockModule:
-              def __init__(self, *args, **kwargs):
-                  pass
-              def __getattr__(self, name):
-                  return MockModule()
               def __call__(self, *args, **kwargs):
-                  return MockModule()
+                  return self
 
-          for dep in ['torch', 'xarray', 'netCDF4', 'h5netcdf',
-                     'matplotlib', 'scipy', 'numpy', 'pandas',
-                     'seaborn']:
-              sys.modules[dep] = MockModule()
+          # Mock all heavy dependencies (including cartopy and seaborn)
+          for dep in ['torch', 'xarray', 'netCDF4', 'h5netcdf', 'matplotlib',
+                     'scipy', 'numpy', 'pandas', 'seaborn', 'cartopy']:
+              sys.modules[dep] = MockModule(dep)
+
+          # Special handling for cartopy.config (common in conf.py)
+          if 'cartopy' in sys.modules:
+              cartopy = sys.modules['cartopy']
+              cartopy.config = {'data_dir': '/tmp/cartopy_data'}
 
           print('✅ Mocked all heavy dependencies')
           "

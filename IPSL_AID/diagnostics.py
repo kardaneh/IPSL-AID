@@ -394,7 +394,7 @@ def plot_validation_hexbin(
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
     return save_path
 
 
@@ -625,7 +625,7 @@ def plot_comparison_hexbin(
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
     return save_path
 
 
@@ -1070,7 +1070,7 @@ def plot_spatiotemporal_histograms(
     filename = f"{filename}spatiotemporal_{mode}_hexbin.png"
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
     return save_path
 
 
@@ -2107,7 +2107,7 @@ def plot_validation_pdfs(
         np.savez_compressed(npz_path, **pdf_npz_data)
 
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
     return save_path
 
 
@@ -2363,7 +2363,7 @@ def plot_power_spectra(
         np.savez_compressed(npz_path, **spectra_npz_data)
 
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
     return save_path
 
 
@@ -3264,7 +3264,7 @@ def plot_validation_mvcorr(
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
 
     """
     # _________________________________________
@@ -4783,6 +4783,7 @@ class TestPlottingFunctions(unittest.TestCase):
             self.logger.info("✅ All dry frequency map plot tests passed")
 
     def test_dry_frequency_map(self):
+        """Comprehensive test for the dry frequency map compute function."""
         if self.logger:
             self.logger.info(
                 "Testing dry frequency map compute function comprehensively"
@@ -4798,6 +4799,7 @@ class TestPlottingFunctions(unittest.TestCase):
             self.logger.info("✅ All dry frequency tests passed")
 
     def test_divergence(self):
+        """Comprehensive test for the divergence compute function."""
         if self.logger:
             self.logger.info("Testing divergence compute function comprehensively")
         u = self.predictions[:, 0, :48, :68]
@@ -4812,6 +4814,7 @@ class TestPlottingFunctions(unittest.TestCase):
             self.logger.info("✅ All divergence tests passed")
 
     def test_curl(self):
+        """Comprehensive test for the curl compute function."""
         if self.logger:
             self.logger.info("Testing curl compute function comprehensively")
         u = self.predictions[:, 0, :48, :68]
@@ -5134,6 +5137,7 @@ class TestPlottingFunctions(unittest.TestCase):
             self.logger.info("✅ All temporal series comparison tests passed")
 
     def test_ranks(self):
+        """Comprehensive test for the ranks compute function."""
         if self.logger:
             self.logger.info("Testing ranks compute function comprehensively")
         predictions = self.predictions[:, :, :48, :68]
@@ -5155,6 +5159,7 @@ class TestPlottingFunctions(unittest.TestCase):
             self.logger.info("✅ All ranks tests passed")
 
     def test_plot_ranks(self):
+        """Comprehensive test for the ranks plot function."""
         if self.logger:
             self.logger.info("Testing plot_ranks function comprehensively")
         predictions = self.predictions[:, :, :48, :68]

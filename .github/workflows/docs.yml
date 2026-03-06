@@ -56,7 +56,8 @@ jobs:
       - name: Build documentation
         run: |
           cd doc
-          python -m sphinx.cmd.build -b html source build/html -q
+          make clean
+          make html
           echo "✅ Documentation built successfully!"
 
       - name: Upload docs

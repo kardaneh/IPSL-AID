@@ -2699,7 +2699,7 @@ def plot_dry_frequency_map(
     base_width_per_panel = 4.5
     base_height_per_panel = 3.0
 
-    fig_width = 3 * base_width_per_panel
+    fig_width = base_width_per_panel
     fig_height = 3 * base_height_per_panel
 
     fig, axes = plt.subplots(
@@ -2709,6 +2709,9 @@ def plot_dry_frequency_map(
             "projection": ccrs.PlateCarree(central_longitude=lon_center)
         },  # ccrs.Mercator(central_longitude=lon_center)
         gridspec_kw={"wspace": 0.1},
+    )
+    fig.subplots_adjust(
+        top=0.9, bottom=0.1, left=0.1, right=0.9, wspace=0.1, hspace=0.1
     )
     im = axes[0].pcolormesh(
         lon,
@@ -2772,13 +2775,13 @@ def plot_dry_frequency_map(
     axes[1].set_yticks([])
     axes[1].set_title("Target")
 
-    fig.colorbar(
-        im,
-        ax=axes[0:2],
-        location="right",
-        orientation="vertical",
-        label="frequency",
-    )
+    pos0 = axes[0].get_position()
+    pos1 = axes[1].get_position()
+    bottom = pos1.y0
+    top = pos0.y1
+    height = top - bottom
+    cax1 = fig.add_axes([0.92, bottom, 0.03, height])
+    fig.colorbar(im, cax=cax1, label="frequency")
 
     # vmax_diff = max(
     #     np.abs(np.max(dry_freq_pred_map - dry_freq_targ_map)),
@@ -2816,13 +2819,9 @@ def plot_dry_frequency_map(
     axes[2].set_yticks([])
     axes[2].set_title("Predicted frequency - Target frequency")
 
-    fig.colorbar(
-        im,
-        ax=axes[2],
-        location="right",
-        orientation="vertical",
-        label="frequency",
-    )
+    pos2 = axes[2].get_position()
+    cax2 = fig.add_axes([0.92, pos2.y0, 0.03, pos2.height])
+    fig.colorbar(im, cax=cax2, label="frequency")
 
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
@@ -2939,11 +2938,13 @@ def plot_validation_mvcorr_space(
     # Calculate grid dimensions
     ncols = 1
     nrows = int(num_vars * (num_vars - 1) / 2)  # no. distinct pairs of input variables
-    fwidth = ncols * figsize_multiplier * 2.5  # longitude range
+    fwidth = 6  # longitude range
     fheight = nrows * figsize_multiplier
 
     # Set up figure
-    fig, axes = plt.subplots(nrows, ncols, figsize=(fwidth, fheight), squeeze=False)
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=(fwidth, fheight), squeeze=False, sharex=True
+    )
 
     axes = axes.flatten()
 
@@ -2988,31 +2989,21 @@ def plot_validation_mvcorr_space(
             ax.plot(time_index, coarse_corr, label="Coarse", **style_coarse)
 
         ax.grid(True, alpha=0.3)
-        ax.set_ylabel("Pearson Correlation")
+        ax.set_ylabel(var_name_combo)
+        # ax.set_ylim(-1, 1)
+        ax.set_xlim(0, batch_size - 1)
 
         if i == 0:
             ax.legend()
+            axes[0].set_title("Spatial Pearson Correlation Over Time")
 
     axes[-1].set_xlabel("Time Step")
-
-    # Add row labels
-    for row_idx, label in enumerate(var_name_combo_list):
-        axes[row_idx].text(
-            1.13,
-            0.5,
-            label,
-            transform=axes[row_idx].transAxes,
-            va="center",
-            ha="right",
-            rotation="vertical",
-            fontsize=12,
-        )
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
-    plt.close()
+    plt.close(fig)
     return save_path
 
 
@@ -3249,7 +3240,7 @@ def plot_validation_mvcorr(
     # Add row labels
     for row_idx, label in enumerate(var_name_combo_list):
         axes[row_idx, 0].text(
-            -0.02,
+            -0.1,
             0.5,
             label,
             transform=axes[row_idx, 0].transAxes,
@@ -3260,23 +3251,14 @@ def plot_validation_mvcorr(
         )
 
     # Add colorbar
-    cbar = fig.colorbar(
-        im_pred,
-        # cax=cbar_ax,
-        ax=axes.ravel(),
-        orientation="horizontal",
-        label="correlation",
-        # fraction=0.04,
-        pad=0.04,
-        aspect=50,
-        use_gridspec=True,
-    )
-
-    cbar.ax.tick_params()
-
-    fig.subplots_adjust(
-        top=0.85, bottom=0.25, left=0.08, right=0.97, wspace=0.1, hspace=0.15
-    )
+    fig.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9, wspace=0.1)
+    pos_top = axes[0, 0].get_position()
+    pos_bottom = axes[-1, 0].get_position()
+    bottom = pos_bottom.y0
+    top = pos_top.y1
+    height = top - bottom
+    cbar_ax = fig.add_axes([0.92, bottom, 0.015, height])
+    fig.colorbar(im_pred, cax=cbar_ax, label=r"Temporal Pearson Correlation")
 
     # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
@@ -3696,17 +3678,20 @@ def plot_mean_divergence_map(
     base_width_per_panel = 4.5
     base_height_per_panel = 3.0
 
-    fig_width = 3 * base_width_per_panel
+    fig_width = base_width_per_panel
     fig_height = 3 * base_height_per_panel
 
     fig, axes = plt.subplots(
-        1,
         3,
+        1,
         figsize=(fig_width, fig_height),
         subplot_kw={
             "projection": ccrs.PlateCarree(central_longitude=lon_center)
         },  # ccrs.Mercator(central_longitude=lon_center)
         gridspec_kw={"wspace": 0.1},
+    )
+    fig.subplots_adjust(
+        top=0.9, bottom=0.1, left=0.1, right=0.9, wspace=0.1, hspace=0.1
     )
     im = axes[0].pcolormesh(
         lon,
@@ -3768,13 +3753,21 @@ def plot_mean_divergence_map(
     axes[1].set_yticks([])
     axes[1].set_title("Prediction")
 
-    cax = axes[0].inset_axes([0.85, -0.15, 1.5, 0.10])
-    fig.colorbar(
-        im,
-        cax=cax,
-        orientation="horizontal",
-        label="divergence",
-    )
+    # axes are vertically stacked
+
+    # Get positions of the top two axes
+    pos0 = axes[0].get_position()
+    pos1 = axes[1].get_position()
+
+    bottom = pos1.y0
+    top = pos0.y1
+    height = top - bottom
+
+    # Create the colorbar axis
+    cax1 = fig.add_axes([0.92, bottom, 0.02, height])  # [left, bottom, width, height]
+
+    # Add the colorbar
+    fig.colorbar(im, cax=cax1, orientation="vertical", label="divergence")
 
     im = axes[2].pcolormesh(
         lon,
@@ -3805,6 +3798,15 @@ def plot_mean_divergence_map(
     axes[2].set_xticks([])
     axes[2].set_yticks([])
     axes[2].set_title("Predicted - Target")
+
+    # Get position of the bottom axis
+    pos2 = axes[2].get_position()
+
+    # Create colorbar axis
+    cax2 = fig.add_axes([0.92, pos2.y0, 0.02, pos2.height])
+
+    # Add the colorbar
+    fig.colorbar(im, cax=cax2, orientation="vertical", label="divergence error")
 
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
@@ -3900,17 +3902,20 @@ def plot_mean_curl_map(
     base_width_per_panel = 4.5
     base_height_per_panel = 3.0
 
-    fig_width = 3 * base_width_per_panel
+    fig_width = base_width_per_panel
     fig_height = 3 * base_height_per_panel
 
     fig, axes = plt.subplots(
-        1,
         3,
+        1,
         figsize=(fig_width, fig_height),
         subplot_kw={
             "projection": ccrs.PlateCarree(central_longitude=lon_center)
         },  # ccrs.Mercator(central_longitude=lon_center)
         gridspec_kw={"wspace": 0.1},
+    )
+    fig.subplots_adjust(
+        top=0.9, bottom=0.1, left=0.1, right=0.9, wspace=0.1, hspace=0.1
     )
     im = axes[0].pcolormesh(
         lon,
@@ -3972,13 +3977,19 @@ def plot_mean_curl_map(
     axes[1].set_yticks([])
     axes[1].set_title("Prediction")
 
-    cax = axes[0].inset_axes([0.85, -0.15, 1.5, 0.10])
-    fig.colorbar(
-        im,
-        cax=cax,
-        orientation="horizontal",
-        label="curl",
-    )
+    # Get positions of the top two axes
+    pos0 = axes[0].get_position()
+    pos1 = axes[1].get_position()
+
+    bottom = pos1.y0
+    top = pos0.y1
+    height = top - bottom
+
+    # Create the colorbar axis
+    cax1 = fig.add_axes([0.92, bottom, 0.02, height])  # [left, bottom, width, height]
+
+    # Add the colorbar
+    fig.colorbar(im, cax=cax1, orientation="vertical", label="curl")
 
     im = axes[2].pcolormesh(
         lon,
@@ -4009,6 +4020,15 @@ def plot_mean_curl_map(
     axes[2].set_xticks([])
     axes[2].set_yticks([])
     axes[2].set_title("Predicted - Target")
+
+    # Get position of the bottom axis
+    pos2 = axes[2].get_position()
+
+    # Create colorbar axis
+    cax2 = fig.add_axes([0.92, pos2.y0, 0.02, pos2.height])
+
+    # Add the colorbar
+    fig.colorbar(im, cax=cax2, orientation="vertical", label="curl error")
 
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
@@ -4084,10 +4104,10 @@ class TestPlottingFunctions(unittest.TestCase):
                 )
 
         self.variable_names = [
-            "Temperature",
-            "Pressure",
-            "Humidity",
-            "Wind Speed",
+            "Temp",
+            "Press",
+            "Humid",
+            "Wind",
         ]
 
         # Create lat/lon arrays for spatial tests
@@ -4454,7 +4474,7 @@ class TestPlottingFunctions(unittest.TestCase):
             targets[0, i] = pattern + np.random.randn(h, w) * 1
             pred[0, i] = targets[0, i] + np.random.randn(h, w) * 0.3
 
-        variable_names = ["Temperature", "Pressure", "Humidity"]
+        variable_names = ["Temp", "Press", "Humid"]
         timestamp = datetime(2024, 1, 1, 12, 0)
 
         # Test with numpy arrays
@@ -4527,7 +4547,7 @@ class TestPlottingFunctions(unittest.TestCase):
             targets[0, i] = pattern + np.random.randn(H, W)
             pred[0, i] = targets[0, i] + np.random.randn(H, W) * 0.3
 
-        variable_names = ["Temperature", "Pressure", "Humidity"]
+        variable_names = ["Temp", "Press", "Humid"]
         timestamp = datetime(2024, 1, 1, 12, 0)
 
         # Test with numpy arrays

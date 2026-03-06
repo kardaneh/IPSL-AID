@@ -47,7 +47,8 @@ jobs:
                   return MockModule()
 
           for dep in ['torch', 'xarray', 'netCDF4', 'h5netcdf',
-                     'matplotlib', 'scipy', 'numpy', 'pandas']:
+                     'matplotlib', 'scipy', 'numpy', 'pandas',
+                     'seaborn']:
               sys.modules[dep] = MockModule()
 
           print('✅ Mocked all heavy dependencies')

@@ -31,20 +31,8 @@ def parse_args():
     Returns
     -------
     argparse.Namespace
-        Parsed arguments containing:
-
-        year_start : int
-            First year to download.
-
-        year_end : int
-            Last year to download (inclusive).
-
-        variable : list of str
-            ERA5 variable names.
-
-        pressure_level : list of str or None
-            Pressure levels in hPa (["500", "850"]).
-            If not provided, single-level ERA5 variables are downloaded.
+        Parsed command line arguments as a namespace object with attributes
+        corresponding to each argument.
 
     Notes
     -----

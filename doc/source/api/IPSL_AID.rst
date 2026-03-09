@@ -84,3 +84,19 @@ IPSL_AID.utils module
    :members:
    :undoc-members:
    :show-inheritance:
+
+IPSL_AID.download_ERA5_cds module
+---------------------------------
+
+.. automodule:: IPSL_AID.download_ERA5_cds
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+IPSL_AID.generate_all_data_ERA5 module
+--------------------------------------
+
+.. automodule:: IPSL_AID.generate_all_data_ERA5
+   :members:
+   :undoc-members:
+   :show-inheritance:

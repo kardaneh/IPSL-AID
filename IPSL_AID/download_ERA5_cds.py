@@ -74,6 +74,7 @@ def main(logger):
     Download ERA5 data from the Copernicus Climate Data Store.
 
     The function follows a structured workflow:
+
     1. Parse command-line arguments.
     2. Create output directories.
     3. Loop over requested years, variables, and months.

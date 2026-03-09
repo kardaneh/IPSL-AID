@@ -54,6 +54,7 @@ dependencies = [
     "netcdf4>=1.7.2",
     "h5netcdf>=1.1.0",
     "seaborn>=0.13.2",
+    "cdsapi>=0.7.6",
 ]
 [tool.setuptools.dynamic]
 version = { attr = "IPSL_AID.version.__version__" }

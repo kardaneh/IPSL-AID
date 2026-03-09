@@ -29,10 +29,11 @@ jobs:
       - name: Run pre-commit
         run: uv run pre-commit run --all-files
 
-      - name: Run lightweight tests
+      - name: Run tests
         run: |
           uv run python -m tests.test_all utils
           uv run python -m tests.test_all logger
+          uv run python -m tests.test_all model_utils
 
       - name: Check package builds
         run: uv build

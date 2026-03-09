@@ -35,6 +35,7 @@ jobs:
           uv run python -m tests.test_all logger
           uv run python -m tests.test_all model_utils
           uv run python -m tests.test_all dataset
+          uv run python -m tests.test_all networks
 
       - name: Check package builds
         run: uv build

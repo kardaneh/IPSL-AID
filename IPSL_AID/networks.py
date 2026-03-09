@@ -2914,8 +2914,8 @@ class TestDiffusionNetworks(unittest.TestCase):
             in_channels=total_in_channels,  # Use total channels including conditional
             out_channels=self.out_channels,
             label_dim=self.label_dim,
-            model_channels=64,
-            channel_mult=[1, 2, 2],
+            model_channels=32,
+            channel_mult=[1, 2],
             attn_resolutions=[32],
             embedding_type="positional",
         ).to(self.device)
@@ -2961,8 +2961,8 @@ class TestDiffusionNetworks(unittest.TestCase):
             in_channels=total_in_channels,  # Use total channels including conditional
             out_channels=self.out_channels,
             label_dim=self.label_dim,
-            model_channels=64,
-            channel_mult=[1, 2, 2],
+            model_channels=32,
+            channel_mult=[1, 2],
             attn_resolutions=[16],
             embedding_type="fourier",
         ).to(self.device)
@@ -3007,8 +3007,8 @@ class TestDiffusionNetworks(unittest.TestCase):
             in_channels=total_in_channels,  # Use total channels including conditional
             out_channels=self.out_channels,
             label_dim=self.label_dim,
-            model_channels=64,
-            channel_mult=[1, 2, 2],
+            model_channels=32,
+            channel_mult=[1, 2],
             attn_resolutions=[32, 16],
         ).to(self.device)
 
@@ -3054,8 +3054,8 @@ class TestDiffusionNetworks(unittest.TestCase):
             label_dim=self.label_dim,
             use_fp16=False,
             model_type="SongUNet",
-            model_channels=64,
-            channel_mult=[1, 2, 2],
+            model_channels=32,
+            channel_mult=[1, 2],
         ).to(self.device)
 
         # Test forward pass
@@ -3092,8 +3092,8 @@ class TestDiffusionNetworks(unittest.TestCase):
             label_dim=self.label_dim,
             use_fp16=False,
             model_type="SongUNet",
-            model_channels=64,
-            channel_mult=[1, 2, 2],
+            model_channels=32,
+            channel_mult=[1, 2],
         ).to(self.device)
 
         # Test forward pass
@@ -3130,8 +3130,8 @@ class TestDiffusionNetworks(unittest.TestCase):
             label_dim=self.label_dim,
             use_fp16=False,
             model_type="DhariwalUNet",
-            model_channels=64,
-            channel_mult=[1, 2, 2],
+            model_channels=32,
+            channel_mult=[1, 2],
         ).to(self.device)
 
         # Test forward pass

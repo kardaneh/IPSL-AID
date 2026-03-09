@@ -56,7 +56,7 @@ dependencies = [
     "seaborn>=0.13.2",
 ]
 [tool.setuptools.dynamic]
-version = { attr = "IPSL-AID.version.__version__" }
+version = { attr = "IPSL_AID.version.__version__" }
 
 [project.urls]
 Source = "https://github.com/kardaneh/IPSL-AID"

@@ -43,6 +43,7 @@ autodoc_mock_imports = [
     "cycler",
     "markupsafe",
     "seaborn",
+    "cdsapi",
 ]
 
 autodoc_default_options = {

@@ -33,23 +33,8 @@ def parse_args():
     Returns
     -------
     argparse.Namespace
-        Parsed command-line arguments.
-
-        year_start : int
-            First year to process.
-
-        year_end : int
-            Last year to process (inclusive).
-
-        variable : list of str
-            ERA5 variable names corresponding to the downloaded data.
-
-        pressure_level : list of str, optional
-            Pressure levels to extract (["500", "850"]).
-
-        rename_var : list of str
-            New variable names to use in the output NetCDF files.
-            Must match the number and order of variable.
+        Parsed command line arguments as a namespace object with attributes
+        corresponding to each argument.
 
     Raises
     ------

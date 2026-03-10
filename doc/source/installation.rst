@@ -43,4 +43,4 @@ After installation, verify that the environment is correctly set up:
 .. code-block:: bash
 
    python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
-   python -c "from IPSL_AID import config; print('IPSL-AID imported successfully')"
+   python -c "from IPSL_AID import main; print('IPSL-AID imported successfully')"

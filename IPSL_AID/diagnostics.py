@@ -117,6 +117,7 @@ class PlotConfig:
         "mae": "Reds",
         "divergence": "seismic",
         "curl": "seismic",
+        "ssr": "seismic",
         "default": "viridis",
     }
 
@@ -154,6 +155,25 @@ class PlotConfig:
         "VAR_10V": (0.0, 3.0),
         "TP": (0.0, 1.0),
         "tp": (0.0, 1.0),
+        "VAR_TP": (0.0, 1.0),
+        "VAR_D2M": (0.0, 3.0),
+        "VAR_ST": (0.0, 3.0),
+    }
+
+    FIXED_SSR_RANGES = {
+        "T2M": (0.0, 3.0),
+        "temperature": (0.0, 3.0),
+        "2t": (0.0, 3.0),
+        "VAR_2T": (0.0, 3.0),
+        "U10": (0.0, 3.0),
+        "10u": (0.0, 3.0),
+        "meridional": (0.0, 3.0),
+        "VAR_10U": (0.0, 3.0),
+        "V10": (0.0, 3.0),
+        "10v": (0.0, 3.0),
+        "VAR_10V": (0.0, 3.0),
+        "TP": (0.0, 3.0),
+        "tp": (0.0, 3.0),
         "VAR_TP": (0.0, 1.0),
         "VAR_D2M": (0.0, 3.0),
         "VAR_ST": (0.0, 3.0),
@@ -233,6 +253,11 @@ class PlotConfig:
     def get_fixed_mae_range(var_name):
         """Get fixed visualization range for Mean Absolute Error (MAE)."""
         return PlotConfig.FIXED_MAE_RANGES.get(var_name, None)
+
+    @staticmethod
+    def get_fixed_ssr_range(var_name):
+        """Get fixed visualization range for Mean Absolute Error (MAE)."""
+        return PlotConfig.FIXED_SSR_RANGES.get(var_name, None)
 
 
 def plot_validation_hexbin(
@@ -1832,6 +1857,241 @@ def plot_MAE_map(
             cax=cax,
             orientation="horizontal",
             label=f"MAE {plot_variable_names[col_idx]}",
+        )
+
+    fig.subplots_adjust(top=0.85, bottom=0.25, left=0.08, right=0.95)
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
+
+
+def plot_spread_skill_ratio_map(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    lat_1d,
+    lon_1d,
+    timestamp=None,
+    variable_names=None,
+    filename="validation_spread_skill_ratio_map.png",
+    save_dir=None,
+    figsize_multiplier=None,  # Base size per subplot
+):
+    """
+    Plot spatial spread skill ratio maps averaged over all time steps:
+    SSR(x, y) = spread(x,y) / skill(x,y)
+    where spread(x,y) = temporal mean of standard deviation of ensemble members predictions
+    and skill = temporal mean of RMSE of the mean of the ensemble members.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [ensemble_size, batch_size, num_variables, h, w]
+        It is very important not to switch dimensions order.
+        ensemble_size must be greater or equal than 2 for spread skill ratio to be computed.
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    lat_1d : array-like
+        1D array of latitude coordinates with shape [H].
+    lon_1d : array-like
+        1D array of longitude coordinates with shape [W].
+    timestamp : datetime.datetime
+        Forecast timestamp to include in the plot title.
+    variable_names : list of str, optional
+        Variable names or identifiers.
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots.
+
+    Returns
+    -------
+    None
+    """
+
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
+    # Convert tensors to numpy
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    if hasattr(lat_1d, "detach"):
+        lat_1d = lat_1d.detach().cpu().numpy()
+    if hasattr(lon_1d, "detach"):
+        lon_1d = lon_1d.detach().cpu().numpy()
+
+    lat_min, lat_max = lat_1d.min(), lat_1d.max()
+    lon_min, lon_max = lon_1d.min(), lon_1d.max()
+
+    if len(predictions.shape) != 5:
+        raise ValueError(
+            "predictions needs to be 5 dimensional tensor / array [ensemble_size, temporal_size, n_vars, h, w]."
+        )
+
+    if predictions.shape[0] == 1:
+        raise ValueError(
+            "predictions needs to contain more than 1 member to compute spread skill ratio."
+        )
+
+    E, T, n_vars, h, w = predictions.shape
+
+    lat_block = np.linspace(lat_max, lat_min, h)
+    lon_block = np.linspace(lon_min, lon_max, w)
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
+
+    if targets.shape[1] != n_vars:
+        raise ValueError("targets and predictions must have same number of variables")
+
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(n_vars)]
+
+    plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
+    # cmaps = [PlotConfig.get_colormap(var) for var in variable_names]
+    cmaps = PlotConfig.get_colormap("SSR")
+
+    vmin_list, vmax_list = [], []
+    ssr_list = []
+    # MAE averaged over time for color scaling
+    for i in range(n_vars):
+        # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
+        pred_i = PlotConfig.convert_units(variable_names[i], predictions[:, :, i])
+        tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])
+
+        mean_pred_i = np.mean(pred_i, axis=0)
+        rmse_data_i = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2, axis=0))
+
+        spread_i = np.mean(np.std(pred_i, axis=0), axis=0)
+        ssr_i = np.divide(spread_i, rmse_data_i)
+        ssr_list.append(ssr_i)
+        ssr_i_flat = (ssr_i).flatten()
+
+        fixed_range = PlotConfig.get_fixed_ssr_range(variable_names[i])
+
+        if fixed_range is not None:
+            vmin, vmax = fixed_range
+        else:
+            if len(ssr_i_flat) > 0:
+                q_low, q_high = np.quantile(ssr_i_flat, [0.02, 0.98])
+                vmin, vmax = float(q_low), float(q_high)
+            else:
+                vmin, vmax = 0.0, 2.0
+
+        if vmin >= vmax:
+            vmin, vmax = float(np.nanmin(ssr_i_flat)), float(np.nanmax(ssr_i_flat))
+
+        vmin_list.append(vmin)
+        vmax_list.append(vmax)
+
+    base_width_per_panel = 4.5
+    base_height_per_panel = 3.0
+
+    fig_width = base_width_per_panel * n_vars
+    fig_height = base_height_per_panel
+
+    fig, axes = plt.subplots(
+        1,
+        n_vars,
+        figsize=(fig_width, fig_height),
+        subplot_kw={
+            "projection": ccrs.PlateCarree(central_longitude=lon_center)
+        },  # ccrs.Mercator(central_longitude=lon_center)
+        gridspec_kw={"wspace": 0.1},
+    )
+
+    if n_vars == 1:
+        axes = [axes]
+
+    if timestamp is None:
+        fig.suptitle(
+            "Spread skill ratio map (time-averaged)",
+            fontsize=16,
+            y=1.05,
+        )
+    if timestamp is not None:
+        fig.suptitle(
+            f"Spread skill ratio map {timestamp.strftime('%Y-%m-%d %H:%M')}",
+            fontsize=16,
+            y=1.05,
+        )
+
+    for col_idx in range(n_vars):
+        ax = axes[col_idx]
+
+        # MAE averaged over all time steps
+        ssr_data_i = ssr_list[col_idx]
+        vmin = vmin_list[col_idx]
+        vmax = vmax_list[col_idx]
+
+        if vmin <= 1 <= vmax:
+            norm = mcolors.TwoSlopeNorm(vmin=vmin, vcenter=1, vmax=vmax)
+            im = ax.pcolormesh(
+                lon,
+                lat,
+                ssr_data_i,
+                cmap=cmaps,
+                norm=norm,
+                transform=ccrs.PlateCarree(),
+                shading="auto",
+            )
+        else:
+            im = ax.pcolormesh(
+                lon,
+                lat,
+                ssr_data_i,
+                cmap=cmaps,
+                vmin=vmin,
+                vmax=vmax,
+                transform=ccrs.PlateCarree(),
+                shading="auto",
+            )
+        ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+        # ax.set_global()
+        ax.coastlines(linewidth=0.6)
+        ax.add_feature(
+            cfeature.BORDERS.with_scale("50m"),
+            linewidth=0.6,
+            linestyle="--",
+            edgecolor="black",
+            zorder=11,
+        )
+        ax.add_feature(
+            cfeature.LAKES.with_scale("50m"),
+            edgecolor="black",
+            facecolor="none",
+            linewidth=0.6,
+            zorder=9,
+        )
+        # ax.set_aspect("auto")
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        # place a text box in upper left in axes coords
+        ax.text(
+            0.05,
+            1.15,
+            f"SSR = {np.mean(ssr_data_i):.2f}",
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=props,
+        )
+
+        cax = ax.inset_axes([0.1, -0.15, 0.8, 0.05])
+        fig.colorbar(
+            im,
+            cax=cax,
+            orientation="horizontal",
+            label=f"SSR {plot_variable_names[col_idx]}",
         )
 
     fig.subplots_adjust(top=0.85, bottom=0.25, left=0.08, right=0.95)
@@ -4640,6 +4900,68 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All MAE map plot tests passed")
+
+    def test_plot_spread_skill_ratio_map_comprehensive(self):
+        """Comprehensive test for time-averaged MAE spatial map plots."""
+        if self.logger:
+            self.logger.info("Testing SSR map plots comprehensively")
+
+        # Regional lat/lon
+        lat_1d = np.linspace(30, 50, 48)
+        lon_1d = np.linspace(-120, -80, 68)
+
+        # Matching spatial resolution
+        predictions = self.predictions[:, :, :48, :68]
+        # Transform predictions into ensemble by adding noise:
+        T, C, h, w = predictions.shape
+        noise = np.random.normal(size=(10, T, C, h, w))
+        predictions_ensemble = predictions + noise
+        targets = self.targets[:, :, :48, :68]
+
+        # Test 1: Standard numpy inputs
+        expected_path = plot_spread_skill_ratio_map(
+            predictions=predictions_ensemble,
+            targets=targets,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_ssr_map_standard.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: PyTorch tensors
+        expected_path = plot_spread_skill_ratio_map(
+            predictions=torch.from_numpy(predictions_ensemble),
+            targets=torch.from_numpy(targets),
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_ssr_map_torch.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 3: Single variable
+        expected_path = plot_spread_skill_ratio_map(
+            predictions=predictions_ensemble[:, :, 0:1],
+            targets=targets[:, 0:1],
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=[self.variable_names[0]],
+            save_dir=self.output_dir,
+            filename="validation_ssr_map_single_var.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ All spread skill ratio map plot tests passed")
 
     def test_plot_mean_divergence_map_comprehensive(self):
         """Comprehensive test for mean divergence map plots."""

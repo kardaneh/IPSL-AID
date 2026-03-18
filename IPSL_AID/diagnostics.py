@@ -1964,16 +1964,21 @@ def plot_spread_skill_ratio_map(
     # MAE averaged over time for color scaling
     for i in range(n_vars):
         # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
-        pred_i = PlotConfig.convert_units(variable_names[i], predictions[:, :, i])
-        tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])
+        pred_i = PlotConfig.convert_units(
+            variable_names[i], predictions[:, :, i]
+        )  # [E,T,h,w]
+        tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])  # [T,h,w]
 
-        mean_pred_i = np.mean(pred_i, axis=0)
-        rmse_data_i = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2, axis=0))
+        mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
+        rmse_data_i = np.abs((mean_pred_i - tgt_i))  # [T,h,w]
 
-        spread_i = np.mean(np.std(pred_i, axis=0), axis=0)
-        ssr_i = np.divide(spread_i, rmse_data_i)
+        spread_i = np.std(pred_i, axis=0)  # ensemble std [T,h,w]
+        ssr_i = np.divide(
+            spread_i, rmse_data_i
+        )  # SSR for each pixel and each timestep [T,h,w]
+        ssr_i = np.mean(ssr_i, axis=0)  # temporal mean [h,w]
         ssr_list.append(ssr_i)
-        ssr_i_flat = (ssr_i).flatten()
+        ssr_i_flat = (ssr_i).flatten()  # flatten [h*w]
 
         fixed_range = PlotConfig.get_fixed_ssr_range(variable_names[i])
 
@@ -2029,7 +2034,6 @@ def plot_spread_skill_ratio_map(
         ssr_data_i = ssr_list[col_idx]
         vmin = vmin_list[col_idx]
         vmax = vmax_list[col_idx]
-
         if vmin <= 1 <= vmax:
             norm = mcolors.TwoSlopeNorm(vmin=vmin, vcenter=1, vmax=vmax)
             im = ax.pcolormesh(
@@ -2041,17 +2045,29 @@ def plot_spread_skill_ratio_map(
                 transform=ccrs.PlateCarree(),
                 shading="auto",
             )
-        else:
+        elif vmax >= 1:
+            norm = mcolors.TwoSlopeNorm(vmin=0, vcenter=1, vmax=vmax)
             im = ax.pcolormesh(
                 lon,
                 lat,
                 ssr_data_i,
                 cmap=cmaps,
-                vmin=vmin,
-                vmax=vmax,
+                norm=norm,
                 transform=ccrs.PlateCarree(),
                 shading="auto",
             )
+        else:
+            norm = mcolors.TwoSlopeNorm(vmin=0, vcenter=1, vmax=2)
+            im = ax.pcolormesh(
+                lon,
+                lat,
+                ssr_data_i,
+                cmap=cmaps,
+                norm=norm,
+                transform=ccrs.PlateCarree(),
+                shading="auto",
+            )
+
         ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
         # ax.set_global()
         ax.coastlines(linewidth=0.6)

@@ -2107,6 +2107,173 @@ def plot_spread_skill_ratio_map(
     return save_path
 
 
+def plot_spread_skill_ratio_hexbin(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    variable_names=None,
+    filename="validation_spread_skill_ratio_hexbin.png",
+    save_dir=None,
+    figsize_multiplier=None,  # Base size per subplot
+):
+    """
+    Plot spatial spread skill ratio scatterplot, where each point represent a prediction for a single pixel, single timestep:
+    SSR(x, y) = spread(x,y) / skill(x,y)
+    where spread(x,y) = temporal mean of standard deviation of ensemble members predictions
+    and skill = temporal mean of RMSE of the mean of the ensemble members.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [ensemble_size, batch_size, num_variables, h, w]
+        It is very important not to switch dimensions order.
+        ensemble_size must be greater or equal than 2 for spread skill ratio to be computed.
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Variable names or identifiers.
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots.
+
+    Returns
+    -------
+    None
+    """
+
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
+    # Convert tensors to numpy
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+
+    if len(predictions.shape) != 5:
+        raise ValueError(
+            "predictions needs to be 5 dimensional tensor / array [ensemble_size, temporal_size, n_vars, h, w]."
+        )
+
+    if predictions.shape[0] == 1:
+        raise ValueError(
+            "predictions needs to contain more than 1 member to compute spread skill ratio."
+        )
+
+    E, T, n_vars, h, w = predictions.shape
+
+    if targets.shape[1] != n_vars:
+        raise ValueError("targets and predictions must have same number of variables")
+
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(n_vars)]
+
+    plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
+    rmse_list = []
+    spread_list = []
+    # MAE averaged over time for color scaling
+    for i in range(n_vars):
+        # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
+        pred_i = PlotConfig.convert_units(variable_names[i], predictions[:, :, i])
+        tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])
+
+        mean_pred_i = np.mean(pred_i, axis=0)
+        rmse_data_i = np.abs((mean_pred_i - tgt_i)).flatten()
+        rmse_list.append(rmse_data_i)
+
+        spread_i = np.std(pred_i, axis=0).flatten()
+        spread_list.append(spread_i)
+
+    base_width_per_panel = 6.0
+    base_height_per_panel = 4.0
+
+    fig_width = base_width_per_panel * n_vars
+    fig_height = base_height_per_panel
+
+    fig, axes = plt.subplots(
+        1,
+        n_vars,
+        figsize=(fig_width, fig_height),
+        gridspec_kw={"wspace": 0.2},
+    )
+    fig.subplots_adjust(top=0.85, bottom=0.25, left=0.08, right=0.95)
+
+    if n_vars == 1:
+        axes = [axes]
+
+    # For color scaling: collect all hexbin counts
+    all_counts = []
+    for i, var_name in enumerate(variable_names):
+        # Use a temporary invisible axes to get density arrays
+        fig_tmp, ax_tmp = plt.subplots()
+        rmse_data_i = rmse_list[i]
+        spread_data_i = spread_list[i]
+
+        hb1 = ax_tmp.hexbin(
+            rmse_data_i, spread_data_i, gridsize=100, cmap="jet", bins="log", mincnt=1
+        )
+        hb2 = ax_tmp.hexbin(
+            rmse_data_i, spread_data_i, gridsize=100, cmap="jet", bins="log", mincnt=1
+        )
+
+        all_counts.append(hb1.get_array())
+        all_counts.append(hb2.get_array())
+
+        plt.close(fig_tmp)
+
+    # Global colorbar limits
+    all_counts = np.concatenate(all_counts)
+    global_vmin = np.min(all_counts)
+    global_vmax = np.max(all_counts)
+
+    for col_idx in range(n_vars):
+        ax = axes[col_idx]
+        # MAE averaged over all time steps
+        rmse_data_i = rmse_list[col_idx]
+        spread_i = spread_list[col_idx]
+        # Calculate per-variable min/max for this variable
+        var_min = min(rmse_data_i.min(), spread_i.min())
+        var_max = max(rmse_data_i.max(), spread_i.max())
+        # Add a small margin
+        margin = 0.05 * (var_max - var_min)
+        plot_min = var_min - margin
+        plot_max = var_max + margin
+
+        hb = ax.hexbin(
+            x=rmse_data_i,
+            y=spread_i,
+            gridsize=100,
+            cmap="jet",
+            bins="log",
+            mincnt=1,
+            vmin=global_vmin,
+            vmax=global_vmax,
+        )
+        last_hb = hb  # store for colorbar
+        # Use per-variable axis limits
+        ax.set_xlim(plot_min, plot_max)
+        ax.set_ylim(plot_min, plot_max)
+        # identity line
+        ax.plot([plot_min, plot_max], [plot_min, plot_max], "r--", alpha=0.7)
+        ax.set_title(f"{plot_variable_names[col_idx]} – spread vs skill")
+        ax.set_xlabel("RMSE")
+        ax.set_ylabel("Ensemble standard deviation")
+
+    cbar_ax = fig.add_axes([0.98, 0.1, 0.02, 0.8])
+    fig.colorbar(last_hb, cax=cbar_ax, label=r"$\log_{10}[\mathrm{Count}]$")
+
+    # Save
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
+
+
 def plot_validation_pdfs(
     predictions,  # Model predictions (fine predicted)
     targets,  # Ground truth (fine true)
@@ -4966,6 +5133,58 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All spread skill ratio map plot tests passed")
+
+    def test_plot_spread_skill_ratio_hexbin_comprehensive(self):
+        """Comprehensive test for spread skill ratio hexbin plots"""
+        if self.logger:
+            self.logger.info("Testing SSR hexbin plots comprehensively")
+
+        # Matching spatial resolution
+        predictions = self.predictions[:, :, :48, :68]
+        # Transform predictions into ensemble by adding noise:
+        T, C, h, w = predictions.shape
+        noise = np.random.normal(size=(10, T, C, h, w))
+        predictions_ensemble = predictions + noise
+        targets = self.targets[:, :, :48, :68]
+
+        # Test 1: Standard numpy inputs
+        expected_path = plot_spread_skill_ratio_hexbin(
+            predictions=predictions_ensemble,
+            targets=targets,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_ssr_hexbin_standard.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: PyTorch tensors
+        expected_path = plot_spread_skill_ratio_hexbin(
+            predictions=torch.from_numpy(predictions_ensemble),
+            targets=torch.from_numpy(targets),
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_ssr_hexbin_torch.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 3: Single variable
+        expected_path = plot_spread_skill_ratio_hexbin(
+            predictions=predictions_ensemble[:, :, 0:1],
+            targets=targets[:, 0:1],
+            variable_names=[self.variable_names[0]],
+            save_dir=self.output_dir,
+            filename="validation_ssr_hexbin_single_var.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ All spread skill ratio hexbin plot tests passed")
 
     def test_plot_mean_divergence_map_comprehensive(self):
         """Comprehensive test for mean divergence map plots."""

@@ -2011,18 +2011,16 @@ def plot_spread_skill_ratio_map(
     if n_vars == 1:
         axes = [axes]
 
-    if timestamp is None:
-        fig.suptitle(
-            "Spread skill ratio map (time-averaged)",
-            fontsize=16,
-            y=1.05,
-        )
-    if timestamp is not None:
-        fig.suptitle(
-            f"Spread skill ratio map {timestamp.strftime('%Y-%m-%d %H:%M')}",
-            fontsize=16,
-            y=1.05,
-        )
+    # if timestamp is None:
+    #    fig.suptitle(
+    #        "Spread skill ratio map (time-averaged)",
+    #        y=1.05,
+    #    )
+    # if timestamp is not None:
+    #    fig.suptitle(
+    #        f"Spread skill ratio map {timestamp.strftime('%Y-%m-%d %H:%M')}",
+    #        y=1.05,
+    #    )
 
     for col_idx in range(n_vars):
         ax = axes[col_idx]
@@ -2075,15 +2073,21 @@ def plot_spread_skill_ratio_map(
         ax.set_xticks([])
         ax.set_yticks([])
 
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        # props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
         # place a text box in upper left in axes coords
-        ax.text(
-            0.05,
-            1.15,
-            f"SSR = {np.mean(ssr_data_i):.2f}",
-            transform=ax.transAxes,
-            verticalalignment="top",
-            bbox=props,
+        # ax.text(
+        #    0.05,
+        #    1.15,
+        #    f"SSR = {np.mean(ssr_data_i):.2f}",
+        #    transform=ax.transAxes,
+        #    verticalalignment="top",
+        #    bbox=props,
+        # )
+
+        mean_ssr = np.mean(ssr_data_i)
+        ax.set_title(
+            f"{plot_variable_names[col_idx]} (SSR={mean_ssr:.2f})",
+            pad=10,
         )
 
         cax = ax.inset_axes([0.1, -0.15, 0.8, 0.05])
@@ -3775,8 +3779,8 @@ def plot_ranks(
         )
         ax.hist(ranks_predicted, bins=np.arange(ensemble_size + 2), density=True)
         ax.plot(
-            [0, ensemble_size + 2],
-            [1 / (ensemble_size + 2), 1 / (ensemble_size + 2)],
+            [0, ensemble_size + 1],
+            [1 / (ensemble_size + 1), 1 / (ensemble_size + 1)],
             linestyle="--",
             color="red",
         )

@@ -3678,7 +3678,7 @@ def plot_validation_mvcorr(
             pred_corr,
             vmin=-1.0,
             vmax=1.0,
-            cmap="RdBu_r",
+            cmap="RdBu",
             transform=ccrs.PlateCarree(),
             shading="auto",
         )
@@ -3701,7 +3701,7 @@ def plot_validation_mvcorr(
                 coarse_corr,
                 vmin=-1.0,
                 vmax=1.0,
-                cmap="RdBu_r",
+                cmap="RdBu",
                 transform=ccrs.PlateCarree(),
                 shading="auto",
             )

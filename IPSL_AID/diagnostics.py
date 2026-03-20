@@ -1873,6 +1873,7 @@ def plot_spread_skill_ratio_map(
     targets,  # Ground truth (fine true)
     lat_1d,
     lon_1d,
+    alternative_formula=False,
     timestamp=None,
     variable_names=None,
     filename="validation_spread_skill_ratio_map.png",
@@ -1961,6 +1962,7 @@ def plot_spread_skill_ratio_map(
 
     vmin_list, vmax_list = [], []
     ssr_list = []
+    ssr_mean_list = []
     # MAE averaged over time for color scaling
     for i in range(n_vars):
         # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
@@ -1969,15 +1971,32 @@ def plot_spread_skill_ratio_map(
         )  # [E,T,h,w]
         tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])  # [T,h,w]
 
-        mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
-        rmse_data_i = np.abs((mean_pred_i - tgt_i))  # [T,h,w]
-
-        spread_i = np.std(pred_i, axis=0)  # ensemble std [T,h,w]
-        ssr_i = np.divide(
-            spread_i, rmse_data_i
-        )  # SSR for each pixel and each timestep [T,h,w]
-        ssr_i = np.mean(ssr_i, axis=0)  # temporal mean [h,w]
+        if alternative_formula:
+            # apply the formula (15) found in "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
+            mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
+            rmse_data_i = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2, axis=0))  # [h,w]
+            spread_i = (
+                np.sqrt(np.mean(np.var(pred_i, axis=0), axis=0)) * np.sqrt(E + 1 / E)
+            )  # [h,w] # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
+            ssr_i = np.divide(spread_i, rmse_data_i)  # [h,w]
+            # do the same but for average over every pixel and every timestep
+            mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
+            rmse_data_i_mean = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2))  # float
+            spread_i_mean = (
+                np.sqrt(np.mean(np.var(pred_i, axis=0))) * np.sqrt(E + 1 / E)
+            )  # float # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
+            ssr_i_mean = np.divide(spread_i_mean, rmse_data_i_mean)  # [h,w]
+        else:
+            mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
+            rmse_data_i = np.abs((mean_pred_i - tgt_i))  # [T,h,w]
+            spread_i = np.std(pred_i, axis=0)  # ensemble std [T,h,w]
+            ssr_i = np.divide(
+                spread_i, rmse_data_i
+            )  # SSR for each pixel and each timestep [T,h,w]
+            ssr_i = np.mean(ssr_i, axis=0)  # temporal mean [h,w]
+            ssr_i_mean = np.mean(ssr_i)  # pixel mean : float
         ssr_list.append(ssr_i)
+        ssr_mean_list.append(ssr_i_mean)
         ssr_i_flat = (ssr_i).flatten()  # flatten [h*w]
 
         fixed_range = PlotConfig.get_fixed_ssr_range(variable_names[i])
@@ -2032,6 +2051,7 @@ def plot_spread_skill_ratio_map(
 
         # MAE averaged over all time steps
         ssr_data_i = ssr_list[col_idx]
+        ssr_data_i_mean = ssr_mean_list[col_idx]
         vmin = vmin_list[col_idx]
         vmax = vmax_list[col_idx]
         if vmin <= 1 <= vmax:
@@ -2100,9 +2120,8 @@ def plot_spread_skill_ratio_map(
         #    bbox=props,
         # )
 
-        mean_ssr = np.mean(ssr_data_i)
         ax.set_title(
-            f"{plot_variable_names[col_idx]} (SSR={mean_ssr:.2f})",
+            f"{plot_variable_names[col_idx]} (SSR={ssr_data_i_mean:.2f})",
             pad=10,
         )
 
@@ -2127,6 +2146,7 @@ def plot_spread_skill_ratio_hexbin(
     predictions,  # Model predictions (fine predicted)
     targets,  # Ground truth (fine true)
     variable_names=None,
+    alternative_formula=False,
     filename="validation_spread_skill_ratio_hexbin.png",
     save_dir=None,
     figsize_multiplier=None,  # Base size per subplot
@@ -2191,6 +2211,7 @@ def plot_spread_skill_ratio_hexbin(
     plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
     rmse_list = []
     spread_list = []
+    mean_ssr_list = []
     # MAE averaged over time for color scaling
     for i in range(n_vars):
         # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
@@ -2203,6 +2224,20 @@ def plot_spread_skill_ratio_hexbin(
 
         spread_i = np.std(pred_i, axis=0).flatten()
         spread_list.append(spread_i)
+
+        # compute mean ssr :
+        if alternative_formula:
+            # apply the formula (15) found in "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
+            # for average over every pixel and every timestep
+            mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
+            rmse_data_i_mean = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2))  # float
+            spread_i_mean = (
+                np.sqrt(np.mean(np.var(pred_i, axis=0))) * np.sqrt(E + 1 / E)
+            )  # float # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
+            ssr_i_mean = np.divide(spread_i_mean, rmse_data_i_mean)  # [h,w]
+        else:
+            ssr_i_mean = np.mean(np.divide(spread_i, rmse_data_i))
+        mean_ssr_list.append(ssr_i_mean)
 
     base_width_per_panel = 6.0
     base_height_per_panel = 4.0
@@ -5118,8 +5153,21 @@ class TestPlottingFunctions(unittest.TestCase):
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
-
-        # Test 2: PyTorch tensors
+        # Test 2: Standard numpy inputs + alternative_formula
+        expected_path = plot_spread_skill_ratio_map(
+            predictions=predictions_ensemble,
+            targets=targets,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            alternative_formula=True,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_ssr_map_standard_alternative.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+        # Test 3: PyTorch tensors
         expected_path = plot_spread_skill_ratio_map(
             predictions=torch.from_numpy(predictions_ensemble),
             targets=torch.from_numpy(targets),
@@ -5133,7 +5181,7 @@ class TestPlottingFunctions(unittest.TestCase):
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
 
-        # Test 3: Single variable
+        # Test 4: Single variable
         expected_path = plot_spread_skill_ratio_map(
             predictions=predictions_ensemble[:, :, 0:1],
             targets=targets[:, 0:1],
@@ -5174,8 +5222,19 @@ class TestPlottingFunctions(unittest.TestCase):
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
-
-        # Test 2: PyTorch tensors
+        # Test 2: Standard numpy inputs + alternative_formula
+        expected_path = plot_spread_skill_ratio_hexbin(
+            predictions=predictions_ensemble,
+            targets=targets,
+            variable_names=self.variable_names,
+            alternative_formula=True,
+            save_dir=self.output_dir,
+            filename="validation_ssr_hexbin_standard_alternative_formula.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+        # Test 3: PyTorch tensors
         expected_path = plot_spread_skill_ratio_hexbin(
             predictions=torch.from_numpy(predictions_ensemble),
             targets=torch.from_numpy(targets),
@@ -5187,7 +5246,7 @@ class TestPlottingFunctions(unittest.TestCase):
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
 
-        # Test 3: Single variable
+        # Test 4: Single variable
         expected_path = plot_spread_skill_ratio_hexbin(
             predictions=predictions_ensemble[:, :, 0:1],
             targets=targets[:, 0:1],

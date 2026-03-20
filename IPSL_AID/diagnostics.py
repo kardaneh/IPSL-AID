@@ -2239,9 +2239,6 @@ def plot_spread_skill_ratio_hexbin(
             ssr_i_mean = np.mean(np.divide(spread_i, rmse_data_i))
         mean_ssr_list.append(ssr_i_mean)
 
-    # =========================
-    # VISUAL STYLE (2nd CODE)
-    # =========================
     ncols = n_vars
     nrows = (n_vars + ncols - 1) // ncols
 
@@ -2276,7 +2273,6 @@ def plot_spread_skill_ratio_hexbin(
         )
         last_hb = hb
 
-        # --- SSR display (from original computation) ---
         textstr = f"SSR: {mean_ssr_list[i]:.3f}"
         ax.text(
             0.05,
@@ -2315,7 +2311,6 @@ def plot_spread_skill_ratio_hexbin(
         else:
             ax.set_xlabel("")
 
-    # Colorbar style (like 2nd code)
     ax_last = axes[min(n_vars - 1, len(axes) - 1)]
     cax = ax_last.inset_axes([1.05, 0.0, 0.04, 1.0])
     cbar = fig.colorbar(last_hb, cax=cax)
@@ -3472,11 +3467,13 @@ def plot_validation_mvcorr_space(
 
         time_index = range(batch_size)
 
-        ax.plot(time_index, target_corr, label="Truth", **style_truth)
-        ax.plot(time_index, pred_corr, label="Prediction", **style_pred)
+        ax.plot(time_index, target_corr, label="Truth", linewidth=1.0, **style_truth)
+        ax.plot(time_index, pred_corr, label="Prediction", linewidth=1.0, **style_pred)
 
         if coarse_inputs is not None:
-            ax.plot(time_index, coarse_corr, label="Coarse", **style_coarse)
+            ax.plot(
+                time_index, coarse_corr, label="Coarse", linewidth=1.0, **style_coarse
+            )
 
         ax.grid(True, alpha=0.3)
         ax.set_ylabel(var_name_combo)
@@ -3657,7 +3654,7 @@ def plot_validation_mvcorr(
             target_corr,
             vmin=-1.0,
             vmax=1.0,
-            cmap="RdBu_r",
+            cmap="RdBu",
             transform=ccrs.PlateCarree(),
             shading="auto",
         )

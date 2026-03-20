@@ -2239,83 +2239,91 @@ def plot_spread_skill_ratio_hexbin(
             ssr_i_mean = np.mean(np.divide(spread_i, rmse_data_i))
         mean_ssr_list.append(ssr_i_mean)
 
-    base_width_per_panel = 6.0
-    base_height_per_panel = 4.0
-
-    fig_width = base_width_per_panel * n_vars
-    fig_height = base_height_per_panel
+    # =========================
+    # VISUAL STYLE (2nd CODE)
+    # =========================
+    ncols = n_vars
+    nrows = (n_vars + ncols - 1) // ncols
 
     fig, axes = plt.subplots(
-        1,
-        n_vars,
-        figsize=(fig_width, fig_height),
-        gridspec_kw={"wspace": 0.2},
+        nrows,
+        ncols,
+        figsize=(ncols * figsize_multiplier, figsize_multiplier),
     )
-    fig.subplots_adjust(top=0.85, bottom=0.25, left=0.08, right=0.95)
 
-    if n_vars == 1:
-        axes = [axes]
+    axes = np.atleast_1d(axes).ravel()
 
-    # For color scaling: collect all hexbin counts
-    all_counts = []
-    for i, var_name in enumerate(variable_names):
-        # Use a temporary invisible axes to get density arrays
-        fig_tmp, ax_tmp = plt.subplots()
-        rmse_data_i = rmse_list[i]
-        spread_data_i = spread_list[i]
+    for ax in axes:
+        ax.set_box_aspect(1)
 
-        hb1 = ax_tmp.hexbin(
-            rmse_data_i, spread_data_i, gridsize=100, cmap="jet", bins="log", mincnt=1
-        )
-        hb2 = ax_tmp.hexbin(
-            rmse_data_i, spread_data_i, gridsize=100, cmap="jet", bins="log", mincnt=1
-        )
+    last_hb = None
 
-        all_counts.append(hb1.get_array())
-        all_counts.append(hb2.get_array())
+    for i, ax in enumerate(axes):
+        if i >= n_vars:
+            ax.set_visible(False)
+            continue
 
-        plt.close(fig_tmp)
-
-    # Global colorbar limits
-    all_counts = np.concatenate(all_counts)
-    global_vmin = np.min(all_counts)
-    global_vmax = np.max(all_counts)
-
-    for col_idx in range(n_vars):
-        ax = axes[col_idx]
-        # MAE averaged over all time steps
-        rmse_data_i = rmse_list[col_idx]
-        spread_i = spread_list[col_idx]
-        # Calculate per-variable min/max for this variable
-        var_min = min(rmse_data_i.min(), spread_i.min())
-        var_max = max(rmse_data_i.max(), spread_i.max())
-        # Add a small margin
-        margin = 0.05 * (var_max - var_min)
-        plot_min = var_min - margin
-        plot_max = var_max + margin
+        rmse = rmse_list[i]
+        spread = spread_list[i]
 
         hb = ax.hexbin(
-            x=rmse_data_i,
-            y=spread_i,
+            rmse,
+            spread,
             gridsize=100,
             cmap="jet",
             bins="log",
             mincnt=1,
-            vmin=global_vmin,
-            vmax=global_vmax,
         )
-        last_hb = hb  # store for colorbar
-        # Use per-variable axis limits
+        last_hb = hb
+
+        # --- SSR display (from original computation) ---
+        textstr = f"SSR: {mean_ssr_list[i]:.3f}"
+        ax.text(
+            0.05,
+            0.95,
+            textstr,
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment="top",
+        )
+
+        var_min = min(rmse.min(), spread.min())
+        var_max = max(rmse.max(), spread.max())
+
+        margin = 0.05 * (var_max - var_min)
+        plot_min = var_min - margin
+        plot_max = var_max + margin
+
+        # Identity line
+        ax.plot([plot_min, plot_max], [plot_min, plot_max], "r--", alpha=0.7)
+
         ax.set_xlim(plot_min, plot_max)
         ax.set_ylim(plot_min, plot_max)
-        # identity line
-        ax.plot([plot_min, plot_max], [plot_min, plot_max], "r--", alpha=0.7)
-        ax.set_title(f"{plot_variable_names[col_idx]} – spread vs skill")
-        ax.set_xlabel("RMSE")
-        ax.set_ylabel("Ensemble standard deviation")
 
-    cbar_ax = fig.add_axes([0.98, 0.1, 0.02, 0.8])
-    fig.colorbar(last_hb, cax=cbar_ax, label=r"$\log_{10}[\mathrm{Count}]$")
+        ax.set_title(plot_variable_names[i])
+
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(5))
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(5))
+
+        if i % ncols == 0:
+            ax.set_ylabel("Ensemble std")
+        else:
+            ax.set_ylabel("")
+
+        if i >= (nrows - 1) * ncols:
+            ax.set_xlabel("RMSE")
+        else:
+            ax.set_xlabel("")
+
+    # Colorbar style (like 2nd code)
+    ax_last = axes[min(n_vars - 1, len(axes) - 1)]
+    cax = ax_last.inset_axes([1.05, 0.0, 0.04, 1.0])
+    cbar = fig.colorbar(last_hb, cax=cax)
+    cbar.set_label(r"$\log_{10}[\mathrm{Count}]$")
+
+    plt.subplots_adjust(
+        hspace=0.1, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
+    )
 
     # Save
     os.makedirs(save_dir, exist_ok=True)

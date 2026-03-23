@@ -6403,4 +6403,77 @@ class TestPlottingFunctions(unittest.TestCase):
             )
 
 
+class TestSSRFunction(unittest.TestCase):
+    """Unit tests for crps_ensemble_all function."""
+
+    def __init__(self, methodName="runTest", logger=None):
+        super().__init__(methodName)
+        self.logger = logger
+
+    def setUp(self):
+        """Set up test fixtures."""
+        if self.logger:
+            self.logger.info("Setting up spread_skill_ratio function test fixtures")
+
+    def test_ssr_basic(self):
+        """Test SSR with simple known values."""
+        if self.logger:
+            self.logger.info("Testing SSR basic functionality")
+        np.random.seed(0)  # set random seed for reproducibility.
+        true = np.zeros((100, 1, 10, 10))  # shape [T,C,h,w]
+        pred_ens = np.random.normal(
+            loc=0, scale=0.1, size=(10, 100, 1, 10, 10)
+        )  # N_ens = 10
+        ssr = spread_skill_ratio(
+            predictions=pred_ens, targets=true, variable_names=None, pixel_wise=False
+        )[0]  # get element of single element array.
+        # expected SSR should be ~3.15 :
+        # let $X_{i,r}$ be the prediction for ensemble member r.
+        # as targets = mean of predictions, RMSE should be very close to variance of predictions (= 0.01)
+        # deriving the expected value of the spread is more complicated :
+        # $ spread = \frac{11}{10} \sqrt{ \frac{1}{N} \sum_{i,r} (X_{i,r} - \bar X_i)^2 } $
+        # We can inject the definition of $\bar X_i = \frac{1}{R} \sum_{r'} X_{i,r'} $
+        # and develop the squared term :
+        # $ X_{i,r} \frac{R-1}{R} - \frac{1}{R} \sum_{r' != r} X_{i,r'} $
+        # we can replace the mean by the expectance operator, and develop the squared term :
+        # $ R \times \mathbb{E} [ ( X_{i,r} \frac{R-1}{R} - \frac{1}{R} \sum_{r' != r} X_{i,r'} )^2 ]  $
+        # Since all X_{i,r'} are iid, we can develop the square inside the expected value, the covariance terms will be 0
+        # and we are left with :
+        # $ R \times [ \mathbb{V}(X_{i,r}) (\frac{R-1}{R})^2 + \frac{R-1}{R^2} \mathbb{V}(X_{i,r'}) ] $
+        # plugging in R = 10, we get :
+        # $ 10 * 0.9 * \mathbb{X}$
+        # this term is under a square root and multiplied by the corrective factor to give the spread :
+        # spread = \sqrt{1.1} \times \sqrt{\mathbb{V}(X)} \times 3
+        # So, SSR = spread / RMSE = \sqrt{1.1} * 3 ~ 3.15
+
+        # SSR must be finite and non-negative
+        self.assertGreaterEqual(ssr, 0.0)
+        self.assertAlmostEqual(ssr, 3.15, places=1)
+        if self.logger:
+            self.logger.info(f"SSR computed : {ssr:.2f} vs SSR expected : ~ 3.15")
+            self.logger.info("✅ SSR basic test passed")
+
+    def test_ssr_one_when_perfect_prediction(self):
+        """Test SSR is supposed to be 1 when the predictions follow the same distribution as the truth."""
+        if self.logger:
+            self.logger.info("Testing SSR perfect prediction")
+
+        np.random.seed(0)  # set random seed for reproducibility.
+        true = np.random.normal(
+            loc=0, scale=0.1, size=(100, 1, 10, 10)
+        )  # shape [T,C,h,w]
+        pred_ens = np.random.normal(
+            loc=0, scale=0.1, size=(10, 100, 1, 10, 10)
+        )  # N_ens = 10
+        ssr = spread_skill_ratio(
+            predictions=pred_ens, targets=true, variable_names=None, pixel_wise=False
+        )[0]  # get element of single element array.
+
+        self.assertAlmostEqual(ssr, 1.0, places=1)
+
+        if self.logger:
+            self.logger.info(f"SSR computed : {ssr:.2f} vs SSR expected : ~ 1.0")
+            self.logger.info("✅ SSR perfect prediction test passed")
+
+
 # ----------------------------------------------------------------------------

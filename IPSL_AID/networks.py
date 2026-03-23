@@ -1,17 +1,57 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# ============================================================================
+# ORIGINAL WORK (NVIDIA)
+# ============================================================================
+# This work is a derivative of "Elucidating the Design Space of
+# Diffusion-Based Generative Models" by NVIDIA CORPORATION & AFFILIATES.
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Original work: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES.
+# Original license: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+# Original source: https://github.com/NVlabs/edm
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# ============================================================================
+# MODIFICATIONS AND ADDITIONS (IPSL / CNRS / Sorbonne University)
+# ============================================================================
+# Modifications include:
+#   1. Added rectangular resolution support for non-square images
+#      - Modified SongUNet and DhariwalUNet to handle (height, width) tuples
+#      - Updated resolution calculations throughout the network
+#      - Fixed attention resolution checks for rectangular inputs
+#
+#   2. Added conditional image support to all preconditioners
+#      - Extended VPPrecond, VEPrecond, iDDPMPrecond, and EDMPrecond
+#      - Added condition_img parameter for image-based conditioning
+#      - Implemented channel-wise concatenation for conditional inputs
+#
+#   3. Enhanced documentation and type hints
+#      - Added comprehensive docstrings for all classes and methods
+#      - Improved parameter descriptions and usage examples
+#
+#   4. Added comprehensive unit tests
+#      - Created TestDiffusionNetworks class
+#      - Added tests for square and rectangular resolutions
+#      - Added tests for all preconditioners with conditional images
+#      - Added parameter count validation tests
+#
+#   5. Code quality improvements
+#      - Replaced generic assertions with specific error messages
+#      - Added input validation for resolution parameters
+#      - Improved variable naming for clarity
+#
+# ============================================================================
+# LICENSE
+# ============================================================================
+# This derivative work is licensed under the same terms as the original:
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+# To view a copy of this license, visit
+# http://creativecommons.org/licenses/by-nc-sa/4.0/
+# ============================================================================
+# ACKNOWLEDGMENTS
+# ============================================================================
+# We thank the NVIDIA team for their excellent work on EDM and for making it
+# available under an open license that enables further research and development.
 
 import numpy as np
 import torch

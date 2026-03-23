@@ -1,17 +1,60 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# ============================================================================
+# ORIGINAL WORK (NVIDIA)
+# ============================================================================
+# This work is a derivative of "Elucidating the Design Space of
+# Diffusion-Based Generative Models" by NVIDIA CORPORATION & AFFILIATES.
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Original work: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES.
+# Original license: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+# Original source: https://github.com/NVlabs/edm
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# ============================================================================
+# MODIFICATIONS AND ADDITIONS (IPSL / CNRS / Sorbonne University)
+# ============================================================================
+# Modifications to loss functions include:
+#   1. Added conditional image support to all loss functions
+#      - Extended VPLoss, VELoss, EDMLoss with conditional_img parameter
+#      - Modified __call__ method to pass conditional images to the network
+#      - Updated documentation to reflect conditional image usage
+#
+#   2. Added UnetLoss class for non-diffusion UNet training
+#      - Created new loss class for direct image-to-image prediction tasks
+#      - Supports MSE, L1, and Smooth L1 loss types
+#      - Compatible with UNet architectures (DhariwalUNet, SongUNet)
+#      - Includes support for data augmentation and conditioning
+#
+#   3. Enhanced documentation
+#      - Added comprehensive docstrings for all classes and methods
+#      - Included mathematical formulas and training procedures
+#      - Added usage examples and parameter descriptions
+#
+#   4. Added comprehensive unit tests
+#      - Created TestLosses class with test methods for all loss functions
+#      - Added tests for loss gradients and numerical stability
+#      - Added tests with data augmentation
+#      - Added loss comparison tests
+#      - Added rectangular resolution support tests
+#
+#   5. Code quality improvements
+#      - Added type hints for better code clarity
+#      - Improved variable naming
+#      - Added input validation where appropriate
+#
+# ============================================================================
+# LICENSE
+# ============================================================================
+# This derivative work is licensed under the same terms as the original:
+# Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+# To view a copy of this license, visit
+# http://creativecommons.org/licenses/by-nc-sa/4.0/
+# ============================================================================
+# ACKNOWLEDGMENTS
+# ============================================================================
+# We thank the NVIDIA team for their excellent work on EDM and for making it
+# available under an open license that enables further research and development.
 
 """
 Diffusion model loss functions and testing utilities.

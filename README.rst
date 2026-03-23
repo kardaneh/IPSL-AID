@@ -22,9 +22,9 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :target: LICENSE
    :alt: License
 
-.. |Documentation Status| image:: https://readthedocs.org/projects/ipsl-aid/badge/?version=latest
-   :target: https://ipsl-aid.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+.. |Documentation Status| image:: https://img.shields.io/badge/docs-GitHub%20Pages-blue
+   :target: https://kardaneh.github.io/IPSL-AID/
+   :alt: Documentation
 
 
 Authors

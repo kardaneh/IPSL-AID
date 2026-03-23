@@ -115,6 +115,7 @@ class PlotConfig:
         "wind": "coolwarm",
         "speed": "coolwarm",
         "mae": "Reds",
+        "error": "Reds",
         "divergence": "seismic",
         "curl": "seismic",
         "ssr": "seismic",
@@ -139,6 +140,19 @@ class PlotConfig:
         "VAR_TP": (-0.5, 0.5),
         "VAR_D2M": (-5.0, 5.0),  # K
         "VAR_ST": (-5.0, 5.0),  # K
+    }
+
+    FIXED_DIFF_RANGES_ERRORS = {
+        "VAR_2T": (0, 0.01),  # K
+        "VAR_10U": (0, 3.0),  # m/s
+        "VAR_10V": (0, 3.0),  # m/s
+        "VAR_TP": (0, 0.5),  # mm/h
+        "VAR_D2M": (0, 1.0),  # K
+        "VAR_ST": (0, 1.0),  # K
+        "Temp": (0, 3.0),
+        "Press": (0, 3.0),
+        "Humid": (0, 3.0),
+        "Wind": (0, 3.0),
     }
 
     FIXED_MAE_RANGES = {
@@ -250,13 +264,18 @@ class PlotConfig:
         return PlotConfig.FIXED_DIFF_RANGES.get(var_name, None)
 
     @staticmethod
+    def get_fixed_diff_range_errors(var_name):
+        """Get fixed visualization range for error map."""
+        return PlotConfig.FIXED_DIFF_RANGES_ERRORS.get(var_name, None)
+
+    @staticmethod
     def get_fixed_mae_range(var_name):
         """Get fixed visualization range for Mean Absolute Error (MAE)."""
         return PlotConfig.FIXED_MAE_RANGES.get(var_name, None)
 
     @staticmethod
     def get_fixed_ssr_range(var_name):
-        """Get fixed visualization range for Mean Absolute Error (MAE)."""
+        """Get fixed visualization range for Spread Skill Ratio (SSR)."""
         return PlotConfig.FIXED_SSR_RANGES.get(var_name, None)
 
 
@@ -1423,6 +1442,248 @@ def plot_surface(
     return save_path
 
 
+def plot_ensemble_surface(
+    predictions_ens,
+    lat_1d,
+    lon_1d,
+    variable_names,
+    timestamp=None,
+    filename="ensemble_surface.png",
+    save_dir="./results",
+):
+    """
+    Plot ensemble members, ensemble mean, and ensemble spread.
+
+    Parameters
+    ----------
+    predictions_ens : torch.Tensor or np.ndarray
+        Ensemble predictions of shape [n_ensemble_members, n_vars, H, W]
+    lat_1d : array-like
+        1D array of latitude coordinates with shape [H].
+    lon_1d : array-like
+        1D array of longitude coordinates with shape [W].
+    variable_names : list of str, optional
+        Variable names or identifiers.
+    timestamp : datetime.datetime
+        Forecast timestamp to include in the plot title.
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots.
+
+    Returns
+    -------
+    None
+    """
+
+    if torch.is_tensor(predictions_ens):
+        predictions_ens = predictions_ens.detach().cpu().numpy()
+
+    N_ens, C, H, W = predictions_ens.shape
+
+    if N_ens < 3:
+        raise ValueError("Need at least 3 ensemble members")
+
+    # Ensemble statistics
+    ensemble_mean = np.mean(predictions_ens, axis=0)
+    ensemble_std = np.std(predictions_ens, axis=0)
+
+    lat_1d = np.asarray(lat_1d)
+    lon_1d = np.asarray(lon_1d)
+
+    lat_min, lat_max = lat_1d.min(), lat_1d.max()
+    lon_min, lon_max = lon_1d.min(), lon_1d.max()
+
+    lat_block = np.linspace(lat_max, lat_min, H)
+    lon_block = np.linspace(lon_min, lon_max, W)
+
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
+
+    plot_variable_names = [PlotConfig.get_plot_name(v) for v in variable_names]
+    cmaps = [PlotConfig.get_colormap(v) for v in variable_names]
+
+    # Compute vmin/vmax
+    vmin_list = []
+    vmax_list = []
+
+    for i in range(C):
+        var = variable_names[i]
+
+        ens_members = [
+            PlotConfig.convert_units(var, predictions_ens[k, i]) for k in range(N_ens)
+        ]
+
+        mean_i = PlotConfig.convert_units(var, ensemble_mean[i])
+
+        all_data = np.concatenate(
+            [x.flatten() for x in ens_members] + [mean_i.flatten()]
+        )
+
+        all_data = all_data[~np.isnan(all_data)]
+
+        if len(all_data) > 0:
+            q_low, q_high = np.quantile(all_data, [0.02, 0.98])
+            vmin, vmax = float(q_low), float(q_high)
+        else:
+            vmin, vmax = -1, 1
+
+        if vmin >= vmax:
+            vmin = float(np.nanmin(all_data))
+            vmax = float(np.nanmax(all_data))
+
+        vmin_list.append(vmin)
+        vmax_list.append(vmax)
+
+    n_rows = 5
+    n_cols = C
+
+    base_width_per_panel = 4.5
+    base_height_per_panel = 3.0
+
+    fig_width = base_width_per_panel * n_cols
+    fig_height = base_height_per_panel * n_rows
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(fig_width, fig_height),
+        subplot_kw={"projection": ccrs.PlateCarree(central_longitude=lon_center)},
+        gridspec_kw={"wspace": 0.1, "hspace": 0.15},
+        squeeze=False,
+    )
+
+    row_labels = [
+        "Prediction 1",
+        "Prediction 2",
+        "Prediction 3",
+        "Ensemble Mean",
+        "Ensemble std (σ)",
+    ]
+
+    for col in range(n_cols):
+        var = variable_names[col]
+
+        member1 = PlotConfig.convert_units(var, predictions_ens[0, col])
+        member2 = PlotConfig.convert_units(var, predictions_ens[1, col])
+        member3 = PlotConfig.convert_units(var, predictions_ens[2, col])
+        mean_field = PlotConfig.convert_units(var, ensemble_mean[col])
+        std_field = PlotConfig.convert_units(var, ensemble_std[col])
+
+        rows_data = [member1, member2, member3, mean_field, std_field]
+
+        im_main = None
+        im_spread = None
+
+        for row in range(n_rows):
+            ax = axes[row, col]
+
+            if row == 4:
+                cmap = "Reds"
+                vmin = 0
+                vmax = np.nanmax(std_field)
+                # vmax = np.quantile(std_field, 0.99)
+            else:
+                cmap = cmaps[col]
+                vmin = vmin_list[col]
+                vmax = vmax_list[col]
+
+            im = ax.pcolormesh(
+                lon,
+                lat,
+                rows_data[row],
+                vmin=vmin,
+                vmax=vmax,
+                cmap=cmap,
+                transform=ccrs.PlateCarree(),
+                shading="auto",
+            )
+
+            ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+
+            ax.coastlines(linewidth=0.6)
+
+            ax.add_feature(
+                cfeature.BORDERS.with_scale("50m"),
+                linewidth=0.9,
+                linestyle="--",
+                edgecolor="black",
+                zorder=11,
+            )
+
+            ax.add_feature(
+                cfeature.LAKES.with_scale("50m"),
+                edgecolor="black",
+                facecolor="none",
+                linewidth=0.9,
+                zorder=9,
+            )
+
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            if row == 4:
+                im_spread = im
+            else:
+                if im_main is None:
+                    im_main = im
+
+        ax_top = axes[0, col]
+
+        cax_top = ax_top.inset_axes([0.1, 1.05, 0.8, 0.05])
+
+        cbar = fig.colorbar(im_main, cax=cax_top, orientation="horizontal")
+
+        cbar.set_label(plot_variable_names[col])
+
+        cax_top.xaxis.set_ticks_position("top")
+        cax_top.xaxis.set_label_position("top")
+
+        ax_bottom = axes[4, col]
+
+        cax_bottom = ax_bottom.inset_axes([0.1, -0.12, 0.8, 0.05])
+
+        fig.colorbar(
+            im_spread,
+            cax=cax_bottom,
+            orientation="horizontal",
+            label=f"Std {plot_variable_names[col]}",
+        )
+
+    for r, label in enumerate(row_labels):
+        axes[r, 0].text(
+            -0.12,
+            0.5,
+            label,
+            transform=axes[r, 0].transAxes,
+            va="center",
+            ha="right",
+            rotation="vertical",
+            fontsize=12,
+        )
+
+    if timestamp is not None:
+        print(f"Ensemble predictions — {timestamp}")
+
+    fig.subplots_adjust(
+        top=0.90,
+        bottom=0.25,
+        left=0.10,
+        right=0.95,
+        wspace=0.1,
+        hspace=0.15,
+    )
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
+
+
 def plot_global_surface_robinson(
     predictions,
     targets,
@@ -1865,6 +2126,190 @@ def plot_MAE_map(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
+    return save_path
+
+
+def plot_error_map(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    lat_1d,
+    lon_1d,
+    timestamp=None,
+    variable_names=None,
+    filename="validation_error_map.png",
+    save_dir=None,
+    figsize_multiplier=None,
+):
+    """
+    Plot spatial ERROR maps averaged over all time steps.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [batch_size, num_variables, h, w]
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    lat_1d : array-like
+        1D array of latitude coordinates with shape [H].
+    lon_1d : array-like
+        1D array of longitude coordinates with shape [W].
+    timestamp : datetime.datetime
+        Forecast timestamp to include in the plot title.
+    variable_names : list of str, optional
+        Variable names or identifiers.
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots.
+
+    Returns
+    -------
+    None
+    """
+
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
+    # Convert tensors to numpy
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    if hasattr(lat_1d, "detach"):
+        lat_1d = lat_1d.detach().cpu().numpy()
+    if hasattr(lon_1d, "detach"):
+        lon_1d = lon_1d.detach().cpu().numpy()
+
+    lat_min, lat_max = lat_1d.min(), lat_1d.max()
+    lon_min, lon_max = lon_1d.min(), lon_1d.max()
+
+    T, n_vars, h, w = predictions.shape
+
+    lat_block = np.linspace(lat_max, lat_min, h)
+    lon_block = np.linspace(lon_min, lon_max, w)
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
+
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(n_vars)]
+
+    plot_variable_names = [PlotConfig.get_plot_name(v) for v in variable_names]
+    cmaps = PlotConfig.get_colormap("error")
+
+    vmin_list, vmax_list = [], []
+
+    eps = 1e-6
+
+    # Compute time-averaged error for scaling
+    for i in range(n_vars):
+        var = variable_names[i]
+
+        pred_i = PlotConfig.convert_units(var, predictions[:, i])
+        tgt_i = PlotConfig.convert_units(var, targets[:, i])
+
+        if var.lower() in ["var_tp", "precip", "precipitation"]:
+            err = np.mean(np.abs(pred_i - tgt_i), axis=0)
+        else:
+            err = np.mean(np.abs(pred_i - tgt_i) / (np.abs(tgt_i) + eps), axis=0)
+
+        err_flat = err.flatten()
+        err_flat = err_flat[~np.isnan(err_flat)]
+
+        fixed_range = PlotConfig.get_fixed_diff_range_errors(var)
+
+        if fixed_range is not None:
+            vmin, vmax = fixed_range
+        else:
+            if len(err_flat) > 0:
+                vmax = np.max(err_flat)
+                vmin = 0
+                vmax = 1.1 * vmax
+            else:
+                vmin, vmax = 0, 1
+
+        vmin_list.append(vmin)
+        vmax_list.append(vmax)
+
+    base_w, base_h = 4.5, 3.0
+    fig, axes = plt.subplots(
+        1,
+        n_vars,
+        figsize=(base_w * n_vars, base_h),
+        subplot_kw={"projection": ccrs.PlateCarree(central_longitude=lon_center)},
+        gridspec_kw={"wspace": 0.1},
+    )
+
+    if n_vars == 1:
+        axes = [axes]
+
+    for i in range(n_vars):
+        ax = axes[i]
+        var = variable_names[i]
+
+        pred_i = PlotConfig.convert_units(var, predictions[:, i])
+        tgt_i = PlotConfig.convert_units(var, targets[:, i])
+
+        if var.lower() in ["var_tp", "precip", "precipitation"]:
+            err_map = np.mean(np.abs(pred_i - tgt_i), axis=0)
+            label = "Absolute Error (mm/h)"
+        else:
+            err_map = np.mean(np.abs(pred_i - tgt_i) / (np.abs(tgt_i) + eps), axis=0)
+            label = "Relative Error"
+
+        im = ax.pcolormesh(
+            lon,
+            lat,
+            err_map,
+            vmin=vmin_list[i],
+            vmax=vmax_list[i],
+            cmap=cmaps,
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+
+        ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+        ax.coastlines(linewidth=0.6)
+
+        ax.add_feature(
+            cfeature.BORDERS.with_scale("50m"),
+            linewidth=0.6,
+            linestyle="--",
+            edgecolor="black",
+            zorder=11,
+        )
+
+        ax.add_feature(
+            cfeature.LAKES.with_scale("50m"),
+            edgecolor="black",
+            facecolor="none",
+            linewidth=0.6,
+            zorder=9,
+        )
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(plot_variable_names[i])
+
+        cax = ax.inset_axes([0.1, -0.15, 0.8, 0.05])
+        fig.colorbar(
+            im,
+            cax=cax,
+            orientation="horizontal",
+            label=f"{label}",
+        )
+
+    fig.subplots_adjust(top=0.85, bottom=0.25, left=0.08, right=0.95)
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+
     return save_path
 
 
@@ -2320,7 +2765,6 @@ def plot_spread_skill_ratio_hexbin(
         hspace=0.1, wspace=0.3, left=0.1, right=0.9, top=0.9, bottom=0.1
     )
 
-    # Save
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
@@ -5004,6 +5448,78 @@ class TestPlottingFunctions(unittest.TestCase):
         if self.logger:
             self.logger.info("✅ All surface plot tests passed")
 
+    def test_plot_ensemble_surface_comprehensive(self):
+        """Comprehensive test for ensemble surface plots."""
+        if self.logger:
+            self.logger.info("Testing ensemble surface plots comprehensively")
+
+        lat_1d = np.linspace(30, 50, 48)
+        lon_1d = np.linspace(-120, -80, 68)
+
+        # Ensemble configuration
+        N_ens = 5
+        n_vars = 3
+        H, W = 48, 68
+
+        x = np.linspace(0, 3 * np.pi, W)
+        y = np.linspace(0, 3 * np.pi, H)
+        X, Y = np.meshgrid(x, y)
+
+        # different types of spatial patterns
+        base_patterns = [
+            np.sin(X / 2) * np.cos(Y / 2),  # sinusoidal pattern
+            np.exp(-0.01 * (X - 24) ** 2 - 0.01 * (Y - 24) ** 2),  # Gaussian blob
+            X * Y / 200,  # linear gradient
+        ]
+
+        # ensemble array: [N_ens, n_vars, H, W]
+        predictions_ens = np.zeros((N_ens, n_vars, H, W))
+
+        # Generate ensemble members
+        for k in range(N_ens):
+            for i in range(n_vars):
+                # Select a base spatial pattern for each variable
+                base = base_patterns[i % len(base_patterns)]
+                # Scale to realistic physical values
+                signal = base * 20 + 280
+
+                # Add Gaussian noise to simulate ensemble spread
+                predictions_ens[k, i] = signal + np.random.randn(H, W) * (0.5 + k * 0.2)
+
+        variable_names = ["Temp", "Press", "Humid"]
+        timestamp = datetime(2024, 1, 1, 12, 0)
+
+        # Test 1: numpy
+        expected_path = plot_ensemble_surface(
+            predictions_ens=predictions_ens,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=variable_names,
+            timestamp=timestamp,
+            filename="plot_ensemble_surface_numpy.png",
+            save_dir=self.output_dir,
+        )
+
+        self.assertTrue(os.path.exists(expected_path))
+        self.assertGreater(os.path.getsize(expected_path), 0)
+
+        # Test 2: torch
+        expected_path = plot_ensemble_surface(
+            predictions_ens=torch.from_numpy(predictions_ens),
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=variable_names,
+            timestamp=timestamp,
+            filename="plot_ensemble_surface_torch.png",
+            save_dir=self.output_dir,
+        )
+
+        self.assertTrue(os.path.exists(expected_path))
+        self.assertGreater(os.path.getsize(expected_path), 0)
+
+        if self.logger:
+            self.logger.info("✅ All ensemble surface plot tests passed")
+
     def test_plot_global_surface_robinson_comprehensive(self):
         """Comprehensive test for global Robinson surface plots."""
         if self.logger:
@@ -5127,6 +5643,64 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All MAE map plot tests passed")
+
+    def test_plot_error_map_comprehensive(self):
+        """Comprehensive test for time-averaged ERROR spatial map plots."""
+        if self.logger:
+            self.logger.info("Testing ERROR map plots comprehensively")
+
+        # Regional lat/lon
+        lat_1d = np.linspace(30, 50, 48)
+        lon_1d = np.linspace(-120, -80, 68)
+
+        # Matching spatial resolution
+        predictions = self.predictions[:, :, :48, :68]
+        targets = self.targets[:, :, :48, :68]
+
+        # Test 1: Standard numpy inputs
+        expected_path = plot_error_map(
+            predictions=predictions,
+            targets=targets,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_error_map_standard.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: PyTorch tensors
+        expected_path = plot_error_map(
+            predictions=torch.from_numpy(predictions),
+            targets=torch.from_numpy(targets),
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_error_map_torch.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 3: Single variable
+        expected_path = plot_error_map(
+            predictions=predictions[:, 0:1],
+            targets=targets[:, 0:1],
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=[self.variable_names[0]],
+            save_dir=self.output_dir,
+            filename="validation_error_map_single_var.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ All ERROR map plot tests passed")
 
     def test_plot_spread_skill_ratio_map_comprehensive(self):
         """Comprehensive test for time-averaged MAE spatial map plots."""

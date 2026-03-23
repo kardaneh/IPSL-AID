@@ -14,9 +14,9 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :target: https://pypi.org/project/IPSL-AID/
    :alt: PyPI version
 
-.. |arXiv publication| image:: https://img.shields.io/badge/arXiv-2026-blue
-   :target: https://arxiv.org/abs/YYYY.NNNNN
-   :alt: arXiv publication
+.. |Python versions| image:: https://img.shields.io/pypi/pyversions/IPSL-AID.svg
+   :target: https://pypi.org/project/IPSL-AID/
+   :alt: Python versions
 
 .. |License| image:: https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg
    :target: LICENSE

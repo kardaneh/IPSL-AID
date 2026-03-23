@@ -46,13 +46,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: documentation
+          path: public
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GH_PAGES_TOKEN }}
-          publish_dir: ./documentation
+          publish_dir: public
           publish_branch: gh-pages
           force_orphan: true  # Clean history for private repo
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'

@@ -2306,6 +2306,85 @@ def plot_error_map(
     return save_path
 
 
+def spread_skill_ratio(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    variable_names,
+    pixel_wise=False,
+):
+    """
+    Compute spread skill ratio of predictions with respect to targets.
+    The formula implemented is equation (15) in "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [ensemble_size, batch_size, num_variables, h, w]
+        It is very important not to switch dimensions order.
+        ensemble_size must be greater or equal than 2 for spread skill ratio to be computed.
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Variable names or identifiers.
+    pixel_wise : bool
+        If True, computes and return the SSR for each pixel independantly.
+        If False, computes and return the SSR averaged over all pixels and all timesteps.
+        Defaults to False
+    Returns
+    -------
+    np.array of shape [num_variables, h, w] if pixel_wise == True
+    or of shape [num_variables,] if pixel_wise == False (default)
+    """
+    # Convert tensors to numpy
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+
+    if len(predictions.shape) != 5:
+        raise ValueError(
+            "predictions needs to be 5 dimensional tensor / array [ensemble_size, temporal_size, n_vars, h, w]."
+        )
+
+    if predictions.shape[0] == 1:
+        raise ValueError(
+            "predictions needs to contain more than 1 member to compute spread skill ratio."
+        )
+    E, T, n_vars, h, w = predictions.shape
+    if targets.shape[1] != n_vars:
+        raise ValueError("targets and predictions must have same number of variables")
+
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(n_vars)]
+
+    ssr_list = []
+    for i in range(n_vars):
+        # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
+        pred_i = PlotConfig.convert_units(
+            variable_names[i], predictions[:, :, i]
+        )  # [E,T,h,w]
+        tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])  # [T,h,w]
+
+        # apply the formula (15) found in "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
+        mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
+        if pixel_wise:
+            rmse_data_i = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2, axis=0))  # [h,w]
+            spread_i = (
+                np.sqrt(np.mean(np.var(pred_i, axis=0), axis=0)) * np.sqrt((E + 1) / E)
+            )  # [h,w] # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
+            ssr_i = np.divide(spread_i, rmse_data_i)  # [h,w]
+        else:
+            # do the same but for average over every pixel and every timestep
+            rmse_data_i_mean = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2))  # float
+            spread_i_mean = (
+                np.sqrt(np.mean(np.var(pred_i, axis=0))) * np.sqrt((E + 1) / E)
+            )  # float # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
+            ssr_i = np.divide(spread_i_mean, rmse_data_i_mean)  # float
+
+        ssr_list.append(ssr_i)
+    return np.array(ssr_list)
+
+
 def plot_spread_skill_ratio_map(
     predictions,  # Model predictions (fine predicted)
     targets,  # Ground truth (fine true)
@@ -2318,10 +2397,8 @@ def plot_spread_skill_ratio_map(
     figsize_multiplier=None,  # Base size per subplot
 ):
     """
-    Plot spatial spread skill ratio maps averaged over all time steps:
-    SSR(x, y) = spread(x,y) / skill(x,y)
-    where spread(x,y) = temporal mean of standard deviation of ensemble members predictions
-    and skill = temporal mean of RMSE of the mean of the ensemble members.
+    Plot spatial spread skill ratio maps averaged over all time steps for each individual pixel.
+    The formula implemented is equation (15) in article "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
 
     Parameters
     ----------
@@ -2398,32 +2475,13 @@ def plot_spread_skill_ratio_map(
     cmaps = PlotConfig.get_colormap("SSR")
 
     vmin_list, vmax_list = [], []
-    ssr_list = []
-    ssr_mean_list = []
+    ssr_list = spread_skill_ratio(predictions, targets, variable_names, pixel_wise=True)
+    ssr_mean_list = spread_skill_ratio(
+        predictions, targets, variable_names, pixel_wise=False
+    )
     # MAE averaged over time for color scaling
     for i in range(n_vars):
-        # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
-        pred_i = PlotConfig.convert_units(
-            variable_names[i], predictions[:, :, i]
-        )  # [E,T,h,w]
-        tgt_i = PlotConfig.convert_units(variable_names[i], targets[:, i])  # [T,h,w]
-
-        # apply the formula (15) found in "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
-        mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
-        rmse_data_i = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2, axis=0))  # [h,w]
-        spread_i = (
-            np.sqrt(np.mean(np.var(pred_i, axis=0), axis=0)) * np.sqrt((E + 1) / E)
-        )  # [h,w] # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
-        ssr_i = np.divide(spread_i, rmse_data_i)  # [h,w]
-        # do the same but for average over every pixel and every timestep
-        rmse_data_i_mean = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2))  # float
-        spread_i_mean = (
-            np.sqrt(np.mean(np.var(pred_i, axis=0))) * np.sqrt((E + 1) / E)
-        )  # float # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
-        ssr_i_mean = np.divide(spread_i_mean, rmse_data_i_mean)  # [h,w]
-
-        ssr_list.append(ssr_i)
-        ssr_mean_list.append(ssr_i_mean)
+        ssr_i = ssr_list[i]
         ssr_i_flat = (ssr_i).flatten()  # flatten [h*w]
 
         fixed_range = PlotConfig.get_fixed_ssr_range(variable_names[i])
@@ -2637,7 +2695,9 @@ def plot_spread_skill_ratio_hexbin(
     plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
     rmse_list = []
     spread_list = []
-    mean_ssr_list = []
+    mean_ssr_list = spread_skill_ratio(
+        predictions, targets, variable_names, pixel_wise=False
+    )
     # MAE averaged over time for color scaling
     for i in range(n_vars):
         # mae_data = np.mean(np.abs(predictions[:, i] - targets[:, i]), axis=0)
@@ -2650,17 +2710,6 @@ def plot_spread_skill_ratio_hexbin(
 
         spread_i = np.std(pred_i, axis=0).flatten()
         spread_list.append(spread_i)
-
-        # compute mean ssr :
-        # apply the formula (15) found in "Why Should Ensemble Spread Match the RMSE of the Ensemble Mean?", Fortin et al.
-        # for average over every pixel and every timestep
-        mean_pred_i = np.mean(pred_i, axis=0)  # ensemble mean [T,h,w]
-        rmse_data_i_mean = np.sqrt(np.mean((mean_pred_i - tgt_i) ** 2))  # float
-        spread_i_mean = (
-            np.sqrt(np.mean(np.var(pred_i, axis=0))) * np.sqrt((E + 1) / E)
-        )  # float # sqrt of temporal mean of variance * corrective factor depending on the number of members in the ensemble.
-        ssr_i_mean = np.divide(spread_i_mean, rmse_data_i_mean)  # [h,w]
-        mean_ssr_list.append(ssr_i_mean)
 
     ncols = n_vars
     nrows = (n_vars + ncols - 1) // ncols

@@ -51,7 +51,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GH_PAGES_TOKEN }}
-          publish_dir: .
+          publish_dir: ./documentation
           publish_branch: gh-pages
           force_orphan: true  # Clean history for private repo
           user_name: 'github-actions[bot]'

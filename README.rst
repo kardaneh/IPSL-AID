@@ -14,9 +14,9 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :target: https://pypi.org/project/IPSL-AID/
    :alt: PyPI version
 
-.. |Python versions| image:: https://img.shields.io/pypi/pyversions/IPSL-AID.svg
-   :target: https://pypi.org/project/IPSL-AID/
-   :alt: Python versions
+.. |arXiv publication| image:: https://img.shields.io/badge/arXiv-2026-blue
+   :target: https://arxiv.org/abs/YYYY.NNNNN
+   :alt: arXiv publication
 
 .. |License| image:: https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg
    :target: LICENSE
@@ -40,9 +40,6 @@ License
 
 This software is licensed under the
 **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License**.
-
-- **Original NVIDIA Work**: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES
-- **Modifications and Additions**: Copyright 2026, IPSL / CNRS / Sorbonne University
 
 You are free to:
 
@@ -73,11 +70,11 @@ IPSL / CNRS / Sorbonne University.
 
 BibTeX::
 
-    @misc{kingston2026ipslaid,
+    @article{kingston2026ipslaid_arxiv,
         title={IPSL-AID: Generative Diffusion Models for Climate Downscaling from Regional to Global Scales},
-        author={Kishanthan Kingston and Kazem Ardaneh and Olivier Boucher and Freddy Bouchet
-                and Pierre Chapel and Rosemary Eade and Jean-François Lamarque and Redouane Lguensat},
+        author={K. Kingston and O. Boucher and F. Bouchet and P. Chapel and R. Eade and J.-F. Lamarque and R. Lguensat and K. Ardaneh},
+        journal={arXiv preprint},
         year={2026},
-        institution={IPSL / CNRS / Sorbonne University},
-        howpublished={\url{https://github.com/ipsl/ipsl-aid}}
+        eprint={arXiv:YYYY.NNNNN},
+        note={\url{https://arxiv.org/abs/YYYY.NNNNN}}
     }

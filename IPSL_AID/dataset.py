@@ -236,9 +236,6 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
     coarse_up = interp_transform(coarsen_transform(fine_filtered))
     # Remove batch dimension
     coarse_up = coarse_up.squeeze(0)
-    # fine_squeezed = fine_batch.squeeze(0)
-
-    # residual = fine_squeezed - coarse_up
 
     return coarse_up
 
@@ -498,6 +495,7 @@ class DataPreprocessor(Dataset):
         dtype=(torch.float32, np.float32),
         apply_filter=False,
         region_center=None,  # (lat_value, lon_value)
+        region_size=None,
         logger=None,
     ):
         """
@@ -604,6 +602,7 @@ class DataPreprocessor(Dataset):
         self.dW = steps.d_longitude
 
         self.region_center = region_center
+        self.region_size = region_size
 
         self.tbatch = tbatch
         self.sbatch = sbatch
@@ -766,8 +765,8 @@ class DataPreprocessor(Dataset):
             if self.run_type == "inference":
                 self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
                 # self.time_batchs = np.linspace(
-                #    self.etime // 3, self.etime * 2 // 3, self.tbatch, dtype=int
-                # ) # 2 for debug, self.tbatch
+                #    self.etime // 3, self.etime * 2 // 3, 2, dtype=int
+                # )  # 2 for debug, self.tbatch
 
             elif self.run_type == "inference_regional":
                 # Regional inference mode:
@@ -780,22 +779,25 @@ class DataPreprocessor(Dataset):
                     self.region_center is not None
                 ), "region_center must be provided for inference_regional mode"
 
-                # Convert the requested (lat, lon) in degrees
-                # to the nearest grid point indices,
-                # because the dataset works with indices, not exact coordinates.
+                assert (
+                    self.region_size is not None
+                ), "region_size must be provided when using inference_regional mode"
+
                 lat_val, lon_val = self.region_center
                 lat_idx, lon_idx = self.get_center_indices_from_latlon(lat_val, lon_val)
 
-                # This center will be passed to extract_batch, which handles cyclic longitude
-                self.inference_center = (lat_idx, lon_idx)
+                region_size_lat, region_size_lon = self.region_size
 
-                # Only one spatial batch is needed (single regional window)
-                # To Do: set sbatch if we use also n blocks for regional case
-                self.sbatch = 1
+                assert region_size_lat % self.batch_size_lat == 0
+                assert region_size_lon % self.batch_size_lon == 0
+
+                self.eval_slices = self.generate_region_slices(
+                    lat_idx, lon_idx, region_size_lat, region_size_lon
+                )
+
+                # Set sbatch to exactly match number of slices
+                self.sbatch = len(self.eval_slices)
                 self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
-                # self.time_batchs = np.linspace(
-                #    self.etime // 3, self.etime * 2 // 3, self.tbatch, dtype=int
-                # ) # 2 for debug, self.tbatch
 
                 self.logger.info(
                     f"Inference region mode activated at lat={lat_val}, lon={lon_val}"
@@ -1009,6 +1011,70 @@ class DataPreprocessor(Dataset):
             f"Generated {len(slices)} evaluation blocks "
             f"({n_blocks_lat} x {n_blocks_lon} grid)"
         )
+        return slices
+
+    def generate_region_slices(
+        self, lat_center, lon_center, region_size_lat, region_size_lon
+    ):
+        """
+        Generate deterministic spatial slices for regional inference.
+        The slices cover a block centered on (lat_center, lon_center).
+        The region is divided into non-overlapping blocks of size
+        (batch_size_lat, batch_size_lon) used for model inference.
+
+        Parameters
+        ----------
+        lat_center : int
+            Latitude index of the region center in the global grid.
+        lon_center : int
+            Longitude index of the region center in the global grid.
+        region_size_lat : int
+            Height of the region (in grid points).
+        region_size_lon : int
+            Width of the region (in grid points).
+
+        Returns
+        -------
+        slices : list of tuple
+            List of (lat_start, lat_end, lon_start, lon_end) tuples defining
+            non-overlapping spatial blocks covering the selected region.
+
+        Notes
+        -----
+        The latitude start index is clamped to ensure the region remains within
+        the global latitude bounds. As a result, if the requested region is too
+        close to the poles, the extracted region may be shifted and may no longer
+        be centered exactly on (lat_center, lon_center). Longitude wrapping
+        is handled later during patch extraction (in extract_batch).
+        """
+
+        n_blocks_lat = region_size_lat // self.batch_size_lat
+        n_blocks_lon = region_size_lon // self.batch_size_lon
+
+        # Compute the top-left corner (lat0, lon0) of the region
+        # The region is centered around (lat_center, lon_center)
+        lat0 = lat_center - region_size_lat // 2
+        lon0 = lon_center - region_size_lon // 2
+
+        # Latitude is NOT cyclic, so we must ensure indices stay within [0, H]
+        lat0 = max(0, lat0)
+        lat0 = min(lat0, self.H - region_size_lat)
+
+        slices = []
+
+        for i in range(n_blocks_lat):
+            for j in range(n_blocks_lon):
+                # Compute latitude boundaries of the current block
+                lat_start = lat0 + i * self.batch_size_lat
+                lat_end = lat_start + self.batch_size_lat
+
+                # Compute longitude boundaries of the current block
+                # Longitude is allowed to go out of bound
+                lon_start = lon0 + j * self.batch_size_lon
+                lon_end = lon_start + self.batch_size_lon
+
+                slices.append((lat_start, lat_end, lon_start, lon_end))
+
         return slices
 
     def extract_batch(self, data, ilat, ilon):
@@ -1410,31 +1476,45 @@ class DataPreprocessor(Dataset):
 
         # Determine spatial sampling based on mode
         if self.mode == "validation":
+            # Ensure evaluation slices are available
+            assert (
+                hasattr(self, "eval_slices") and self.eval_slices is not None
+            ), "eval_slices not initialized for validation mode"
+            assert len(self.eval_slices) > 0, "eval_slices is empty for validation mode"
+
+            # Deterministic spatial sampling for evaluation.
+            # eval_slices defines the spatial regions to evaluate and is later used
+            # to reconstruct the full domain.
+            lat_start, lat_end, lon_start, lon_end = self.eval_slices[sindex]
+
+            lat_center = lat_start + self.batch_size_lat // 2
+            lon_center = lon_start + self.batch_size_lon // 2
+
+            self.center_tracker.append((lat_center, lon_center))
+
             if self.run_type == "inference_regional":
-                # Use a fixed geographic center instead of evaluation slices.
-                # The region is centered on the user-defined inference location.
-
-                # Retrieve the precomputed grid indices of the requested region center
-                lat_center, lon_center = self.inference_center
-                self.center_tracker.append((lat_center, lon_center))
-
-                # Extract coordinate batches centered on the specified region
+                # Extract coordinates using the same spatial extraction logic as training
+                # (cyclic longitude handling, boundary alignment).
                 lat_batch, lat_indices = self.extract_batch(
                     lat_grid, lat_center, lon_center
                 )
-                lat_start, lat_end, lon_start, lon_end = lat_indices
-
                 lon_batch, lon_indices = self.extract_batch(
                     lon_grid, lat_center, lon_center
                 )
 
-                # Extract data for all variables into a NumPy array
+                assert lat_indices == lon_indices, (
+                    f"Indices mismatch for same center (lat_center={lat_center}, lon_center={lon_center}):\n"
+                    f"  lat_indices: {lat_indices}\n"
+                    f"  lon_indices: {lon_indices}"
+                )
+
+                lat_start, lat_end, lon_start, lon_end = lat_indices
+
                 npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
                 for var_name in self.varnames_list:
                     iv = self.index_mapping[var_name]
                     npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
-                # Extract spatial block centered on requested region
                 fine_block, fine_indices = self.extract_batch(
                     npfeatures_full, lat_center, lon_center
                 )
@@ -1446,21 +1526,6 @@ class DataPreprocessor(Dataset):
                     )
 
             else:  # validation, global inference
-                # Ensure evaluation slices are available
-                assert (
-                    hasattr(self, "eval_slices") and self.eval_slices is not None
-                ), "eval_slices not initialized for validation mode"
-                assert (
-                    len(self.eval_slices) > 0
-                ), "eval_slices is empty for validation mode"
-
-                # Deterministic spatial sampling for evaluation
-                lat_start, lat_end, lon_start, lon_end = self.eval_slices[sindex]
-                lat_center = lat_start + self.batch_size_lat // 2
-                lon_center = lon_start + self.batch_size_lon // 2
-
-                self.center_tracker.append((lat_center, lon_center))
-
                 # Extract normalized coordinates for the batch
                 lat_batch = lat_grid[lat_start:lat_end, lon_start:lon_end]
                 lon_batch = lon_grid[lat_start:lat_end, lon_start:lon_end]
@@ -1750,8 +1815,13 @@ class DataPreprocessor(Dataset):
             # Recompute the same shift used inside extract_batch
             shift = self.W // 2 - lon_center
             lon_rolled = np.roll(lon, shift=shift)
+
+            # Extract the regional longitude window
             lon_vals = lon_rolled[lon_start:lon_end]
-            lon_vals = ((lon_vals + 180) % 360) - 180
+
+            # Ensure longitude continuity when the window crosses the dateline
+            if np.any(np.diff(lon_vals) < -180):
+                lon_vals = np.rad2deg(np.unwrap(np.deg2rad(lon_vals)))
 
         else:
             lat_vals = lat[lat_start:lat_end]
@@ -1763,7 +1833,6 @@ class DataPreprocessor(Dataset):
                 "targets": residual,  # residual in normalized space (model target)
                 "fine": fine_block,  # fine-resolution physical data (for diagnostics)
                 "coarse": coarse,  # coarse physical data (baselinefor diagnostics)
-                # "coarse_norm": coarse_norm, # coarse normalized data (for reconstruction at validation)
                 "corrdinates": {
                     "lat": torch.from_numpy(lat_vals).to(self.torch_dtype),
                     "lon": torch.from_numpy(lon_vals).to(self.torch_dtype),
@@ -2288,6 +2357,55 @@ class TestDataPreprocessor(unittest.TestCase):
         if self.logger:
             self.logger.info("✅ New_epoch method test passed")
 
+    def test_get_center_indices_from_latlon(self):
+        """Test conversion from geographic coordinates to grid indices."""
+        if self.logger:
+            self.logger.info("Testing get_center_indices_from_latlon")
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=4,
+            debug=True,
+            mode="validation",
+            run_type="inference_regional",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            region_center=(10.0, 50.0),
+            region_size=(32, 64),
+            logger=self.logger,
+        )
+
+        lat_val, lon_val = preprocessor.region_center
+
+        lat_idx, lon_idx = preprocessor.get_center_indices_from_latlon(lat_val, lon_val)
+
+        lat_array = self.ds.latitude.values
+        lon_array = self.ds.longitude.values
+
+        self.assertTrue(0 <= lat_idx < len(lat_array))
+        self.assertTrue(0 <= lon_idx < len(lon_array))
+
+        # verify closest point
+        self.assertEqual(lat_idx, np.abs(lat_array - lat_val).argmin())
+        self.assertEqual(lon_idx, np.abs(lon_array - lon_val).argmin())
+
+        if self.logger:
+            self.logger.info(
+                f"✅ get_center_indices_from_latlon test passed - indices: ({lat_idx}, {lon_idx})"
+            )
+
     def test_generate_random_batch_centers(self):
         """Test random batch centers generation."""
         if self.logger:
@@ -2425,6 +2543,70 @@ class TestDataPreprocessor(unittest.TestCase):
         if self.logger:
             self.logger.info(
                 f"✅ Generate evaluation slices test passed - created {len(slices)} slices"
+            )
+
+    def test_generate_region_slices(self):
+        """Test regional slice generation."""
+        if self.logger:
+            self.logger.info("Testing generate_region_slices")
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=4,
+            debug=True,
+            mode="validation",
+            run_type="inference_regional",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            region_center=(10.0, 50.0),
+            region_size=(32, 64),
+            logger=self.logger,
+        )
+
+        lat_val, lon_val = preprocessor.region_center
+        lat_center, lon_center = preprocessor.get_center_indices_from_latlon(
+            lat_val, lon_val
+        )
+
+        region_size_lat, region_size_lon = preprocessor.region_size
+
+        slices = preprocessor.generate_region_slices(
+            lat_center, lon_center, region_size_lat, region_size_lon
+        )
+
+        n_blocks_lat = region_size_lat // preprocessor.batch_size_lat
+        n_blocks_lon = region_size_lon // preprocessor.batch_size_lon
+
+        # correct number of slices
+        self.assertEqual(len(slices), n_blocks_lat * n_blocks_lon)
+
+        # verify slice sizes and bounds
+        for lat_start, lat_end, lon_start, lon_end in slices:
+            self.assertEqual(lat_end - lat_start, preprocessor.batch_size_lat)
+            self.assertEqual(lon_end - lon_start, preprocessor.batch_size_lon)
+
+            self.assertTrue(0 <= lat_start < preprocessor.H)
+            self.assertTrue(0 < lat_end <= preprocessor.H)
+
+        if self.logger:
+            self.logger.info(
+                f"✅ Generate region slices test passed - created {len(slices)} slices"
             )
 
     # ------------------------------------------------------------------------

@@ -19,6 +19,7 @@ from IPSL_AID.diagnostics import (
     plot_qq_quantiles,
     plot_surface,
     plot_MAE_map,
+    plot_error_map,
     plot_metrics_heatmap,
     plot_validation_mvcorr,
     plot_validation_mvcorr_space,
@@ -1174,7 +1175,7 @@ def reconstruct_original_layout(
     logger.info("Reconstruction completed successfully")
 
     # Check if we need to combine spatial blocks for inference
-    if args.run_type == "inference":
+    if args.run_type in ["inference", "inference_regional"]:
         logger.info(
             "Inference mode is active - combining spatial blocks to reconstruct full domain..."
         )
@@ -1184,9 +1185,17 @@ def reconstruct_original_layout(
             eval_slices = dataset.eval_slices
             logger.info(f"Found {len(eval_slices)} evaluation slices")
 
-            # Determine actual covered domain from blocks
-            covered_H = max([s[1] for s in eval_slices])
-            covered_W = max([s[3] for s in eval_slices])
+            # Determine the spatial extent covered by evaluation slices.
+            # In regional inference, slices may not start at index 0, so the domain size
+            # is computed from the min/max slice indices.
+            lat_min = min(s[0] for s in eval_slices)
+            lat_max = max(s[1] for s in eval_slices)
+
+            lon_min = min(s[2] for s in eval_slices)
+            lon_max = max(s[3] for s in eval_slices)
+
+            covered_H = lat_max - lat_min
+            covered_W = lon_max - lon_min
 
             logger.info(f"Dataset dimensions: H={dataset.H}, W={dataset.W}")
             logger.info(f"Blocks cover: H={covered_H}, W={covered_W}")
@@ -1222,6 +1231,14 @@ def reconstruct_original_layout(
                 for spatial_idx, (lat_start, lat_end, lon_start, lon_end) in enumerate(
                     eval_slices
                 ):
+                    # Shift slice indices into the local reconstruction coordinate system.
+                    # This is required for regional inference where slices do not start at 0.
+                    # For global inference lat_min=lon_min=0 so indices remain unchanged.
+                    lat_start -= lat_min
+                    lat_end -= lat_min
+                    lon_start -= lon_min
+                    lon_end -= lon_min
+
                     if spatial_idx >= sbatch:
                         error_msg = (
                             f"CRITICAL ERROR: Slice index {spatial_idx} exceeds sbatch {sbatch}. "
@@ -1296,6 +1313,13 @@ def reconstruct_original_layout(
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
+            # Fix longitude discontinuity when blocks cross the 0°/360° meridian.
+            # np.unwrap keeps the longitude coordinate monotonic
+            # Ex: 358,359,0,1 to 358,359,360,361
+            lon_reconstructed = torch.from_numpy(
+                np.rad2deg(np.unwrap(np.deg2rad(lon_reconstructed.cpu().numpy())))
+            ).to(device)
+
             # All checks passed - reconstruction is complete
             logger.info("✅ Coordinate reconstruction complete")
             logger.info("✅ Grid coverage complete")
@@ -1361,7 +1385,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             units=None,  # You might want to add units to args
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
-            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:02d}.png",
+            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:03d}.png",
             save_dir=paths.results,
         )
 
@@ -1502,7 +1526,7 @@ def reconstruct_original_layout(
         )
 
     # For inference mode, also generate full domain plots
-    if args.run_type == "inference":
+    if args.run_type in ["inference", "inference_regional"]:
         assert (
             "combined" in reconstructions
         ), "Combined data not found in reconstructions for inference mode"
@@ -1602,7 +1626,20 @@ def reconstruct_original_layout(
         )
         logger.info(f"Saved full domain MAE map to: {save_path}")
 
-        # 6. Surface plots for first few time steps of full domain
+        # 6. Error map Plot for full domain
+        save_path = plot_error_map(
+            predictions=predictions_full,
+            targets=fine_full,
+            lat_1d=lat_full,
+            lon_1d=lon_full,
+            variable_names=args.varnames_list,
+            filename=f"{args.run_type}_full_domain_error_map_epoch_{epoch}.png",
+            save_dir=paths.results,
+        )
+
+        logger.info(f"Saved full domain error map to: {save_path}")
+
+        # 7. Surface plots for first few time steps of full domain
         num_time_steps_to_plot = min(3, time_batchs)
         for time_idx in range(num_time_steps_to_plot):
             # Extract single time step
@@ -1631,7 +1668,7 @@ def reconstruct_original_layout(
                 f"Saved full domain surface plot (time {time_idx}) to: {save_path}"
             )
 
-        # 7. Multivariate Correlation Maps for full domain
+        # 8. Multivariate Correlation Maps for full domain
         # Convert 1D lat/lon to 2D meshgrid
         lat_2d_full, lon_2d_full = torch.meshgrid(lat_full, lon_full, indexing="ij")
 
@@ -1648,7 +1685,7 @@ def reconstruct_original_layout(
 
         logger.info(f"Saved full domain multivariate correlation map to: {save_path}")
 
-        # 8. Temporal series for full domain
+        # 9. Temporal series for full domain
         save_path = plot_temporal_series_comparison(
             predictions=predictions_full,
             targets=fine_full,
@@ -1660,7 +1697,7 @@ def reconstruct_original_layout(
 
         logger.info(f"Saved full domain temporal series plot to: {save_path}")
 
-        # 9. Multivariate spatial correlation time series for full domain
+        # 10. Multivariate spatial correlation time series for full domain
         save_path = plot_validation_mvcorr_space(
             predictions=predictions_full,
             targets=fine_full,
@@ -1688,7 +1725,6 @@ def generate_residuals_norm(
     logger,
     epoch=0,
     batch_idx=0,
-    edm_sampler_steps=10,
     inference_type="sampler",
 ):
     """
@@ -1714,8 +1750,6 @@ def generate_residuals_norm(
         Logger instance
     epoch : int
         Current epoch number
-    edm_sampler_steps : int, optional
-        Number of steps used in the EDM sampler
     inference_type : str, optional
         Inference mode, either "direct" (deterministic) or "sampler"
         (stochastic diffusion sampling)
@@ -1745,17 +1779,22 @@ def generate_residuals_norm(
             raise ValueError("UNet does not support sampler inference")
         if args.debug and logger is not None:
             logger.info("Using sampler inference/evaluation mode (stochastic)")
-            logger.info(f"Starting EDM sampler with {edm_sampler_steps} steps")
+            logger.info(f"Starting EDM sampler with {args.num_steps} steps")
         generated_residuals = sampler(
             epoch,
             batch_idx,
             model,
             features,
             labels,
-            num_steps=edm_sampler_steps,
-            # discretization='vp',
-            # schedule='vp',
-            # scaling='vp',
+            num_steps=args.num_steps,
+            sigma_min=args.sigma_min,
+            sigma_max=args.sigma_max,
+            rho=args.rho,
+            solver=args.solver,
+            S_churn=args.s_churn,
+            S_min=args.s_min,
+            S_max=args.s_max,
+            S_noise=args.s_noise,
             logger=logger,
         )
     else:
@@ -1780,7 +1819,6 @@ def run_validation(
     epoch,
     writer=None,
     plot_every_n_epochs=None,
-    edm_sampler_steps=10,
     paths=None,
     compute_crps=False,
     crps_batch_size=2,
@@ -1813,8 +1851,6 @@ def run_validation(
         TensorBoard writer
     plot_every_n_epochs : int, optional
         Frequency (in epochs) at which validation plots are generated
-    edm_sampler_steps : int, optional
-        Number of steps used in the EDM sampler
     paths : dict, optional
         Paths used for saving reconstructions and plots
     compute_crps : bool, optional
@@ -1890,7 +1926,7 @@ def run_validation(
     crps_batches = []
 
     logger.info(f"Running validation for epoch {epoch}...")
-    logger.info(f"EDM Sampler parameters: steps={edm_sampler_steps}")
+    logger.info(f"EDM Sampler parameters: steps={args.num_steps}")
 
     with torch.no_grad():
         val_loop = tqdm(
@@ -1975,7 +2011,6 @@ def run_validation(
                 logger=logger,
                 epoch=epoch,
                 batch_idx=batch_idx,
-                edm_sampler_steps=edm_sampler_steps,
                 inference_type=args.inference_type,
             )
 
@@ -2113,7 +2148,6 @@ def run_validation(
                     logger=None,
                     epoch=epoch,
                     batch_idx=-1,  # not tied to validation loop
-                    edm_sampler_steps=edm_sampler_steps,
                     inference_type="sampler",
                 )
 

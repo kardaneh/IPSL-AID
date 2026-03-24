@@ -33,7 +33,6 @@ num_workers=8
 datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
 per_var_datadir=(
   "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
   )
 
 #"VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
@@ -45,11 +44,11 @@ per_var_datadir=(
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T" "VAR_TP") # "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST"
+varnames_list=("VAR_2T") # "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST"
 constant_varnames_list=("z" "lsm")
 constant_varnames_file="ERA5_const_sfc_variables.nc"
-normalization_types=("VAR_2T=standard" "VAR_TP=log1p_standard") # "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard"
-units_list=("K" "m/h") # "m/s" "m/s" "m/h" "K" "K"
+normalization_types=("VAR_2T=standard") # "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard"
+units_list=("K") # "m/s" "m/s" "m/h" "K" "K"
 dynamic_covariates=()
 dynamic_covariates_dir="../data_covariates/"
 
@@ -69,10 +68,27 @@ dtype="fp32"
 arch="adm"
 precond="edm" # edm for edm (default model), unet for unet,
 # for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
-in_channels=2
-cond_channels=6 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP") + lat + lon + z + lsm, no cond_channels for unet
-out_channels=2 # ("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
+in_channels=1 # number of variables
+cond_channels=5 # number of variables + lat + lon + z + lsm, no cond_channels for unet
+out_channels=1 # number of variables
 inference_type="sampler" # "direct" for unet, "sampler" for diffusion
+
+compute_crps=false
+
+if [[ "$compute_crps" == true && "$inference_type" != "sampler" ]]; then
+    echo "WARNING: CRPS requires sampler inference. Disabling compute_crps."
+    compute_crps=false
+fi
+
+# EDM Sampler Parameters
+num_steps=10
+sigma_min=0.002
+sigma_max=80.0
+rho=7
+s_churn=40
+solver="heun"
+
+
 # NEW: Add apply_filter parameter
 apply_filter=false
 
@@ -117,6 +133,19 @@ train_parts+=("tb${tbatch}")
 train_parts+=("eps${eps_str}")
 train_parts+=("mrg${margin}")
 train_parts+=("inf_${inference_type}")
+
+sigma_min_str="${sigma_min//./d}"
+sigma_max_str="${sigma_max//./d}"
+rho_str="${rho//./d}"
+
+if [[ "$inference_type" == "sampler" ]]; then
+    train_parts+=("steps${num_steps}")
+    train_parts+=("sigmin${sigma_min_str}")
+    train_parts+=("sigmax${sigma_max_str}")
+    train_parts+=("rho${rho_str}")
+    train_parts+=("s_churn${s_churn}")
+    train_parts+=("solver_${solver}")
+fi
 
 # Add checkpoint info to model name if not training from scratch
 if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
@@ -208,7 +237,6 @@ echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $run_scrip
 [ ${#units_list[@]} -gt 0 ] && echo "    --units_list ${units_list[@]} \\" >> $run_script
 [ ${#dynamic_covariates[@]} -gt 0 ] && echo "    --dynamic_covariates ${dynamic_covariates[@]} \\" >> $run_script
 
-#--per_var_datadir ${per_var_datadir[@]} \\
 cat >> $run_script <<EOF
     --year_start "$year_start" \\
     --year_end "$year_end" \\
@@ -229,7 +257,14 @@ cat >> $run_script <<EOF
     --beta "$beta" \\
     --margin "$margin" \\
     --dynamic_covariates_dir "$dynamic_covariates_dir" \\
-    --dtype "$dtype"
+    --dtype "$dtype" \\
+    --num_steps "$num_steps" \\
+    --sigma_min "$sigma_min" \\
+    --sigma_max "$sigma_max" \\
+    --rho "$rho" \\
+    --s_churn "$s_churn" \\
+    --solver "$solver" \\
+    --compute_crps "$compute_crps"
 EOF
 
 chmod +x $run_script
@@ -260,8 +295,8 @@ cat >> $sbatch_script <<EOF
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-#SBATCH --mail-user=kkingston@ipsl.fr
-#SBATCH --mail-type=END,FAIL
+# #SBATCH --mail-user=kkingston@ipsl.fr
+# #SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge

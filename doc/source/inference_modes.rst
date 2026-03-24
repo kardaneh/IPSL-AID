@@ -36,7 +36,8 @@ is performed on a spatial subset of the domain:
 Regions can be defined either using predefined regions (e.g., ``--region europe``,
 ``--region asia``, ``--region us``) or by specifying a custom region
 (e.g., ``--region_center lat lon``). The region size can also be controlled
-(e.g., :math:`144\times360` or :math:`288\times720`), which determines the number of processed blocks.
+(e.g., ``--region_size lat lon`` where ``lat`` can be 144 or 288 and ``lon`` can be 360 or 720),
+which determines the number of processed blocks.
 
 Sampling Procedure
 ------------------

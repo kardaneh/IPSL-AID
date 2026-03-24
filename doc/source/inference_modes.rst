@@ -39,13 +39,15 @@ is performed on a spatial subset of the domain.
      region: "europe"
 
      # Option 2: custom region (lat, lon)
-     # region_center: 50.0 10.0
+     region_center: 50.0 10.0
 
      # Region size (lat_size, lon_size)
      region_size: 144 360
      # Supported sizes:
-     # - lat can be 144 or 288
-     # - lon can be 360 or 720
+     # lat can be 144 or 288
+     # lon can be 360 or 720
+
+Either a predefined region or a custom region center must be specified.
 
 The region size defines the spatial extent of the inference window and
 controls the number of processed blocks.

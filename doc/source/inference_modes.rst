@@ -26,18 +26,29 @@ Regional Inference
 ------------------
 
 For specific regions (e.g., Europe, North America, Southeast Asia), inference
-is performed on a spatial subset of the domain:
+is performed on a spatial subset of the domain.
 
-1. **Define region**: Specify latitude/longitude bounds or select a predefined region
-2. **Extract inputs**: Crop coarse fields to the selected region
-3. **Run inference**: Generate high-resolution outputs
-4. **Optional upscaling**: Blend with global context if needed
+**Configuration:**
 
-Regions can be defined either using predefined regions (e.g., ``--region europe``,
-``--region asia``, ``--region us``) or by specifying a custom region
-(e.g., ``--region_center lat lon``). The region size can also be controlled
-(e.g., ``--region_size lat lon`` where ``lat`` can be 144 or 288 and ``lon`` can be 360 or 720),
-which determines the number of processed blocks.
+.. code-block:: yaml
+
+   inference:
+     run_type: inference_regional
+
+     # Option 1: predefined region
+     region: "europe"
+
+     # Option 2: custom region (lat, lon)
+     # region_center: 50.0 10.0
+
+     # Region size (lat_size, lon_size)
+     region_size: 144 360
+     # Supported sizes:
+     # - lat can be 144 or 288
+     # - lon can be 360 or 720
+
+The region size defines the spatial extent of the inference window and
+controls the number of processed blocks.
 
 Sampling Procedure
 ------------------

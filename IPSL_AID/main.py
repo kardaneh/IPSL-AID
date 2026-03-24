@@ -361,6 +361,86 @@ def parse_args():
         "(used only when run_type=inference_regional)",
     )
 
+    parser.add_argument(
+        "--region_size",
+        type=int,
+        nargs=2,
+        default=None,
+        help="Requested regional size in grid points (lat lon) "
+        "for regional inference (used only when run_type=inference_regional)",
+    )
+
+    # EDM sampler configuration
+    parser.add_argument(
+        "--num_steps",
+        type=int,
+        default=20,
+        help="Number of sampling steps used in the diffusion sampler",
+    )
+
+    parser.add_argument(
+        "--sigma_min",
+        type=float,
+        default=0.002,
+        help="Minimum noise level used by the sampler",
+    )
+
+    parser.add_argument(
+        "--sigma_max",
+        type=float,
+        default=80.0,
+        help="Maximum noise level used by the sampler",
+    )
+
+    parser.add_argument(
+        "--rho",
+        type=float,
+        default=7.0,
+        help="Exponent used for EDM time step discretization",
+    )
+
+    parser.add_argument(
+        "--s_churn",
+        type=float,
+        default=40,
+        help="Stochasticity strength parameter controlling noise injection during sampling",
+    )
+
+    parser.add_argument(
+        "--s_min",
+        type=float,
+        default=0,
+        help="Minimum noise level at which stochasticity is applied",
+    )
+
+    parser.add_argument(
+        "--s_max",
+        type=float,
+        default=float("inf"),
+        help="Maximum noise level at which stochasticity is applied",
+    )
+
+    parser.add_argument(
+        "--s_noise",
+        type=float,
+        default=1.0,
+        help="Noise scale applied when stochasticity is enabled",
+    )
+
+    parser.add_argument(
+        "--solver",
+        type=str,
+        default="heun",
+        choices=["heun", "euler"],
+    )
+
+    parser.add_argument(
+        "--compute_crps", type=lambda x: x.lower() == "true", default=False
+    )
+
+    parser.add_argument("--crps_ensemble_size", type=int, default=10)
+    parser.add_argument("--crps_batch_size", type=int, default=2)
+
     return parser.parse_args()
 
 
@@ -601,6 +681,18 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── Conditioning channels: {args.cond_channels}")
     logger.info(f" └── Output channels: {args.out_channels}")
 
+    # Sampler configuration
+    logger.info("\nSampler Configuration:")
+    logger.info(f" └── solver: {args.solver}")
+    logger.info(f" └── num_steps: {args.num_steps}")
+    logger.info(f" └── sigma_min: {args.sigma_min}")
+    logger.info(f" └── sigma_max: {args.sigma_max}")
+    logger.info(f" └── rho: {args.rho}")
+    logger.info(f" └── s_churn: {args.s_churn}")
+    logger.info(f" └── s_min: {args.s_min}")
+    logger.info(f" └── s_max: {args.s_max}")
+    logger.info(f" └── s_noise: {args.s_noise}")
+
     # Output configuration
     logger.info("\nOutput Configuration:")
     logger.info(f" └── Main folder: '{args.main_folder}'")
@@ -636,9 +728,12 @@ def log_configuration(args, paths, logger):
     elif args.run_type == "inference":
         logger.info(" └── Mode: Inference only")
         logger.info(f" └── Inference type: {args.inference_type}")
+        logger.info(f" └── Compute CRPS: {args.compute_crps}")
     elif args.run_type == "inference_regional":
         logger.info(" └── Mode: Regional inference")
         logger.info(f" └── Region center: {args.region_center}")
+        logger.info(f" └── Region size: {args.region_size}")
+        logger.info(f" └── Compute CRPS: {args.compute_crps}")
 
     # Checkpoint saving strategy
     if args.save_model:
@@ -1064,6 +1159,7 @@ def create_data_loaders(
         dtype=(torch_dtype, np_dtype),  # Same dtype for consistency
         apply_filter=args.apply_filter,
         region_center=args.region_center,
+        region_size=args.region_size,
         logger=logger,
     )
 
@@ -1530,6 +1626,13 @@ def main():
             f"(total timesteps = {valid_dataset.etime - valid_dataset.stime})"
         )
 
+        if args.compute_crps and args.inference_type != "sampler":
+            logger.warning(
+                "CRPS requested but inference_type is not 'sampler'. "
+                "CRPS requires probabilistic sampling. Disabling CRPS."
+            )
+            args.compute_crps = False
+
         # Run validation (which is essentially inference on validation data)
         assert (
             valid_loader is not None
@@ -1549,11 +1652,10 @@ def main():
             epoch=0,
             writer=writer,
             plot_every_n_epochs=1,  # Always plot for inference
-            edm_sampler_steps=20,
             paths=paths,
-            compute_crps=False,  # True for diffusion models, False for unet
-            # crps_batch_size=2,
-            # crps_ensemble_size=10,
+            compute_crps=args.compute_crps,  # True for diffusion models, False for unet
+            crps_ensemble_size=args.crps_ensemble_size,
+            crps_batch_size=args.crps_batch_size,
         )
         logger.info("Inference completed successfully!")
         exit(0)

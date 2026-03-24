@@ -5,7 +5,7 @@ IPSL-AID
    :width: 30%
    :align: center
 
-|PyPI version| |Python versions| |License| |Documentation Status|
+|PyPI version| |arXiv| |License| |Documentation Status|
 
 **IPSL-AID** is a high-performance research framework for **climate data downscaling**
 based on **diffusion models**, designed for **GPU clusters and HPC systems**.
@@ -14,9 +14,9 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :target: https://pypi.org/project/IPSL-AID/
    :alt: PyPI version
 
-.. |Python versions| image:: https://img.shields.io/pypi/pyversions/IPSL-AID.svg
-   :target: https://pypi.org/project/IPSL-AID/
-   :alt: Python versions
+.. |arXiv| image:: https://img.shields.io/badge/arXiv-YYYY.NNNNN-b31b1b.svg
+   :target: https://arxiv.org/abs/YYYY.NNNNN
+   :alt: arXiv preprint
 
 .. |License| image:: https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg
    :target: LICENSE
@@ -32,6 +32,7 @@ Authors
 
 - **Kazem Ardaneh**
 - **Kishanthan Kingston**
+- **Pierre Chapel**
 
 Developed at **IPSL / CNRS / Sorbonne University** (2026)
 
@@ -65,7 +66,7 @@ Citation
 If you use **IPSL-AID** in your research, please cite:
 
 **IPSL-AID: Generative Diffusion Models for Climate Downscaling from Regional to Global Scales**
-Kishanthan Kingston, Olivier Boucher, Freddy Bouchet, Pierre Chapel, Rosemary Eade, Jean-François Lamarque, Redouane Lguensat, 2026.
+Kishanthan Kingston, Olivier Boucher, Freddy Bouchet, Pierre Chapel, Rosemary Eade, Jean-François Lamarque, Redouane Lguensat, and Kazem Ardaneh, 2026.
 IPSL / CNRS / Sorbonne University.
 
 BibTeX::

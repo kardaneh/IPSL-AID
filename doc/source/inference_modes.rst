@@ -25,12 +25,18 @@ For global coverage, 20 fixed blocks corresponding to the ERA5 resolution of
 Regional Inference
 ------------------
 
-For specific regions (e.g., Europe, North America, Southeast Asia):
+For specific regions (e.g., Europe, North America, Southeast Asia), inference
+is performed on a spatial subset of the domain:
 
-1. **Define region**: Specify latitude/longitude bounds
-2. **Extract inputs**: Crop coarse fields to region
+1. **Define region**: Specify latitude/longitude bounds or select a predefined region
+2. **Extract inputs**: Crop coarse fields to the selected region
 3. **Run inference**: Generate high-resolution outputs
 4. **Optional upscaling**: Blend with global context if needed
+
+Regions can be defined either using predefined regions (e.g., ``--region europe``,
+``--region asia``, ``--region us``) or by specifying a custom region
+(e.g., ``--region_center lat lon``). The region size can also be controlled
+(e.g., :math:`144\times360` or :math:`288\times720`), which determines the number of processed blocks.
 
 Sampling Procedure
 ------------------

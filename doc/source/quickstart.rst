@@ -285,10 +285,6 @@ Here is an example setup script snippet with commonly used parameters:
 .. code-block:: bash
 
    debug=true
-
-   DATE=$(date +"%Y%m%d")
-   TODAY=$(date +"%Y%m%d_%H%M%S")
-
    run_type="train"
    region=""
    save_model=true

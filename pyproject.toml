@@ -55,6 +55,7 @@ dependencies = [
     "h5netcdf>=1.1.0",
     "seaborn>=0.13.2",
     "cdsapi>=0.7.6",
+    "ipykernel>=6.29.5",
 ]
 [tool.setuptools.dynamic]
 version = { attr = "IPSL_AID.version.__version__" }

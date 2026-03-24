@@ -627,6 +627,8 @@ def edm_sampler(
 ):
     """
     EDM sampler for diffusion model inference.
+    Original work: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES.
+    Original source: https://github.com/NVlabs/edm
 
     Parameters
     ----------
@@ -745,6 +747,8 @@ def sampler(
 ):
     """
     General sampler for diffusion model inference with multiple configurations.
+    Original work: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES.
+    Original source: https://github.com/NVlabs/edm
 
     Parameters
     ----------

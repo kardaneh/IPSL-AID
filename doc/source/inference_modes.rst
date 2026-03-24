@@ -25,10 +25,16 @@ For global coverage, 20 fixed blocks corresponding to the ERA5 resolution of
 Regional Inference
 ------------------
 
-For specific regions (e.g., Europe, North America, Southeast Asia), inference
-is performed on a spatial subset of the domain.
+Regional inference allows running the model on a *specific geographic subset*
+of the global domain instead of processing the entire globe.
 
-**Configuration:**
+This mode is particularly useful for regional studies (e.g., Europe,
+North America, Southeast Asia), where only a limited area is of interest.
+
+Conceptually, the model operates on a **spatial window** extracted from the
+global grid, centered on a given location with a fixed spatial extent.
+
+Configuration:
 
 .. code-block:: yaml
 
@@ -43,14 +49,24 @@ is performed on a spatial subset of the domain.
 
      # Region size (lat_size, lon_size)
      region_size: 144 360
+
      # Supported sizes:
      # lat can be 144 or 288
      # lon can be 360 or 720
 
-Either a predefined region or a custom region center must be specified.
+Region selection:
 
-The region size defines the spatial extent of the inference window and
-controls the number of processed blocks.
+Two approaches are available:
+
+- **Predefined region**:
+  Use a named region (e.g., ``"us"``, ``"europe"``, ``"asia"``). The corresponding spatial
+  boundaries are internally defined.
+
+- **Custom region**:
+  Specify a center point using latitude and longitude (``region_center``).
+  The model will extract a region centered around this location.
+
+Either ``region`` or ``region_center`` must be provided.
 
 Sampling Procedure
 ------------------

@@ -8,21 +8,21 @@ For detailed workflow instructions, refer to our comprehensive documentation:
 User Guide
 ----------
 
-* :doc:`Overview <overview>` – Project overview and context
-* :doc:`Installation <installation>` – Complete installation guide
-* :doc:`Quickstart Guide <quickstart>` – Getting started with development
-* :doc:`Testing Philosophy <testing_philosophy>` – How we test and validate changes (Read This First)
-* :doc:`Project Structure <project_structure>` – Understanding the codebase organization
-* :doc:`Pre-Push Workflow <pre_push_workflow>` – Complete step-by-step guide before pushing changes
-* :doc:`Cartopy Configuration <cartopy_configuration>` – Geospatial visualization setup
+- `Overview <https://kardaneh.github.io/IPSL-AID/overview.html>`_ – Project overview and context
+- `Installation <https://kardaneh.github.io/IPSL-AID/installation.html>`_ – Complete installation guide
+- `Quickstart Guide <https://kardaneh.github.io/IPSL-AID/quickstart.html>`_ – Getting started with development
+- `Testing Philosophy <https://kardaneh.github.io/IPSL-AID/testing_philosophy.html>`_ – How we test and validate changes (Read This First)
+- `Project Structure <https://kardaneh.github.io/IPSL-AID/project_structure.html>`_ – Understanding the codebase organization
+- `Pre-Push Workflow <https://kardaneh.github.io/IPSL-AID/pre_push_workflow.html>`_ – Complete step-by-step guide before pushing changes
+- `Cartopy Configuration <https://kardaneh.github.io/IPSL-AID/cartopy_configuration.html>`_ – Geospatial visualization setup
 
 Core Concepts
 -------------
 
-* :doc:`Diffusion Models <diffusion_models>` – Diffusion-specific implementations
-* :doc:`Neural Architectures <neural_architectures>` – Model architecture guidelines
-* :doc:`Training Strategy <training_strategy>` – Training configurations and strategies
-* :doc:`Inference Modes <inference_modes>` – Inference workflows and options
+- `Diffusion Models <https://kardaneh.github.io/IPSL-AID/diffusion_models.html>`_ – Diffusion-specific implementations
+- `Neural Architectures <https://kardaneh.github.io/IPSL-AID/neural_architectures.html>`_ – Model architecture guidelines
+- `Training Strategy <https://kardaneh.github.io/IPSL-AID/training_strategy.html>`_ – Training configurations and strategies
+- `Inference Modes <https://kardaneh.github.io/IPSL-AID/inference_modes.html>`_ – Inference workflows and options
 
 API Reference
 -------------

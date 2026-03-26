@@ -1,9 +1,11 @@
 Contributing to IPSL-AID
 ========================
 
-Thank you for your interest in contributing to IPSL-AID (AI-based Climate Downscaling)! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to IPSL-AID! This document provides guidelines for contributing to the project.
 
-For detailed workflow instructions, refer to our comprehensive documentation:
+We want to make contributing to this project as easy and transparent as possible.
+
+For detailed workflow instructions, refer to the documentation:
 
 User Guide
 ----------
@@ -28,3 +30,86 @@ API Reference
 -------------
 
 IPSL_AID / IPSL-AID
+
+Pull Requests
+-------------
+
+We actively welcome your pull requests. To ensure a smooth contribution process, please follow these steps:
+
+1. **Fork the repository** and create your branch from `main`
+
+   .. code-block:: bash
+
+      git checkout -b feature/your-feature-name
+
+2. **Add your changes** – If you've added code, add the corresponding tests
+
+3. **Update documentation** – If you've changed APIs or added new features, update the documentation accordingly
+
+4. **Run the test suite** – Ensure all tests pass
+
+   .. code-block:: bash
+
+      python -m tests.test_all
+
+5. **Run pre-commit hooks** – Make sure your code passes all pre-commit checks
+
+   .. code-block:: bash
+
+      pre-commit run --all-files
+
+6. **Commit your changes** using `conventional commits <https://www.conventionalcommits.org/>`_ format:
+
+   - `feat:` for new features
+   - `fix:` for bug fixes
+   - `docs:` for documentation updates
+   - `test:` for test additions or changes
+   - `refactor:` for code refactoring
+   - `perf:` for performance improvements
+
+7. **Push to your fork** and submit a pull request
+
+   .. code-block:: bash
+
+      git push origin feature/your-feature-name
+
+Pull Request Guidelines
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Use a descriptive branch name (e.g., `feature/add-attention-unet`, `fix/data-normalization`)
+- Keep pull requests focused on a single feature or fix
+- Reference any related issues in the pull request description
+- Request review from relevant team members
+- Respond to feedback and address requested changes promptly
+
+Code Review
+~~~~~~~~~~~
+
+All submissions, including submissions by project maintainers, require review. We use GitHub pull requests for this purpose. A reviewer will:
+
+- Check code quality and style
+- Verify test coverage
+- Ensure documentation is complete
+- Test the changes locally if necessary
+
+Merging
+~~~~~~~
+
+Pull requests are merged once they:
+
+- Pass all continuous integration checks
+- Have at least one approval from a maintainer
+- Have no unresolved comments or requested changes
+
+Questions?
+~~~~~~~~~~
+
+If you have questions about contributing, please:
+
+- Open a GitHub issue for discussion
+- Refer to the `Pre-Push Workflow <https://kardaneh.github.io/IPSL-AID/pre_push_workflow.html>`_ for detailed instructions
+- Check the `Quickstart Guide <https://kardaneh.github.io/IPSL-AID/quickstart.html>`_ for setup help
+
+---
+
+Thank you for contributing to IPSL-AID!

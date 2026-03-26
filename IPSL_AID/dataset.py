@@ -765,7 +765,7 @@ class DataPreprocessor(Dataset):
             if self.run_type == "inference":
                 self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
                 # self.time_batchs = np.linspace(
-                #    self.etime // 3, self.etime * 2 // 3, 2, dtype=int
+                #     self.etime // 3, self.etime * 2 // 3, 2, dtype=int
                 # )  # 2 for debug, self.tbatch
 
             elif self.run_type == "inference_regional":

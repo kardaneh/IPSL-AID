@@ -18,6 +18,7 @@ from IPSL_AID.diagnostics import (
     plot_power_spectra,
     plot_qq_quantiles,
     plot_surface,
+    plot_zoom_comparison,
     plot_MAE_map,
     plot_error_map,
     plot_metrics_heatmap,
@@ -1667,6 +1668,21 @@ def reconstruct_original_layout(
             logger.info(
                 f"Saved full domain surface plot (time {time_idx}) to: {save_path}"
             )
+
+            # Zoom comparison plot for full domain (only for global inference)
+            if args.run_type == "inference":
+                save_path = plot_zoom_comparison(
+                    predictions=pred_single_time,
+                    targets=fine_single_time,
+                    lat_1d=lat_full,
+                    lon_1d=lon_full,
+                    variable_names=args.varnames_list,
+                    filename=f"{args.run_type}_full_domain_zoom_comparison_epoch_{epoch}_time_{time_idx:03d}.png",
+                    save_dir=paths.results,
+                )
+                logger.info(
+                    f"Saved full domain zoom comparison (time {time_idx}) to: {save_path}"
+                )
 
         # 8. Multivariate Correlation Maps for full domain
         # Convert 1D lat/lon to 2D meshgrid

@@ -19,6 +19,8 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.colors as mcolors
+import matplotlib.patches as patches
+from matplotlib.patches import ConnectionPatch
 import matplotlib as mpl
 from scipy import stats
 import cartopy.crs as ccrs
@@ -1674,6 +1676,329 @@ def plot_ensemble_surface(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
+    return save_path
+
+
+def plot_zoom_comparison(
+    predictions,
+    targets,
+    lat_1d,
+    lon_1d,
+    variable_names=None,
+    filename="zoom_plot.png",
+    save_dir=None,
+    zoom_box=None,
+):
+    """
+    Plot a comparison between ground truth and model predictions with a geographic zoom.
+
+    Parameters
+    ----------
+    targets : torch.Tensor or np.ndarray
+        Ground-truth high-resolution data with shape [1, n_vars, H, W].
+    predictions : torch.Tensor or np.ndarray
+        Model predictions at targets resolution with shape [1, n_vars, H, W].
+    lat_1d : array-like
+        1D array of latitude coordinates with shape [H].
+    lon_1d : array-like
+        1D array of longitude coordinates with shape [W].
+    variable_names : list of str, optional
+        Variable names or identifiers.
+    filename : str, optional
+        Output filename for saving the plot.
+    save_dir : str, optional
+        Directory to save the plot.
+    zoom_box : dict, optional
+        Dictionary defining the zoom region with keys.
+
+    Returns
+    -------
+    None
+    """
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+
+    if zoom_box is None:
+        zoom_box = {"lat_min": -23, "lat_max": 13, "lon_min": 255, "lon_max": 345}
+
+    # Convert tensors
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+
+    if hasattr(lat_1d, "detach"):
+        lat_1d = lat_1d.detach().cpu().numpy()
+
+    if hasattr(lon_1d, "detach"):
+        lon_1d = lon_1d.detach().cpu().numpy()
+
+    lat = lat_1d
+    lon = lon_1d
+
+    lon2d, lat2d = np.meshgrid(lon, lat)
+
+    lat_min, lat_max = lat.min(), lat.max()
+    lon_min, lon_max = lon.min(), lon.max()
+    lon_center = float((lon_min + lon_max) / 2)
+
+    lat_mask = (lat >= zoom_box["lat_min"]) & (lat <= zoom_box["lat_max"])
+    lon_mask = (lon >= zoom_box["lon_min"]) & (lon <= zoom_box["lon_max"])
+
+    lat_zoom = lat[lat_mask]
+    lon_zoom = lon[lon_mask]
+    lon_zoom2d, lat_zoom2d = np.meshgrid(lon_zoom, lat_zoom)
+
+    n_vars = targets.shape[1]
+
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(n_vars)]
+
+    plot_variable_names = [PlotConfig.get_plot_name(v) for v in variable_names]
+    cmaps = [PlotConfig.get_colormap(v) for v in variable_names]
+
+    proj_global = ccrs.PlateCarree(central_longitude=lon_center)
+    proj_zoom = ccrs.PlateCarree()
+
+    base_width_per_panel = 4.5
+    base_height_per_panel = 2.5
+    fig = plt.figure(figsize=(base_width_per_panel * n_vars, base_height_per_panel * 4))
+
+    left_margin = 0.08
+    right_margin = 0.02
+    bottom_margin = 0.08
+    top_margin = 0.06
+    hspace = 0.002
+    wspace = 0.008
+
+    total_width = 1 - left_margin - right_margin
+    total_height = 1 - bottom_margin - top_margin
+    col_width = total_width / n_vars
+    row_height = total_height / 4
+
+    axes = np.empty((4, n_vars), dtype=object)
+
+    for row in range(4):
+        for col in range(n_vars):
+            proj = proj_global if row == 0 else proj_zoom
+            x0 = left_margin + col * col_width + wspace / 2
+            y0 = 1 - top_margin - (row + 1) * row_height + hspace / 2
+            w = col_width - wspace
+            h = row_height - hspace
+            axes[row, col] = fig.add_axes([x0, y0, w, h], projection=proj)
+
+    coastline = cfeature.COASTLINE.with_scale("50m")
+    borders = cfeature.BORDERS.with_scale("50m")
+
+    for col in range(n_vars):
+        var = variable_names[col]
+
+        truth = PlotConfig.convert_units(var, targets[0, col])
+        pred = PlotConfig.convert_units(var, predictions[0, col])
+        mae = np.abs(pred - truth)
+
+        cmap = cmaps[col]
+
+        all_data = np.concatenate([truth.flatten(), pred.flatten()])
+        all_data = all_data[~np.isnan(all_data)]
+        vmin, vmax = np.quantile(all_data, [0.02, 0.98])
+
+        mae_vmax = np.quantile(mae[~np.isnan(mae)], 0.98)
+
+        truth_zoom = truth[np.ix_(lat_mask, lon_mask)]
+        pred_zoom = pred[np.ix_(lat_mask, lon_mask)]
+        mae_zoom = mae[np.ix_(lat_mask, lon_mask)]
+
+        # ---- Row 0 Truth global ----
+        ax = axes[0, col]
+        im = ax.pcolormesh(
+            lon2d,
+            lat2d,
+            truth,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        ax.set_extent([lon_min, lon_max, lat_min, lat_max])
+        ax.add_feature(coastline, linewidth=0.6)
+        ax.add_feature(borders, linewidth=0.5)
+
+        rect = patches.Rectangle(
+            (zoom_box["lon_min"], zoom_box["lat_min"]),
+            zoom_box["lon_max"] - zoom_box["lon_min"],
+            zoom_box["lat_max"] - zoom_box["lat_min"],
+            linewidth=2,
+            edgecolor="red",
+            facecolor="none",
+            transform=ccrs.PlateCarree(),
+        )
+        ax.add_patch(rect)
+
+        zoom_ax = axes[1, col]
+        fig.add_artist(
+            ConnectionPatch(
+                xyA=(zoom_box["lon_min"], zoom_box["lat_max"]),
+                coordsA=ccrs.PlateCarree()._as_mpl_transform(ax),
+                xyB=(0, 1),
+                coordsB=zoom_ax.transAxes,
+                color="red",
+                linewidth=1.5,
+            )
+        )
+        fig.add_artist(
+            ConnectionPatch(
+                xyA=(zoom_box["lon_max"], zoom_box["lat_max"]),
+                coordsA=ccrs.PlateCarree()._as_mpl_transform(ax),
+                xyB=(1, 1),
+                coordsB=zoom_ax.transAxes,
+                color="red",
+                linewidth=1.5,
+            )
+        )
+
+        im_global = im
+
+        # ---- Row 1 Truth zoom ----
+        ax = axes[1, col]
+        ax.pcolormesh(
+            lon_zoom2d,
+            lat_zoom2d,
+            truth_zoom,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        """
+        ax.set_extent(
+            [
+                zoom_box["lon_min"],
+                zoom_box["lon_max"],
+                zoom_box["lat_min"],
+                zoom_box["lat_max"],
+            ]
+        )
+        """
+        ax.set_extent(
+            [
+                lon_zoom.min(),
+                lon_zoom.max(),
+                lat_zoom.min(),
+                lat_zoom.max(),
+            ],
+            crs=ccrs.PlateCarree(),
+        )
+        ax.add_feature(coastline, linewidth=0.6)
+        ax.add_feature(borders, linewidth=0.5)
+
+        # ---- Row 2 Prediction zoom ----
+        ax = axes[2, col]
+        ax.pcolormesh(
+            lon_zoom2d,
+            lat_zoom2d,
+            pred_zoom,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        """
+        ax.set_extent(
+            [
+                zoom_box["lon_min"],
+                zoom_box["lon_max"],
+                zoom_box["lat_min"],
+                zoom_box["lat_max"],
+            ]
+        )
+        """
+        ax.set_extent(
+            [
+                lon_zoom.min(),
+                lon_zoom.max(),
+                lat_zoom.min(),
+                lat_zoom.max(),
+            ],
+            crs=ccrs.PlateCarree(),
+        )
+        ax.add_feature(coastline, linewidth=0.6)
+        ax.add_feature(borders, linewidth=0.5)
+
+        # ---- Row 3 MAE ----
+        ax = axes[3, col]
+        im_mae = ax.pcolormesh(
+            lon_zoom2d,
+            lat_zoom2d,
+            mae_zoom,
+            cmap="Reds",
+            vmin=0,
+            vmax=mae_vmax,
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        """
+        ax.set_extent(
+            [
+                zoom_box["lon_min"],
+                zoom_box["lon_max"],
+                zoom_box["lat_min"],
+                zoom_box["lat_max"],
+            ]
+        )
+        """
+        ax.set_extent(
+            [
+                lon_zoom.min(),
+                lon_zoom.max(),
+                lat_zoom.min(),
+                lat_zoom.max(),
+            ],
+            crs=ccrs.PlateCarree(),
+        )
+        ax.add_feature(coastline, linewidth=0.6)
+        ax.add_feature(borders, linewidth=0.5)
+
+        # Colorbars
+        cax = ax.inset_axes([0.15, -0.25, 0.7, 0.05])
+        fig.colorbar(im_mae, cax=cax, orientation="horizontal").set_label(
+            f"MAE {plot_variable_names[col]}"
+        )
+
+        ax_top = axes[0, col]
+        cax_top = ax_top.inset_axes([0.1, 1.05, 0.8, 0.05])
+        cbar = fig.colorbar(im_global, cax=cax_top, orientation="horizontal")
+        cbar.set_label(plot_variable_names[col])
+        cax_top.xaxis.set_ticks_position("top")
+        cax_top.xaxis.set_label_position("top")
+
+        for r in range(4):
+            axes[r, col].set_xticks([])
+            axes[r, col].set_yticks([])
+
+    # Labels lignes
+    row_labels = ["Truth", "Truth (Zoom)", "Prediction (Zoom)", "MAE"]
+
+    for i, label in enumerate(row_labels):
+        axes[i, 0].text(
+            -0.15,
+            0.5,
+            label,
+            transform=axes[i, 0].transAxes,
+            rotation=90,
+            va="center",
+            ha="right",
+        )
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close()
+
     return save_path
 
 
@@ -5546,6 +5871,70 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All ensemble surface plot tests passed")
+
+    def test_plot_zoom_comparison_comprehensive(self):
+        """Comprehensive test for zoom comparison plots."""
+        if self.logger:
+            self.logger.info("Testing zoom comparison plots comprehensively")
+
+        # Grid
+        lat_1d = np.linspace(-90, 90, 144)
+        lon_1d = np.linspace(0, 360, 360, endpoint=False)
+
+        batch_size = 1
+        n_vars = 3
+        H, W = 144, 360
+
+        targets = np.zeros((batch_size, n_vars, H, W))
+        predictions = np.zeros((batch_size, n_vars, H, W))
+
+        for i in range(n_vars):
+            base = np.ones((H, W)) * (280 + i * 5)
+
+            targets[0, i] = base + np.random.randn(H, W) * 1.0
+            predictions[0, i] = targets[0, i] + np.random.randn(H, W) * 0.5
+
+        variable_names = ["Temp", "Press", "Humid"]
+
+        zoom_box = {
+            "lat_min": -23,
+            "lat_max": 13,
+            "lon_min": 255,
+            "lon_max": 345,
+        }
+
+        # Test 1: numpy
+        expected_path = plot_zoom_comparison(
+            predictions=predictions,
+            targets=targets,
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=variable_names,
+            filename="plot_zoom_numpy.png",
+            save_dir=self.output_dir,
+            zoom_box=zoom_box,
+        )
+
+        self.assertTrue(os.path.exists(expected_path))
+        self.assertGreater(os.path.getsize(expected_path), 0)
+
+        # Test 2: torch
+        expected_path = plot_zoom_comparison(
+            predictions=torch.from_numpy(predictions),
+            targets=torch.from_numpy(targets),
+            lat_1d=lat_1d,
+            lon_1d=lon_1d,
+            variable_names=variable_names,
+            filename="plot_zoom_torch.png",
+            save_dir=self.output_dir,
+            zoom_box=zoom_box,
+        )
+
+        self.assertTrue(os.path.exists(expected_path))
+        self.assertGreater(os.path.getsize(expected_path), 0)
+
+        if self.logger:
+            self.logger.info("✅ All zoom comparison plot tests passed")
 
     def test_plot_global_surface_robinson_comprehensive(self):
         """Comprehensive test for global Robinson surface plots."""

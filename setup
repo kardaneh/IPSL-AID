@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
 # ======================
+# Check IPSL-AID installation
+# ======================
+if ! command -v ipsl-aid &> /dev/null; then
+    echo "ERROR: ipsl-aid command not found. Please install the package first:"
+    echo "  uv pip install -e ."
+    exit 1
+fi
+
+# ======================
 # 1. Unified Debug Flag
 # ======================
 debug=true     # true = SLURM debug job + Python --debug true
@@ -171,103 +180,13 @@ sub_folder="train_${train_parts_str}_bs${batch_size}_lr${lr_str}"
 prefix="run_${TODAY}"
 
 # ======================
-# Generate Script Names
+# Generate SBATCH Script Only (removed run script)
 # ======================
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-run_script="$PROJECT_ROOT/slurm/run_diffusion_${main_folder}_${sub_folder}.sh"
 sbatch_script="$PROJECT_ROOT/slurm/sbatch_diffusion_${main_folder}_${sub_folder}.sh"
 
-# ======================
-# Generate Run Script
-# ======================
-
-cat > $run_script <<EOF
-#!/usr/bin/env bash
-echo "Starting training: $TODAY"
-echo "Debug mode: $debug"
-echo "Run type: $run_type"
-echo "Configuration: $tag"
-echo "Main folder: $main_folder"
-echo "Sub folder: $sub_folder"
-echo "Prefix: $prefix"
-
-# Set script and project directories
-export PYTHONPATH="$PROJECT_ROOT:\$PYTHONPATH"
-
-# run from project root so -m works
-cd "$PROJECT_ROOT"
-
-python -m IPSL_AID.main \\
-EOF
-
-# Updated debug flag syntax
-echo "    --debug $debug \\" >> $run_script
-
-# Output paths (modified)
-echo "    --main_folder \"$main_folder\" \\" >> $run_script
-echo "    --sub_folder \"$sub_folder\" \\" >> $run_script
-echo "    --prefix \"$prefix\" \\" >> $run_script
-
-# Additional args
-echo "    --run_type \"$run_type\" \\" >> $run_script
-echo "    --save_model $save_model \\" >> $run_script
-echo "    --save_checkpoint_name \"$save_checkpoint_name\" \\" >> $run_script
-echo "    --load_checkpoint_name \"$load_checkpoint_name\" \\" >> $run_script
-echo "    --save_per_samples \"$save_per_samples\" \\" >> $run_script
-echo "    --inference_type \"$inference_type\" \\" >> $run_script
-echo "    --arch \"$arch\" \\" >> $run_script
-echo "    --precond \"$precond\" \\" >> $run_script
-echo "    --in_channels \"$in_channels\" \\" >> $run_script
-echo "    --cond_channels \"$cond_channels\" \\" >> $run_script
-echo "    --out_channels \"$out_channels\" \\" >> $run_script
-
-# NEW: Add apply_filter parameter
-echo "    --apply_filter $apply_filter \\" >> $run_script
-
-# Optional parameters
-[ -n "$region" ] && echo "    --region \"$region\" \\" >> $run_script
-[ -n "$pretrained_path" ] && echo "    --pretrained_path \"$pretrained_path\" \\" >> $run_script
-[ -n "$model_name" ] && echo "    --model_name \"$model_name\" \\" >> $run_script
-
-# Arrays
-[ ${#varnames_list[@]} -gt 0 ] && echo "    --varnames_list ${varnames_list[@]} \\" >> $run_script
-[ ${#normalization_types[@]} -gt 0 ] && echo "    --normalization_types ${normalization_types[@]} \\" >> $run_script
-[ ${#constant_varnames_list[@]} -gt 0 ] && echo "    --constant_varnames_list ${constant_varnames_list[@]} \\" >> $run_script
-echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $run_script
-[ ${#units_list[@]} -gt 0 ] && echo "    --units_list ${units_list[@]} \\" >> $run_script
-[ ${#dynamic_covariates[@]} -gt 0 ] && echo "    --dynamic_covariates ${dynamic_covariates[@]} \\" >> $run_script
-
-cat >> $run_script <<EOF
-    --year_start "$year_start" \\
-    --year_end "$year_end" \\
-    --year_start_test "$year_start_test" \\
-    --year_end_test "$year_end_test" \\
-    --batch_size "$batch_size" \\
-    --num_epochs "$num_epochs" \\
-    --learning_rate "$learning_rate" \\
-    --num_workers "$num_workers" \\
-    --datadir "$datadir" \\
-    --per_var_datadir ${per_var_datadir[@]} \\
-    --time_normalization "$time_normalization" \\
-    --tbatch "$tbatch" \\
-    --sbatch "$sbatch" \\
-    --batch_size_lat "$batch_size_lat" \\
-    --batch_size_lon "$batch_size_lon" \\
-    --epsilon "$epsilon" \\
-    --beta "$beta" \\
-    --margin "$margin" \\
-    --dynamic_covariates_dir "$dynamic_covariates_dir" \\
-    --dtype "$dtype" \\
-    --num_steps "$num_steps" \\
-    --sigma_min "$sigma_min" \\
-    --sigma_max "$sigma_max" \\
-    --rho "$rho" \\
-    --s_churn "$s_churn" \\
-    --solver "$solver" \\
-    --compute_crps "$compute_crps"
-EOF
-
-chmod +x $run_script
+# Create slurm_io directory if it doesn't exist
+mkdir -p "$PROJECT_ROOT/slurm_io"
 
 # ======================
 # Generate SBATCH Script
@@ -300,16 +219,16 @@ cat >> $sbatch_script <<EOF
 
 ulimit -s unlimited
 module purge
+
+# Activate virtual environment
 source .venv/bin/activate
-#source ../arch-nvhpc_LEONARDO.env
-##module load cuda/12.1
-##source ~/torch_test/bin/activate
 
 export PYTHONUNBUFFERED=1
 
 echo "===== Job Infos ====="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "Inference type: $inference_type"
 echo "Node list: \${SLURM_NODELIST}"
 echo "Job ID: \${SLURM_JOB_ID}"
 echo "Current dir: \$(pwd)"
@@ -317,28 +236,100 @@ echo "Output main folder: $main_folder"
 echo "Output sub folder: $sub_folder"
 echo "====================="
 
-$run_script
+# Use ipsl-aid command directly
+ipsl-aid \\
+    --debug $debug \\
+    --main_folder "$main_folder" \\
+    --sub_folder "$sub_folder" \\
+    --prefix "$prefix" \\
+    --run_type "$run_type" \\
+    --save_model $save_model \\
+    --save_checkpoint_name "$save_checkpoint_name" \\
+    --load_checkpoint_name "$load_checkpoint_name" \\
+    --save_per_samples "$save_per_samples" \\
+    --inference_type "$inference_type" \\
+    --arch "$arch" \\
+    --precond "$precond" \\
+    --in_channels "$in_channels" \\
+    --cond_channels "$cond_channels" \\
+    --out_channels "$out_channels" \\
+    --apply_filter $apply_filter \\
+EOF
+
+# Add optional parameters
+[ -n "$region" ] && echo "    --region \"$region\" \\" >> $sbatch_script
+[ -n "$pretrained_path" ] && echo "    --pretrained_path \"$pretrained_path\" \\" >> $sbatch_script
+[ -n "$model_name" ] && echo "    --model_name \"$model_name\" \\" >> $sbatch_script
+
+# Add arrays
+[ ${#varnames_list[@]} -gt 0 ] && echo "    --varnames_list ${varnames_list[@]} \\" >> $sbatch_script
+[ ${#normalization_types[@]} -gt 0 ] && echo "    --normalization_types ${normalization_types[@]} \\" >> $sbatch_script
+[ ${#constant_varnames_list[@]} -gt 0 ] && echo "    --constant_varnames_list ${constant_varnames_list[@]} \\" >> $sbatch_script
+echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $sbatch_script
+[ ${#units_list[@]} -gt 0 ] && echo "    --units_list ${units_list[@]} \\" >> $sbatch_script
+[ ${#dynamic_covariates[@]} -gt 0 ] && echo "    --dynamic_covariates ${dynamic_covariates[@]} \\" >> $sbatch_script
+
+cat >> $sbatch_script <<EOF
+    --year_start "$year_start" \\
+    --year_end "$year_end" \\
+    --year_start_test "$year_start_test" \\
+    --year_end_test "$year_end_test" \\
+    --batch_size "$batch_size" \\
+    --num_epochs "$num_epochs" \\
+    --learning_rate "$learning_rate" \\
+    --num_workers "$num_workers" \\
+    --datadir "$datadir" \\
+    --per_var_datadir ${per_var_datadir[@]} \\
+    --time_normalization "$time_normalization" \\
+    --tbatch "$tbatch" \\
+    --sbatch "$sbatch" \\
+    --batch_size_lat "$batch_size_lat" \\
+    --batch_size_lon "$batch_size_lon" \\
+    --epsilon "$epsilon" \\
+    --beta "$beta" \\
+    --margin "$margin" \\
+    --dynamic_covariates_dir "$dynamic_covariates_dir" \\
+    --dtype "$dtype" \\
+    --num_steps "$num_steps" \\
+    --sigma_min "$sigma_min" \\
+    --sigma_max "$sigma_max" \\
+    --rho "$rho" \\
+    --s_churn "$s_churn" \\
+    --solver "$solver" \\
+    --compute_crps "$compute_crps"
 
 exit \$?
 EOF
 
 chmod +x $sbatch_script
 
+# ======================
+# Final Output
+# ======================
 echo "=== Setup Complete ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
 echo "Inference type: $inference_type"
 echo "Run type: $run_type"
-echo "Checkpoint: load=$load_model, save=$save_model"
+echo "Save model: $save_model"
+echo "Load checkpoint: $load_checkpoint_name"
 if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
     echo "Checkpoint file: $load_checkpoint_name"
 fi
+echo ""
 echo "Model name parts: ${model_parts[*]}"
 echo "Model name: $model_name"
 echo "Tag: $tag"
+echo ""
 echo "Main folder: $main_folder"
 echo "Sub folder: $sub_folder"
 echo "Prefix: $prefix"
-echo "Run script: $run_script"
-echo "SBATCH: $sbatch_script"
-echo "To submit: sbatch $sbatch_script"
+echo ""
+echo "SBATCH script: $sbatch_script"
+echo ""
+echo "To submit the job:"
+echo "  sbatch $sbatch_script"
+echo ""
+echo "To test locally (small run):"
+echo "  source .venv/bin/activate"
+echo "  ipsl-aid --debug true --run_type train --num_epochs 1 --batch_size 2"

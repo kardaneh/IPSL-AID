@@ -7,6 +7,7 @@
 # http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 import os
+import sys
 import time
 import argparse
 from IPSL_AID.logger import Logger
@@ -1368,6 +1369,16 @@ def main():
     ValueError
         If invalid configurations are provided.
     """
+    # Check for --version flag
+    if "--version" in sys.argv or "-V" in sys.argv:
+        from IPSL_AID import __version__, __author__, __license__
+
+        print(f"IPSL-AID version {__version__}")
+        print(f"Copyright (c) 2026 {__author__}")
+        print(f"License: {__license__}")
+        print("Repository: https://github.com/kardaneh/IPSL-AID")
+        sys.exit(0)
+
     # Parse command line arguments
     args = parse_args()
 

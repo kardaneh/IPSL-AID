@@ -3,37 +3,36 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "IPSL-AID"
-version="0.1.0"
+name = "ipsl-aid"
+version = "0.1.0"
 requires-python = ">=3.8"
-
 license = { file = "LICENSE" }
-
-description = "IPSL-AID art generator"
-authors = [{ name = "Kazem Ardaneh", email = "kazem.arrdaneh@gmail.com" }]
+description = "IPSL-AID: AI Diffusion Models for Climate Downscaling"
+authors = [{ name = "Kazem Ardaneh", email = "kardaneh@ipsl.fr" }]
+readme = "README.rst"
 
 classifiers = [
     "Development Status :: 3 - Alpha",
-    'Intended Audience :: Science/Research',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: BSD License',
-    'Programming Language :: Cython',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: Implementation :: CPython',
-    'Topic :: Software Development',
-    'Topic :: Scientific/Engineering',
-    'Typing :: Typed',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX',
-    'Operating System :: Unix',
-    'Operating System :: MacOS',
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Cython",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
 ]
 
 dependencies = [
@@ -57,11 +56,29 @@ dependencies = [
     "cdsapi>=0.7.6",
     "ipykernel>=6.29.5",
 ]
-[tool.setuptools.dynamic]
-version = { attr = "IPSL_AID.version.__version__" }
+
+[project.scripts]
+ipsl-aid = "IPSL_AID.main:main"
 
 [project.urls]
 Source = "https://github.com/kardaneh/IPSL-AID"
+Documentation = "https://github.com/kardaneh/IPSL-AID"
+Issues = "https://github.com/kardaneh/IPSL-AID/issues"
+
+# ADD THIS SECTION - Tell hatchling where your package is
+[tool.hatch.build.targets.wheel]
+packages = ["IPSL_AID"]
+
+# Optional: If you want to include specific files
+[tool.hatch.build]
+include = [
+    "IPSL_AID/**/*",
+    "LICENSE",
+    "README.rst",
+]
+
+#[tool.setuptools.dynamic]
+#version = { attr = "IPSL_AID.version.__version__" }
 
 [tool.pytest.ini_options]
 markers = ["long: marks tests as long (deselect with '-m \"not long\"')"]

@@ -12,10 +12,41 @@ Basic Workflow
 Running the Model
 -----------------
 
-Model execution is controlled via a **setup bash script** that:
+Model execution is controlled via the **ipsl-aid** command-line interface (CLI) or
+a **setup bash script** that generates SLURM submission scripts.
+
+**Option 1: Direct CLI Usage**
+
+The simplest way to run the model is using the ``ipsl-aid`` command:
+
+.. code-block:: bash
+
+   # Show version and help
+   ipsl-aid --version
+   ipsl-aid --help
+
+   # Train a model
+   ipsl-aid --mode train \
+       --arch adm \
+       --precond edm \
+       --in_channels 1 \
+       --out_channels 1 \
+       --batch_size 32 \
+       --num_epochs 100 \
+       --data_dir ./data \
+       --output_dir ./runs
+
+   # Run inference
+   ipsl-aid --mode inference \
+       --checkpoint ./checkpoints/model.pth \
+       --data_dir ./data/test \
+       --inference_type sampler
+
+**Option 2: SLURM Batch Submission (Recommended for HPC)**
+
+For HPC environments, use the setup script that:
 
 - Defines all model, data, and training parameters
-- Generates a runnable script
 - Generates a SLURM submission script
 - Encodes the full configuration in the output folder structure
 
@@ -27,7 +58,7 @@ Typical workflow:
    - Define variables, normalization, batch sizes
    - Choose training or inference mode
 
-2. Generate run and sbatch scripts:
+2. Generate the SBATCH script:
 
 .. code-block:: bash
 

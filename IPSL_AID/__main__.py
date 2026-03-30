@@ -6,12 +6,12 @@
 # To view a copy of this license, visit
 # http://creativecommons.org/licenses/by-nc-sa/4.0/
 
-"""Version information for IPSL-AID package."""
+"""
+Allow the package to be executed as a module:
+    python -m IPSL_AID [args]
+"""
 
-__version__ = "0.1.0"
-__version_info__ = tuple(int(x) for x in __version__.split("."))
+from IPSL_AID.main import main
 
-
-def get_version():
-    """Return the version string."""
-    return __version__
+if __name__ == "__main__":
+    main()

@@ -24,12 +24,11 @@ import unittest
 
 def stats(ds, logger, input_dir, norm_mapping=dict()):
     """
-    Compute statistics and histograms for variables across a NetCDF dataset.
+    Load normalization statistics and compute coordinate metadata for a NetCDF dataset.
 
-    This function analyzes a NetCDF dataset to compute descriptive statistics
-    for both coordinates and data variables, and generates histograms for
-    visualization. It also applies predefined normalization constants for
-    specific weather variables.
+    This function loads normalization statistics from a JSON file if available.
+    If no statistics file is found, it falls back to predefined constants for
+    fine and coarse variables only.
 
     Parameters
     ----------
@@ -55,12 +54,8 @@ def stats(ds, logger, input_dir, norm_mapping=dict()):
 
     Notes
     -----
-    - Computes statistics for all coordinates (excluding datetime) and data variables.
-    - Generates histograms for data variables and saves them as PNG files.
-    - Applies predefined normalization constants for specific weather variables.
-    - Saves statistics to a JSON file in the output directory.
-    - Handles multi-dimensional coordinates with warnings.
-    - Uses EasyDict for convenient attribute access to nested dictionaries.
+    - If statistics.json is found, all statistics are loaded as-is.
+    - If not found, fallback constants are used for fine and coarse variables only.
     """
 
     # stats_file_path = os.path.join(output_dir, "statistics.json")
@@ -89,47 +84,39 @@ def stats(ds, logger, input_dir, norm_mapping=dict()):
         logger.info("No statistics.json found, using manual constants")
 
         RAW_CONSTANTS = {
-            "VAR_2T": {"mean": 2.8504e02, "std": 12.7438},
-            "VAR_10U": {"mean": 4.4536e-01, "std": 3.4649},
-            "VAR_10V": {"mean": -1.1892e-01, "std": 3.7420},
-            "VAR_TP": {"mean": 9.4189e-05, "std": 2.6393e-04},
-            "VAR_D2M": {"mean": 2.8250e02, "std": 5.5930},
-            "VAR_SSTK": {"mean": 2.92517e02, "std": 8.79515},
-            "VAR_SKT": {"mean": 2.86780e02, "std": 13.4919},
-            "VAR_ST": {"mean": 2.86905e02, "std": 13.4027},
-            "VAR_TCWV": {"mean": 1.97549e01, "std": 13.4064},
+            "VAR_2T_fine": {"vmean": 286.3158874511719, "vstd": 12.632543563842773},
+            "VAR_10U_fine": {"vmean": 0.36626559495925903, "vstd": 3.4527664184570312},
+            "VAR_10V_fine": {"vmean": -0.05726669356226921, "vstd": 3.699695110321045},
+            "VAR_TP_fine": {
+                "vmean": 9.736002539284527e-05,
+                "vstd": 0.0004453345318324864,
+            },
+            "VAR_D2M_fine": {"vmean": 280.1187744140625, "vstd": 12.384744644165039},
+            "VAR_SSTK_fine": {"vmean": 294.448974609375, "vstd": 7.419081211090088},
+            "VAR_SKT_fine": {"vmean": 286.8110656738281, "vstd": 13.723491668701172},
+            "VAR_ST_fine": {"vmean": 286.93658447265625, "vstd": 13.66016674041748},
+            "VAR_TCWV_fine": {"vmean": 19.793996810913086, "vstd": 13.685070037841797},
+            "VAR_2T_coarse": {"vmean": 286.2744445800781, "vstd": 12.475735664367676},
+            "VAR_10U_coarse": {"vmean": 0.3791687488555908, "vstd": 3.261948585510254},
+            "VAR_10V_coarse": {
+                "vmean": -0.05645933374762535,
+                "vstd": 3.4837522506713867,
+            },
+            "VAR_TP_coarse": {
+                "vmean": 9.832954674493521e-05,
+                "vstd": 0.0003440176951698959,
+            },
+            "VAR_D2M_coarse": {"vmean": 280.09478759765625, "vstd": 12.215740203857422},
+            "VAR_SSTK_coarse": {"vmean": 292.5169982910156, "vstd": 8.795150756835938},
+            "VAR_SKT_coarse": {"vmean": 286.7804260253906, "vstd": 13.49194049835205},
+            "VAR_ST_coarse": {"vmean": 286.9049377441406, "vstd": 13.402721405029297},
+            "VAR_TCWV_coarse": {"vmean": 19.75491714477539, "vstd": 13.40636920928955},
         }
 
-        RESID_CONSTANTS = {
-            "VAR_2T_residual": {"mean": -9.4627e-05, "std": 1.6042},
-            "VAR_10U_residual": {"mean": -1.3833e-03, "std": 1.0221},
-            "VAR_10V_residual": {"mean": -1.5548e-03, "std": 1.0384},
-            "VAR_TP_residual": {"mean": -4.0417e-08, "std": 2.8678e-04},
-            "VAR_D2M_residual": {"mean": 4.6380e-01, "std": 1.0602},
-            "VAR_SSTK_residual": {"mean": -3.50143e-02, "std": 7.58565e-01},
-            "VAR_SKT_residual": {"mean": 3.11868e-02, "std": 2.04542},
-            "VAR_ST_residual": {"mean": 3.21775e-02, "std": 2.27347},
-            "VAR_TCWV_residual": {"mean": 3.90753e-02, "std": 1.73849},
-        }
-
-        for var_name in ds.data_vars:
-            var_name_residual = f"{var_name}_residual"
-            var_name_coarse = f"{var_name}_coarse"
-
-            norm_mapping[var_name_residual] = EasyDict()
-            norm_mapping[var_name_coarse] = EasyDict()
-
-            if var_name in RAW_CONSTANTS:
-                norm_mapping[var_name_coarse].vmean = RAW_CONSTANTS[var_name]["mean"]
-                norm_mapping[var_name_coarse].vstd = RAW_CONSTANTS[var_name]["std"]
-
-            if var_name_residual in RESID_CONSTANTS:
-                norm_mapping[var_name_residual].vmean = RESID_CONSTANTS[
-                    var_name_residual
-                ]["mean"]
-                norm_mapping[var_name_residual].vstd = RESID_CONSTANTS[
-                    var_name_residual
-                ]["std"]
+        for key, values in RAW_CONSTANTS.items():
+            norm_mapping[key] = EasyDict()
+            norm_mapping[key].vmean = values["vmean"]
+            norm_mapping[key].vstd = values["vstd"]
 
     logger.info("------------------------------------------")
 

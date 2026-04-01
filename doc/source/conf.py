@@ -97,5 +97,13 @@ html_theme_options = {
     "includehidden": True,
     "titles_only": False,
 }
+html_sidebars = {
+    "**": [
+        "about.html",
+        "navigation.html",
+        "relations.html",
+        "searchbox.html",
+    ]
+}
 
 html_static_path = ["_static"]

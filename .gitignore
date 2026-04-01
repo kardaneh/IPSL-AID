@@ -165,6 +165,7 @@ test_plots/
 
 stats/*
 !stats/.gitkeep
+!stats/statistics.json
 
 checkpoints/*
 !checkpoints/.gitkeep

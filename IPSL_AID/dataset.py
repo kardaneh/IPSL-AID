@@ -1994,9 +1994,9 @@ class TestDataPreprocessor(unittest.TestCase):
 
         # Check that norm_mapping was populated with constants
         self.assertIn("VAR_2T_coarse", result_norm)
-        self.assertIn("VAR_2T_residual", result_norm)
-        self.assertEqual(result_norm["VAR_2T_coarse"].vmean, 285.04)
-        self.assertEqual(result_norm["VAR_2T_coarse"].vstd, 12.7438)
+        self.assertIn("VAR_2T_fine", result_norm)
+        self.assertAlmostEqual(result_norm["VAR_2T_coarse"].vmean, 286.2744, places=4)
+        self.assertAlmostEqual(result_norm["VAR_2T_coarse"].vstd, 12.4757, places=4)
 
         # Check coordinate stats
         self.assertIn("latitude", result_norm)

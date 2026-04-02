@@ -122,17 +122,36 @@ def stats(ds, logger, input_dir, norm_mapping=dict()):
 
     for cname in ds.coords:
         cdata = ds[cname].values
+
+        # Scalar coordinates (ndim == 0)
+        # len() would crash on unsized objects, so we set a placeholder and skip
+        if cdata.ndim == 0:
+            steps[cname] = 1
+            steps[f"d_{cname}"] = 0.0
+            logger.info(f"[COORD] '{cname}' is scalar, skipping step computation")
+            continue
+
         steps[cname] = len(cdata)
-        steps[f"d_{cname}"] = abs(cdata[1] - cdata[0])
+
         # Skip multi-dimensional coordinates (rare but possible)
         if cdata.ndim != 1:
             logger.warning(f"[COORD] Skipping '{cname}' because it is not 1-D")
             continue
 
+        # String/object coordinates (dtype S, U, O)
+        if cdata.dtype.kind in ("S", "U", "O"):
+            steps[f"d_{cname}"] = 0.0
+            logger.info(f"[COORD] Skipping '{cname}' (string/object dtype)")
+            continue
+
         # Skip datetime unless desired
         if np.issubdtype(cdata.dtype, np.datetime64):
+            steps[f"d_{cname}"] = abs(cdata[1] - cdata[0])
             logger.info(f"[COORD] Skipping time coordinate '{cname}' (datetime64)")
             continue
+
+        steps[f"d_{cname}"] = abs(cdata[1] - cdata[0])
+        print("steps = ", steps)
 
         vmin = float(np.min(cdata))
         vmax = float(np.max(cdata))

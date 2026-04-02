@@ -195,6 +195,7 @@ def main(logger):
 
                 t0 = time.time()
                 ds = xr.open_dataset(monthly_file)
+                ds = ds.drop_vars(["number", "expver"], errors="ignore")
 
                 if pressure_levels and "pressure_level" in ds.dims:
                     ds = ds.sel(pressure_level=[int(p) for p in pressure_levels])

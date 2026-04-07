@@ -63,19 +63,15 @@ After installation, verify that the package is correctly installed:
 
 .. note::
    The first execution of ``ipsl-aid --version`` or ``ipsl-aid --help``
-   can take up to 1–2 minutes.
+   can take up to couple of minutes. This is due to the current CLI implementation:
+   heavy dependencies (such as PyTorch, Torchvision, NumPy, etc.)
+   are imported at startup, even for lightweight commands.
 
-   This is due to the current CLI implementation: heavy dependencies
-   (such as PyTorch, NumPy, etc.) are imported at startup, even for
-   lightweight commands.
-
-   On HPC systems, many of these libraries are already available via
-   ``module load``, which can significantly reduce startup time. Users are
+   On HPC machines, many of these libraries are already available via
+   ``module load``, which significantly reduce startup time. Users are
    encouraged to rely on these system-provided modules rather than
-   reinstalling them in their virtual environment.
-
-   As a temporary workaround, dependencies already available on the system
-   can be commented out in ``pyproject.toml``.
+   reinstalling them in their virtual environment. In this case,
+   the dependencies already available on the system need be commented out in ``pyproject.toml``.
 
 HPC Configuration
 -----------------

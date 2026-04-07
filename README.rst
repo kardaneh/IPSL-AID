@@ -5,26 +5,26 @@ IPSL-AID
    :width: 30%
    :align: center
 
-|PyPI version| |arXiv| |License| |Documentation Status|
+|CI Status| |arXiv| |License| |Documentation Status|
 
 **IPSL-AID** is a high-performance research framework for **climate data downscaling**
 based on **diffusion models**, designed for **GPU clusters and HPC systems**.
 
-.. |PyPI version| image:: https://img.shields.io/pypi/v/IPSL-AID.svg
-   :target: https://pypi.org/project/IPSL-AID/
-   :alt: PyPI version
+.. |CI Status| image:: https://github.com/kardaneh/IPSL-AID/workflows/CI/badge.svg
+   :target: https://github.com/kardaneh/IPSL-AID/actions
+   :alt: CI Status
 
-.. |arXiv| image:: https://img.shields.io/badge/arXiv-YYYY.NNNNN-b31b1b.svg
-   :target: https://arxiv.org/abs/YYYY.NNNNN
+.. |arXiv| image:: https://img.shields.io/badge/arXiv-2604.03275-b31b1b.svg
+   :target: https://arxiv.org/abs/2604.03275
    :alt: arXiv preprint
 
 .. |License| image:: https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg
    :target: LICENSE
    :alt: License
 
-.. |Documentation Status| image:: https://img.shields.io/badge/docs-GitHub%20Pages-blue
-   :target: https://kardaneh.github.io/IPSL-AID/
-   :alt: Documentation
+.. |Documentation Status| image:: https://github.com/kardaneh/IPSL-AID/workflows/Documentation/badge.svg
+   :target: https://github.com/kardaneh/IPSL-AID/actions
+   :alt: Documentation Status
 
 
 Authors
@@ -65,17 +65,13 @@ Citation
 
 If you use **IPSL-AID** in your research, please cite:
 
-**IPSL-AID: Generative Diffusion Models for Climate Downscaling from Regional to Global Scales**
-Kishanthan Kingston, Olivier Boucher, Freddy Bouchet, Pierre Chapel, Rosemary Eade, Jean-François Lamarque, Redouane Lguensat, and Kazem Ardaneh, 2026.
-IPSL / CNRS / Sorbonne University.
-
 BibTeX::
 
     @article{kingston2026ipslaid_arxiv,
-        title={IPSL-AID: Generative Diffusion Models for Climate Downscaling from Regional to Global Scales},
+        title={IPSL-AID: Generative Diffusion Models for Climate Downscaling from Global to Regional Scales},
         author={K. Kingston and O. Boucher and F. Bouchet and P. Chapel and R. Eade and J.-F. Lamarque and R. Lguensat and K. Ardaneh},
         journal={arXiv preprint},
         year={2026},
-        eprint={arXiv:YYYY.NNNNN},
-        note={\url{https://arxiv.org/abs/YYYY.NNNNN}}
+        eprint={arXiv:2604.03275},
+        note={\url{https://arxiv.org/abs/2604.03275}}
     }

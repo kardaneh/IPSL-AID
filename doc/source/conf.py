@@ -88,7 +88,6 @@ suppress_warnings = [
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": False,
-    "display_version": True,
     "prev_next_buttons_location": "both",
     "style_external_links": True,
     "collapse_navigation": True,
@@ -96,14 +95,6 @@ html_theme_options = {
     "navigation_depth": 4,
     "includehidden": True,
     "titles_only": False,
-}
-html_sidebars = {
-    "**": [
-        "about.html",
-        "navigation.html",
-        "relations.html",
-        "searchbox.html",
-    ]
 }
 
 html_static_path = ["_static"]

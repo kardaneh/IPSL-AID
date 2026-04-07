@@ -1139,7 +1139,7 @@ def create_data_loaders(
         constants_file_path=paths.constants,
         varnames_list=args.varnames_list,
         units_list=args.units_list,
-        in_shape=(16, 32),
+        in_shape=(80, 128),
         batch_size_lat=h,
         batch_size_lon=w,
         steps=steps,

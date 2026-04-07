@@ -1704,7 +1704,7 @@ class DataPreprocessor(Dataset):
                 coarse_full, lat_center, lon_center
             )
 
-            coarse = coarse_block     
+            coarse = coarse_block
 
         else:  # train (global)
             # Random spatial sampling for training

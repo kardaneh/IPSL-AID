@@ -12,7 +12,7 @@ fi
 # ======================
 # 1. Unified Debug Flag
 # ======================
-debug=true     # true = SLURM debug job + Python --debug true
+debug=false     # true = SLURM debug job + Python --debug true
                 # false = full job + Python --debug false
 
 DATE=$(date +"%Y%m%d")
@@ -29,19 +29,24 @@ save_checkpoint_name="difusion_model"
 load_checkpoint_name="difusion_model"
 save_per_samples=10000
 
-year_start=2019
+year_start=2015
 year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
 
 batch_size=70 #20 #40 # use maximum 18 for 1 GPU
-num_epochs=1
+num_epochs=10
 learning_rate=0.0001
 num_workers=8
 
 datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
 per_var_datadir=(
   "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+  "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+  "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
+  "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
+  "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
   )
 
 #"VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
@@ -53,11 +58,11 @@ per_var_datadir=(
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T") # "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST"
+varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
 constant_varnames_list=("z" "lsm")
 constant_varnames_file="ERA5_const_sfc_variables.nc"
-normalization_types=("VAR_2T=standard") # "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard"
-units_list=("K") # "m/s" "m/s" "m/h" "K" "K"
+normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard")
+units_list=("K" "m/s" "m/s" "m/h" "K" "K")
 dynamic_covariates=()
 dynamic_covariates_dir="../data_covariates/"
 
@@ -77,9 +82,9 @@ dtype="fp32"
 arch="adm"
 precond="edm" # edm for edm (default model), unet for unet,
 # for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
-in_channels=1 # number of variables
-cond_channels=5 # number of variables + lat + lon + z + lsm, no cond_channels for unet
-out_channels=1 # number of variables
+in_channels=6 # number of variables
+cond_channels=10 # number of variables + lat + lon + z + lsm, no cond_channels for unet
+out_channels=6 # number of variables
 inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 
 compute_crps=false
@@ -107,7 +112,7 @@ apply_filter=false
 
 SLURM_ACCOUNT="EUHPC_D27_095"
 SLURM_PARTITION="boost_usr_prod"
-SLURM_QOS="boost_qos_lprod"
+SLURM_QOS="boost_qos_bprod"
 SLURM_GRES=4
 SLURM_NODES=1
 SLURM_NTASKS_PER_NODE=32
@@ -210,7 +215,7 @@ fi
 cat >> $sbatch_script <<EOF
 #SBATCH --nodes=$SLURM_NODES
 #SBATCH --gpus-per-node=$SLURM_GRES
-#SBATCH --mem-per-gpu=64G
+#SBATCH --mem=0
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out

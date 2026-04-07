@@ -463,7 +463,7 @@ class DataPreprocessor(Dataset):
         constants_file_path,
         varnames_list,
         units_list,
-        in_shape=(16, 32),
+        in_shape=(80, 128),
         batch_size_lat=144,
         batch_size_lon=144,
         steps=dict(),
@@ -754,7 +754,7 @@ class DataPreprocessor(Dataset):
             if self.run_type == "inference":
                 self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
                 # self.time_batchs = np.linspace(
-                #     self.etime // 3, self.etime * 2 // 3, 2, dtype=int
+                #    self.etime // 3, self.etime * 2 // 3, 2, dtype=int
                 # )  # 2 for debug, self.tbatch
 
             elif self.run_type == "inference_regional":
@@ -1509,10 +1509,27 @@ class DataPreprocessor(Dataset):
                 )
 
                 if self.apply_filter:
+                    # Spatial filtering on the full domain before coarsening
                     fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
                     fine_filtered_block, _ = self.extract_batch(
                         fine_filtered_full, lat_center, lon_center
                     )
+
+                    # Apply coarsening to the full domain of the filtered HR field
+                    coarse_full = coarse_down_up(
+                        fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+                    )
+                else:
+                    # Apply coarsening directly to the full domain of the raw HR field
+                    coarse_full = coarse_down_up(
+                        npfeatures_full, npfeatures_full, input_shape=self.in_shape
+                    )
+
+                coarse_block, coarse_indices = self.extract_batch(
+                    coarse_full, lat_center, lon_center
+                )
+
+                coarse = coarse_block
 
             else:  # validation, global inference
                 # Extract normalized coordinates for the batch
@@ -1528,7 +1545,7 @@ class DataPreprocessor(Dataset):
                 fine_block = npfeatures_full[:, lat_start:lat_end, lon_start:lon_end]
 
                 if self.apply_filter:
-                    # Apply filter to the WHOLE domain (same as training logic)
+                    # Spatial filtering on the full domain before coarsening
                     fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
 
                     assert fine_filtered_full.shape == npfeatures_full.shape, (
@@ -1544,6 +1561,20 @@ class DataPreprocessor(Dataset):
                         f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
                         f"but fine_block has shape {fine_block.shape}."
                     )
+
+                    # Apply coarsening to the full domain of the filtered HR field
+                    coarse_full = coarse_down_up(
+                        fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+                    )
+                else:
+                    # Apply coarsening directly to the full domain of the raw HR field
+                    coarse_full = coarse_down_up(
+                        npfeatures_full, npfeatures_full, input_shape=self.in_shape
+                    )
+
+                coarse_block = coarse_full[:, lat_start:lat_end, lon_start:lon_end]
+
+                coarse = coarse_block
 
                 if self.debug:
                     self.logger.info(
@@ -1597,6 +1628,7 @@ class DataPreprocessor(Dataset):
             )
 
             if self.apply_filter:
+                # Spatial filtering on the full domain before coarsening
                 fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
 
                 assert fine_filtered_full.shape == npfeatures_full.shape, (
@@ -1618,11 +1650,21 @@ class DataPreprocessor(Dataset):
                     f"but fine_block has shape {fine_block.shape}."
                 )
 
-        # Common processing for both modes
-        if self.apply_filter:
-            coarse = coarse_down_up(fine_filtered_block, fine_block)
-        else:
-            coarse = coarse_down_up(fine_block, fine_block)
+                # Apply coarsening to the full domain of the filtered HR field
+                coarse_full = coarse_down_up(
+                    fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+                )
+            else:
+                # Apply coarsening directly to the full domain of the raw HR field
+                coarse_full = coarse_down_up(
+                    npfeatures_full, npfeatures_full, input_shape=self.in_shape
+                )
+
+            coarse_block, coarse_indices = self.extract_batch(
+                coarse_full, lat_center, lon_center
+            )
+
+            coarse = coarse_block
 
         # Convert fine data to torch tensor and initialize normalized container
         fine_block = torch.from_numpy(fine_block).to(self.torch_dtype)

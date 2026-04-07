@@ -62,9 +62,20 @@ After installation, verify that the package is correctly installed:
    python -c "import IPSL_AID; print('IPSL-AID imported successfully')"
 
 .. note::
-   The first execution of ``ipsl-aid --version`` or ``ipsl-aid --help`` loads all dependencies
-   (PyTorch, NumPy, etc.), which may take 1-2 minutes. We are actively working on a fix to
-   make these commands instantaneous. Subsequent calls will be faster due to caching.
+   The first execution of ``ipsl-aid --version`` or ``ipsl-aid --help``
+   can take up to 1–2 minutes.
+
+   This is due to the current CLI implementation: heavy dependencies
+   (such as PyTorch, NumPy, etc.) are imported at startup, even for
+   lightweight commands.
+
+   On HPC systems, many of these libraries are already available via
+   ``module load``, which can significantly reduce startup time. Users are
+   encouraged to rely on these system-provided modules rather than
+   reinstalling them in their virtual environment.
+
+   As a temporary workaround, dependencies already available on the system
+   can be commented out in ``pyproject.toml``.
 
 HPC Configuration
 -----------------

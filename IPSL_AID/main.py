@@ -84,8 +84,14 @@ def parse_args():
         "--run_type",
         type=str,
         default="train",
-        choices=["train", "resume_train", "inference", "inference_regional"],
-        help="Run type: 'train', 'resume_train', 'inference' or 'inference_regional'",
+        choices=[
+            "train",
+            "train_regional",
+            "resume_train",
+            "inference",
+            "inference_regional",
+        ],
+        help="Run type: 'train','train_regional','resume_train', 'inference' or 'inference_regional'",
     )
 
     parser.add_argument(
@@ -182,7 +188,7 @@ def parse_args():
         "--sbatch",
         type=int,
         default=8,
-        help="Number of spatial batches per timestamp for the traning",
+        help="Number of spatial batches per timestamp for the training",
     )
 
     parser.add_argument(
@@ -735,7 +741,11 @@ def log_configuration(args, paths, logger):
         logger.info(f" └── Region center: {args.region_center}")
         logger.info(f" └── Region size: {args.region_size}")
         logger.info(f" └── Compute CRPS: {args.compute_crps}")
-
+    elif args.run_type == "train_regional":
+        logger.info(" └── Mode: Regional train")
+        logger.info(f" └── Region center: {args.region_center}")
+        logger.info(f" └── Region size: {args.region_size}")
+        logger.info(f" └── Compute CRPS: {args.compute_crps}")
     # Checkpoint saving strategy
     if args.save_model:
         logger.info("\nCheckpoint Saving Strategy:")
@@ -1051,7 +1061,7 @@ def create_data_loaders(
     mode : str, optional
         Either ``train`` or ``validation``.
     run_type : str, optional
-        Execution mode (train, resume_train, inference).
+        Execution mode (train, train_regional, resume_train, inference, inference_regional).
     train_loaded_dfs : dict, optional
         Pre-loaded training datasets.
     valid_loaded_dfs : dict, optional
@@ -1249,7 +1259,7 @@ def resolve_region_center(args):
     """
     Resolve the regional inference center coordinates.
 
-    This function enforces the logic for regional inference:
+    This function enforces the logic for regional inference/train:
     user can provide either region or region_center
 
     Parameters
@@ -1275,7 +1285,7 @@ def resolve_region_center(args):
     - Longitude follows the convention [0, 360].
     """
 
-    if args.run_type != "inference_regional":
+    if args.run_type != "inference_regional" and args.run_type != "train_regional":
         return None
 
     # predefined region center coordinates (lat, lon)
@@ -1428,6 +1438,7 @@ def main():
             np_dtype,
             logger,
             mode="train",
+            run_type=args.run_type,
             train_loaded_dfs=train_loaded_dfs,
         )
         logger.info(f"Training dataset loaded with image resolution: {img_res}")
@@ -1458,7 +1469,7 @@ def main():
         valid_loader, valid_img_res, valid_dataset = None, None, None
         logger.warning("No validation dataset created (test files not found or empty)")
 
-    if args.run_type == "inference" and valid_loader is None:
+    if args.run_type in ["inference", "inference_regional"] and valid_loader is None:
         logger.error(
             "Inference mode requires a validation dataset, but none was created."
         )

@@ -757,7 +757,9 @@ class DataPreprocessor(Dataset):
                 #    self.etime // 3, self.etime * 2 // 3, 2, dtype=int
                 # )  # 2 for debug, self.tbatch
 
-            elif self.run_type == "inference_regional":
+            elif (
+                self.run_type in ["inference_regional", "train_regional"]
+            ):  # it can happen that we have mode = validation and run_type = train_regional.
                 # Regional inference mode:
                 # Instead of tiling the full spatial domain (as in global validation),
                 # we extract a single spatial window centered on a user-defined
@@ -800,11 +802,46 @@ class DataPreprocessor(Dataset):
         else:
             # Training mode
             # To Do: set time batches for training (full or partial sampling)
-            self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
-            self.logger.info(
-                f"Training mode: sbatch={self.sbatch}, tbatch={self.tbatch}"
-            )
-            self.new_epoch()  # Initialize time batches for training
+            if self.run_type == "train_regional":
+                # Regional train mode:
+                # Instead of randomly selecting windows (as in train),
+                # we extract a single spatial window centered on a user-defined
+                # geographical location (latitude, longitude).
+
+                # Ensure that a target region center is provided
+                assert (
+                    self.region_center is not None
+                ), "region_center must be provided for train_regional mode"
+
+                assert (
+                    self.region_size is not None
+                ), "region_size must be provided when using train_regional mode"
+
+                lat_val, lon_val = self.region_center
+                lat_idx, lon_idx = self.get_center_indices_from_latlon(lat_val, lon_val)
+
+                region_size_lat, region_size_lon = self.region_size
+
+                assert region_size_lat % self.batch_size_lat == 0
+                assert region_size_lon % self.batch_size_lon == 0
+
+                self.train_slices = self.generate_region_slices(
+                    lat_idx, lon_idx, region_size_lat, region_size_lon
+                )
+
+                # Set sbatch to exactly match number of slices
+                self.sbatch = len(self.train_slices)
+                self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
+
+                self.logger.info(
+                    f"Train region mode activated at lat={lat_val}, lon={lon_val}"
+                )
+            else:  # train global
+                self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
+                self.logger.info(
+                    f"Training (global) mode: sbatch={self.sbatch}, tbatch={self.tbatch}"
+                )
+                self.new_epoch()  # Initialize time batches for training
 
         self.center_tracker = []  # Will store spatial indices
         self.tindex_tracker = []  # Will store temporal indices
@@ -1006,7 +1043,7 @@ class DataPreprocessor(Dataset):
         self, lat_center, lon_center, region_size_lat, region_size_lon
     ):
         """
-        Generate deterministic spatial slices for regional inference.
+        Generate deterministic spatial slices for regional inference/train.
         The slices cover a block centered on (lat_center, lon_center).
         The region is divided into non-overlapping blocks of size
         (batch_size_lat, batch_size_lon) used for model inference.
@@ -1481,7 +1518,11 @@ class DataPreprocessor(Dataset):
 
             self.center_tracker.append((lat_center, lon_center))
 
-            if self.run_type == "inference_regional":
+            if (
+                self.run_type == "inference_regional"
+                or self.run_type == "train_regional"
+            ):
+                # we can have mode = validation and run_type = train_regional at the same time.
                 # Extract coordinates using the same spatial extraction logic as training
                 # (cyclic longitude handling, boundary alignment).
                 lat_batch, lat_indices = self.extract_batch(
@@ -1582,8 +1623,90 @@ class DataPreprocessor(Dataset):
                         f"  Full domain shape: {npfeatures_full.shape}\n"
                         f"  Batch shape: {fine_block.shape}"
                     )
+        elif self.run_type == "train_regional":
+            # Ensure evaluation slices are available
+            assert (
+                hasattr(self, "train_slices") and self.train_slices is not None
+            ), "train_slices not initialized for train_regional mode"
+            assert (
+                len(self.train_slices) > 0
+            ), "train_slices is empty for train_regional mode"
 
-        else:
+            # Deterministic spatial sampling for regional training.
+            # train_slices defines the spatial regions to train on and is later used
+            # to reconstruct the full domain.
+            lat_start, lat_end, lon_start, lon_end = self.train_slices[sindex]
+
+            lat_center = lat_start + self.batch_size_lat // 2
+            lon_center = lon_start + self.batch_size_lon // 2
+
+            self.center_tracker.append((lat_center, lon_center))
+            # Extract coordinates using the same spatial extraction logic as training
+            # (cyclic longitude handling, boundary alignment).
+            lat_batch, lat_indices = self.extract_batch(
+                lat_grid, lat_center, lon_center
+            )
+            lon_batch, lon_indices = self.extract_batch(
+                lon_grid, lat_center, lon_center
+            )
+
+            assert lat_indices == lon_indices, (
+                f"Indices mismatch for same center (lat_center={lat_center}, lon_center={lon_center}):\n"
+                f"  lat_indices: {lat_indices}\n"
+                f"  lon_indices: {lon_indices}"
+            )
+
+            lat_start, lat_end, lon_start, lon_end = lat_indices
+
+            npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+            for var_name in self.varnames_list:
+                iv = self.index_mapping[var_name]
+                npfeatures_full[iv, :, :] = full_data_org[var_name].values
+
+            fine_block, fine_indices = self.extract_batch(
+                npfeatures_full, lat_center, lon_center
+            )
+            assert fine_indices == lat_indices, (
+                f"Indices mismatch between data and coordinate extractions:\n"
+                f"  lat/lon indices: {lat_indices}\n"
+                f"  data indices: {fine_indices}"
+            )
+
+            if self.apply_filter:
+                fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
+                fine_filtered_block, filtered_indices = self.extract_batch(
+                    fine_filtered_full, lat_center, lon_center
+                )
+                assert fine_filtered_full.shape == npfeatures_full.shape, (
+                    f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
+                    f"but npfeatures has shape {npfeatures_full.shape}."
+                )
+                assert filtered_indices == lat_indices, (
+                    f"Indices mismatch after filtering:\n"
+                    f"  original indices: {lat_indices}\n"
+                    f"  filtered indices: {filtered_indices}"
+                )
+                assert fine_filtered_block.shape == fine_block.shape, (
+                    f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
+                    f"but fine_block has shape {fine_block.shape}."
+                )
+                # Apply coarsening to the full domain of the filtered HR field
+                coarse_full = coarse_down_up(
+                    fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+                )
+            else:
+                # Apply coarsening directly to the full domain of the raw HR field
+                coarse_full = coarse_down_up(
+                    npfeatures_full, npfeatures_full, input_shape=self.in_shape
+                )
+
+            coarse_block, coarse_indices = self.extract_batch(
+                coarse_full, lat_center, lon_center
+            )
+
+            coarse = coarse_block     
+
+        else:  # train (global)
             # Random spatial sampling for training
             if self.last_tbatch_index != tbatch_index:
                 self.random_centers = self.generate_random_batch_centers(self.sbatch)
@@ -1791,7 +1914,11 @@ class DataPreprocessor(Dataset):
             )
 
             if self.mode == "validation":
-                if self.run_type == "inference_regional":
+                if (
+                    self.run_type == "inference_regional"
+                    or self.run_type == "train_regional"
+                ):
+                    # we can have mode validation and run_type train_regional at the same time.
                     # For inference_regional, use extract_batch
                     const_batch, const_indices = self.extract_batch(
                         self.const_vars, lat_center, lon_center
@@ -1808,7 +1935,7 @@ class DataPreprocessor(Dataset):
                         :, lat_start:lat_end, lon_start:lon_end
                     ]
             else:
-                # For training, use extract_batch
+                # For training (global or regional), use extract_batch
                 const_batch, const_indices = self.extract_batch(
                     self.const_vars, lat_center, lon_center
                 )
@@ -1835,8 +1962,8 @@ class DataPreprocessor(Dataset):
                     f"  Feature shape after adding constants: {feature.shape}"
                 )
 
-        if self.run_type == "inference_regional":
-            # In regional inference mode, we extract a spatial window centered
+        if self.run_type == "inference_regional" or "train_regional":
+            # In regional inference / regional train mode, we extract a spatial window centered
             # on a user-defined (lat_center, lon_center)
             # Therefore, longitude requires special handling to avoid
             # discontinuities when crossing the dateline
@@ -2222,6 +2349,54 @@ class TestDataPreprocessor(unittest.TestCase):
             self.logger.info(
                 f"✅ Train mode initialization test passed - H={preprocessor.H}, W={preprocessor.W}"
             )
+
+    def test_preprocessor_initialization_train_regional_mode(self):
+        """Test DataPreprocessor initialization in train regional mode."""
+        if self.logger:
+            self.logger.info(
+                "Testing DataPreprocessor initialization - TRAIN REGIONAL mode"
+            )
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=4,
+            debug=True,
+            mode="train",
+            run_type="train_regional",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            region_center=(10.0, 50.0),
+            region_size=(32, 64),
+            logger=self.logger,
+        )
+
+        # Verify that region_center and region_size attributes exist :
+        self.assertEqual(preprocessor.region_center, (10.0, 50.0))
+        self.assertEqual(preprocessor.region_size, (32, 64))
+
+        # Verify that train_slices attribute exists and contains the right locations:
+        self.assertTrue(hasattr(preprocessor, "train_slices"))
+        self.assertIsNotNone(preprocessor.train_slices)
+        self.assertEqual(len(preprocessor.train_slices), 2)
+
+        if self.logger:
+            self.logger.info("✅ Regional train mode initialization test passed")
 
     def test_preprocessor_initialization_validation_mode(self):
         """Test DataPreprocessor initialization in validation mode."""
@@ -2893,6 +3068,64 @@ class TestDataPreprocessor(unittest.TestCase):
         if self.logger:
             self.logger.info(
                 f"✅ __getitem__ train mode test passed - inputs shape: {sample['inputs'].shape}"
+            )
+
+    def test_getitem_regional_train_mode(self):
+        """Test __getitem__ method in regional train mode."""
+        if self.logger:
+            self.logger.info("Testing __getitem__ in train mode")
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=2,
+            debug=True,
+            mode="train",
+            run_type="train_regional",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            region_center=(10.0, 50.0),
+            region_size=(32, 64),
+            logger=self.logger,
+        )
+
+        sample = preprocessor[0]
+
+        # Verify sample structure
+        self.assertIn("inputs", sample)
+        self.assertIn("targets", sample)
+        self.assertIn("fine", sample)
+        self.assertIn("coarse", sample)
+        self.assertIn("corrdinates", sample)
+
+        # Verify shapes
+        n_vars = len(self.varnames_list)
+        n_const = len(self.constant_variables)
+        expected_input_channels = n_vars + 2 + n_const
+
+        self.assertEqual(sample["inputs"].shape, (expected_input_channels, 32, 32))
+        self.assertEqual(sample["targets"].shape, (n_vars, 32, 32))
+        self.assertEqual(sample["fine"].shape, (n_vars, 32, 32))
+        self.assertEqual(sample["coarse"].shape, (n_vars, 32, 32))
+
+        if self.logger:
+            self.logger.info(
+                f"✅ __getitem__ regional train mode test passed - inputs shape: {sample['inputs'].shape}"
             )
 
     def test_getitem_validation_mode(self):

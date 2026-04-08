@@ -753,9 +753,6 @@ class DataPreprocessor(Dataset):
             # To Do: set time batches for validation (if inference is active or not)
             if self.run_type == "inference":
                 self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
-                # self.time_batchs = np.linspace(
-                #    self.etime // 3, self.etime * 2 // 3, 2, dtype=int
-                # )  # 2 for debug, self.tbatch
 
             elif (
                 self.run_type in ["inference_regional", "train_regional"]
@@ -788,7 +785,13 @@ class DataPreprocessor(Dataset):
 
                 # Set sbatch to exactly match number of slices
                 self.sbatch = len(self.eval_slices)
-                self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
+
+                if self.run_type == "train_regional":
+                    self.time_batchs = np.linspace(
+                        self.etime // 3, self.etime * 2 // 3, self.tbatch, dtype=int
+                    )
+                else:
+                    self.time_batchs = np.arange(self.stime, self.etime, dtype=int)
 
                 self.logger.info(
                     f"Inference region mode activated at lat={lat_val}, lon={lon_val}"
@@ -1190,6 +1193,93 @@ class DataPreprocessor(Dataset):
             )
             raise
 
+    def build_fine_coarse_blocks(self, npfeatures_full, lat_center, lon_center):
+        """
+        Build fine, optionally filtered, and coarse-resolution spatial blocks
+        centered at a given location.
+
+        Parameters
+        ----------
+        npfeatures_full : np.ndarray
+            Full-domain input features with shape (C, H, W).
+        lat_center : int
+            Latitude center index.
+        lon_center : int
+            Longitude center index.
+
+        Returns
+        -------
+        fine_block : np.ndarray
+            Extracted fine-resolution block of shape (C, batch_size_lat, batch_size_lon).
+        fine_filtered_block : np.ndarray or None
+            Filtered fine-resolution block of shape (C, batch_size_lat, batch_size_lon).
+            Returns None if apply_filter is False.
+        coarse_block : np.ndarray
+            Coarse-resolution approximation of the fine block (after downscaling
+            and upscaling).
+        fine_indices : tuple
+            Tuple of (lat_start, lat_end, lon_start, lon_end) indices defining the
+            spatial region of the extracted blocks.
+
+        Raises
+        ------
+        AssertionError
+            If spatial indices mismatch between fine, filtered, and coarse blocks,
+            or if their shapes are inconsistent.
+
+        Notes
+        -----
+        - Spatial extraction, ensuring consistent handling of cyclic longitude
+          and non-cyclic latitude.
+        - The coarse block is generated from the full domain (not locally),
+          ensuring global consistency of the low-resolution representation.
+        - All returned blocks share identical spatial indices and shapes,
+          making them directly comparable for residual learning.
+        """
+        fine_block, fine_indices = self.extract_batch(
+            npfeatures_full, lat_center, lon_center
+        )
+
+        if self.apply_filter:
+            fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
+            fine_filtered_block, filtered_indices = self.extract_batch(
+                fine_filtered_full, lat_center, lon_center
+            )
+            assert filtered_indices == fine_indices, (
+                f"Indices mismatch after filtering:\n"
+                f"  original indices: {fine_indices}\n"
+                f"  filtered indices: {filtered_indices}"
+            )
+
+            # Apply coarsening to the full domain of the filtered HR field
+            coarse_full = coarse_down_up(
+                fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+            )
+        else:
+            fine_filtered_block = None
+            # Apply coarsening directly to the full domain of the raw HR field
+            coarse_full = coarse_down_up(
+                npfeatures_full, npfeatures_full, input_shape=self.in_shape
+            )
+
+        coarse_block, coarse_indices = self.extract_batch(
+            coarse_full, lat_center, lon_center
+        )
+
+        assert coarse_indices == fine_indices, (
+            f"Indices mismatch after coarsening:\n"
+            f"  original indices: {fine_indices}\n"
+            f"  coarse indices: {coarse_indices}"
+        )
+
+        assert coarse_block.shape == fine_block.shape, (
+            f"Shape mismatch between fine and coarse blocks:\n"
+            f"  fine shape: {fine_block.shape}\n"
+            f"  coarse shape: {coarse_block.shape}"
+        )
+
+        return fine_block, fine_filtered_block, coarse_block, fine_indices
+
     def filter_batch(self, fine_patch, fine_block):
         """
         Apply Gaussian low-pass filtering for multi-scale processing.
@@ -1545,32 +1635,11 @@ class DataPreprocessor(Dataset):
                     iv = self.index_mapping[var_name]
                     npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
-                fine_block, fine_indices = self.extract_batch(
-                    npfeatures_full, lat_center, lon_center
+                fine_block, fine_filtered_block, coarse, fine_indices = (
+                    self.build_fine_coarse_blocks(
+                        npfeatures_full, lat_center, lon_center
+                    )
                 )
-
-                if self.apply_filter:
-                    # Spatial filtering on the full domain before coarsening
-                    fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
-                    fine_filtered_block, _ = self.extract_batch(
-                        fine_filtered_full, lat_center, lon_center
-                    )
-
-                    # Apply coarsening to the full domain of the filtered HR field
-                    coarse_full = coarse_down_up(
-                        fine_filtered_full, npfeatures_full, input_shape=self.in_shape
-                    )
-                else:
-                    # Apply coarsening directly to the full domain of the raw HR field
-                    coarse_full = coarse_down_up(
-                        npfeatures_full, npfeatures_full, input_shape=self.in_shape
-                    )
-
-                coarse_block, coarse_indices = self.extract_batch(
-                    coarse_full, lat_center, lon_center
-                )
-
-                coarse = coarse_block
 
             else:  # validation, global inference
                 # Extract normalized coordinates for the batch
@@ -1663,48 +1732,15 @@ class DataPreprocessor(Dataset):
                 iv = self.index_mapping[var_name]
                 npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
-            fine_block, fine_indices = self.extract_batch(
-                npfeatures_full, lat_center, lon_center
+            fine_block, fine_filtered_block, coarse, fine_indices = (
+                self.build_fine_coarse_blocks(npfeatures_full, lat_center, lon_center)
             )
+
             assert fine_indices == lat_indices, (
                 f"Indices mismatch between data and coordinate extractions:\n"
                 f"  lat/lon indices: {lat_indices}\n"
                 f"  data indices: {fine_indices}"
             )
-
-            if self.apply_filter:
-                fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
-                fine_filtered_block, filtered_indices = self.extract_batch(
-                    fine_filtered_full, lat_center, lon_center
-                )
-                assert fine_filtered_full.shape == npfeatures_full.shape, (
-                    f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
-                    f"but npfeatures has shape {npfeatures_full.shape}."
-                )
-                assert filtered_indices == lat_indices, (
-                    f"Indices mismatch after filtering:\n"
-                    f"  original indices: {lat_indices}\n"
-                    f"  filtered indices: {filtered_indices}"
-                )
-                assert fine_filtered_block.shape == fine_block.shape, (
-                    f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
-                    f"but fine_block has shape {fine_block.shape}."
-                )
-                # Apply coarsening to the full domain of the filtered HR field
-                coarse_full = coarse_down_up(
-                    fine_filtered_full, npfeatures_full, input_shape=self.in_shape
-                )
-            else:
-                # Apply coarsening directly to the full domain of the raw HR field
-                coarse_full = coarse_down_up(
-                    npfeatures_full, npfeatures_full, input_shape=self.in_shape
-                )
-
-            coarse_block, coarse_indices = self.extract_batch(
-                coarse_full, lat_center, lon_center
-            )
-
-            coarse = coarse_block
 
         else:  # train (global)
             # Random spatial sampling for training
@@ -1740,54 +1776,15 @@ class DataPreprocessor(Dataset):
                 iv = self.index_mapping[var_name]
                 npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
-            # Extract the batch and filter (full domain filtering like validation)
-            fine_block, fine_indices = self.extract_batch(
-                npfeatures_full, lat_center, lon_center
+            fine_block, fine_filtered_block, coarse, fine_indices = (
+                self.build_fine_coarse_blocks(npfeatures_full, lat_center, lon_center)
             )
+
             assert fine_indices == lat_indices, (
                 f"Indices mismatch between data and coordinate extractions:\n"
                 f"  lat/lon indices: {lat_indices}\n"
                 f"  data indices: {fine_indices}"
             )
-
-            if self.apply_filter:
-                # Spatial filtering on the full domain before coarsening
-                fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
-
-                assert fine_filtered_full.shape == npfeatures_full.shape, (
-                    f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
-                    f"but npfeatures has shape {npfeatures_full.shape}."
-                )
-
-                fine_filtered_block, filtered_indices = self.extract_batch(
-                    fine_filtered_full, lat_center, lon_center
-                )
-                assert filtered_indices == lat_indices, (
-                    f"Indices mismatch after filtering:\n"
-                    f"  original indices: {lat_indices}\n"
-                    f"  filtered indices: {filtered_indices}"
-                )
-
-                assert fine_filtered_block.shape == fine_block.shape, (
-                    f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
-                    f"but fine_block has shape {fine_block.shape}."
-                )
-
-                # Apply coarsening to the full domain of the filtered HR field
-                coarse_full = coarse_down_up(
-                    fine_filtered_full, npfeatures_full, input_shape=self.in_shape
-                )
-            else:
-                # Apply coarsening directly to the full domain of the raw HR field
-                coarse_full = coarse_down_up(
-                    npfeatures_full, npfeatures_full, input_shape=self.in_shape
-                )
-
-            coarse_block, coarse_indices = self.extract_batch(
-                coarse_full, lat_center, lon_center
-            )
-
-            coarse = coarse_block
 
         # Convert fine data to torch tensor and initialize normalized container
         fine_block = torch.from_numpy(fine_block).to(self.torch_dtype)
@@ -1962,7 +1959,7 @@ class DataPreprocessor(Dataset):
                     f"  Feature shape after adding constants: {feature.shape}"
                 )
 
-        if self.run_type == "inference_regional" or "train_regional":
+        if self.run_type in ["inference_regional", "train_regional"]:
             # In regional inference / regional train mode, we extract a spatial window centered
             # on a user-defined (lat_center, lon_center)
             # Therefore, longitude requires special handling to avoid
@@ -2707,6 +2704,74 @@ class TestDataPreprocessor(unittest.TestCase):
             self.logger.info(
                 f"✅ Extract_batch test passed - block shape: {block.shape}"
             )
+
+    def test_build_fine_coarse_blocks(self):
+        """Test build_fine_coarse_blocks consistency (no filter)."""
+        if self.logger:
+            self.logger.info("Testing build_fine_coarse_blocks")
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=1,
+            sbatch=1,
+            debug=True,
+            mode="train",
+            run_type="train",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            apply_filter=False,
+            logger=self.logger,
+        )
+
+        # Build full feature tensor (C, H, W)
+        npfeatures_full = np.zeros(
+            (len(self.varnames_list), preprocessor.H, preprocessor.W)
+        )
+
+        sample_ds = self.ds.isel(time=0)
+        for var in self.varnames_list:
+            iv = self.index_mapping[var]
+            npfeatures_full[iv] = sample_ds[var].values
+
+        # Safe center without borders
+        lat_center = preprocessor.H // 2
+        lon_center = preprocessor.W // 2
+
+        fine, fine_filtered, coarse, indices = preprocessor.build_fine_coarse_blocks(
+            npfeatures_full, lat_center, lon_center
+        )
+
+        # Shapes
+        expected_shape = (
+            len(self.varnames_list),
+            self.batch_size_lat,
+            self.batch_size_lon,
+        )
+
+        self.assertEqual(fine.shape, expected_shape)
+        self.assertEqual(coarse.shape, expected_shape)
+
+        # No filter should be None
+        self.assertIsNone(fine_filtered)
+
+        # Indices consistency
+        lat_start, lat_end, lon_start, lon_end = indices
+        self.assertEqual(lat_end - lat_start, self.batch_size_lat)
+        self.assertEqual(lon_end - lon_start, self.batch_size_lon)
+
+        if self.logger:
+            self.logger.info("✅ build_fine_coarse_blocks test passed")
 
     def test_generate_evaluation_slices(self):
         """Test evaluation slices generation."""

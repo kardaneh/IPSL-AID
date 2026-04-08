@@ -22,8 +22,11 @@ TODAY=$(date +"%Y%m%d_%H%M%S")
 # 2. Parameters
 # ======================
 
-run_type="train"  #"inference"
-region=""
+run_type="train" # "train", ""train_regional"
+
+region="Europe" # Only for run_type="train_regional"
+region_size=("288" "720") # Only for run_type="train_regional"
+
 save_model=true
 save_checkpoint_name="difusion_model"
 load_checkpoint_name="difusion_model"
@@ -48,12 +51,6 @@ per_var_datadir=(
   "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
   "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
   )
-
-#"VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-#"VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-#"VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
-#"VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
-#"VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
 
 
 time_normalization="cos_sin"
@@ -262,9 +259,14 @@ ipsl-aid \\
 EOF
 
 # Add optional parameters
-[ -n "$region" ] && echo "    --region \"$region\" \\" >> $sbatch_script
 [ -n "$pretrained_path" ] && echo "    --pretrained_path \"$pretrained_path\" \\" >> $sbatch_script
 [ -n "$model_name" ] && echo "    --model_name \"$model_name\" \\" >> $sbatch_script
+
+# Regional only
+if [[ "$run_type" == "train_regional" || "$run_type" == "inference_regional" ]]; then
+    [ -n "$region" ] && echo "    --region \"$region\" \\" >> $sbatch_script
+    [ ${#region_size[@]} -gt 0 ] && echo "    --region_size ${region_size[@]} \\" >> $sbatch_script
+fi
 
 # Add arrays
 [ ${#varnames_list[@]} -gt 0 ] && echo "    --varnames_list ${varnames_list[@]} \\" >> $sbatch_script

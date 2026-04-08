@@ -348,10 +348,6 @@ def plot_validation_hexbin(
             ax.set_visible(False)
             continue
 
-        # Flatten the spatial dimensions
-        # pred_flat = predictions[:, i, :, :].reshape(-1)
-        # target_flat = targets[:, i, :, :].reshape(-1)
-
         pred_i = PlotConfig.convert_units(var_name, predictions[:, i])
         tgt_i = PlotConfig.convert_units(var_name, targets[:, i])
 
@@ -390,12 +386,8 @@ def plot_validation_hexbin(
         )
 
         # Set title
-        # ax.set_title(f'{var_name}')
         plot_name = PlotConfig.get_plot_name(var_name)
         ax.set_title(plot_name)
-
-        # Set equal aspect ratio
-        # ax.set_aspect('equal')
 
         # Format ticks
         ax.xaxis.set_major_locator(ticker.MaxNLocator(5))
@@ -413,12 +405,6 @@ def plot_validation_hexbin(
         else:
             ax.set_xlabel("")  # Remove x-label for non-bottom plots
 
-    # Add colorbar
-    # cbar_width_per_subplot = 0.02
-    # actual_cbar_width = cbar_width_per_subplot / num_vars
-    # cbar_ax = fig.add_axes([0.92, 0.1, actual_cbar_width, 0.8])
-    # cbar = fig.colorbar(hb, cax=cbar_ax, label=r"$\mathrm{\log_{10}[Count]}$")
-    # Colorbar attached to the LAST axis
     ax_last = axes_flat[min(num_vars - 1, len(axes_flat) - 1)]
 
     cax = ax_last.inset_axes([1.05, 0.0, 0.04, 1.0])  # [x, y, width, height]
@@ -499,10 +485,6 @@ def plot_comparison_hexbin(
     # ----------------------------------------
     # 2) Pre-pass: collect hexbin densities
     # ----------------------------------------
-    # for i in range(num_vars):
-    # target_flat = targets[:, i].reshape(-1)
-    # pred_flat   = predictions[:, i].reshape(-1)
-    # coarse_flat = coarse_inputs[:, i].reshape(-1)
 
     for i, var_name in enumerate(variable_names):
         pred_i = PlotConfig.convert_units(var_name, predictions[:, i])
@@ -552,10 +534,6 @@ def plot_comparison_hexbin(
     last_hb = None
 
     for i, var_name in enumerate(variable_names):
-        # target_flat = targets[:, i].reshape(-1)
-        # pred_flat   = predictions[:, i].reshape(-1)
-        # coarse_flat = coarse_inputs[:, i].reshape(-1)
-
         pred_i = PlotConfig.convert_units(var_name, predictions[:, i])
         tgt_i = PlotConfig.convert_units(var_name, targets[:, i])
         coarse_i = PlotConfig.convert_units(var_name, coarse_inputs[:, i])
@@ -731,7 +709,6 @@ def plot_metric_histories(
             ax.plot(coarse_hist, label="Coarse vs Fine", **next(linestyles))
 
             ax.set_yscale("log")
-            # ax.set_ylabel(rf"$\mathrm{{{metric}\ ({var})}}$")
             ax.set_ylabel(f"{metric} ({var})")
 
             ax.grid(True, alpha=0.3)
@@ -1222,12 +1199,6 @@ def plot_surface(
         target_i = PlotConfig.convert_units(var_name, targets[0, i])
         pred_i = PlotConfig.convert_units(var_name, predictions[0, i])
 
-        # Get combined data range for this variable (coarse_inputs, truth, prediction)
-        # all_data = np.concatenate([#
-        #    coarse_inputs[0, i].flatten(),
-        #    targets[0, i].flatten(),
-        #    predictions[0, i].flatten()
-        # ])
         all_data = np.concatenate(
             [coarse_i.flatten(), target_i.flatten(), pred_i.flatten()]
         )
@@ -1298,17 +1269,8 @@ def plot_surface(
         #    )
         print(f"Forecast for {timestamp.strftime('%Y-%m-%d %H:%M')}")
 
-    # Define geographic features
-    # coastline = cfeature.COASTLINE.with_scale('50m')
-    # borders = cfeature.BORDERS.with_scale('50m')
-    # lakes = cfeature.LAKES.with_scale('50m')
-
     # Plot each variable
     for col_idx in range(n_vars):
-        # Data for this variable
-        # coarse_inputs_data = coarse_inputs[0, col_idx, :, :]
-        # targets_data = targets[0, col_idx, :, :]
-        # pred_data = predictions[0, col_idx, :, :]
         var_name = variable_names[col_idx]
         # plot_name = plot_variable_names[col_idx]
 
@@ -1365,11 +1327,8 @@ def plot_surface(
                 im_diff = im
 
             # Set extent and features
-            # ax.set_global()
             ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-            # ax.coastlines(linewidth=0.5)
-            # ax.add_feature(borders, linewidth=0.5, linestyle="--", edgecolor="black")
-            # ax.add_feature(lakes, linewidth=0.5, edgecolor="black", facecolor="none")
+
             ax.coastlines(linewidth=0.6)
             ax.add_feature(
                 cfeature.BORDERS.with_scale("50m"),
@@ -1873,16 +1832,7 @@ def plot_zoom_comparison(
             transform=ccrs.PlateCarree(),
             shading="auto",
         )
-        """
-        ax.set_extent(
-            [
-                zoom_box["lon_min"],
-                zoom_box["lon_max"],
-                zoom_box["lat_min"],
-                zoom_box["lat_max"],
-            ]
-        )
-        """
+
         ax.set_extent(
             [
                 lon_zoom.min(),
@@ -1907,16 +1857,7 @@ def plot_zoom_comparison(
             transform=ccrs.PlateCarree(),
             shading="auto",
         )
-        """
-        ax.set_extent(
-            [
-                zoom_box["lon_min"],
-                zoom_box["lon_max"],
-                zoom_box["lat_min"],
-                zoom_box["lat_max"],
-            ]
-        )
-        """
+
         ax.set_extent(
             [
                 lon_zoom.min(),
@@ -1941,16 +1882,7 @@ def plot_zoom_comparison(
             transform=ccrs.PlateCarree(),
             shading="auto",
         )
-        """
-        ax.set_extent(
-            [
-                zoom_box["lon_min"],
-                zoom_box["lon_max"],
-                zoom_box["lat_min"],
-                zoom_box["lat_max"],
-            ]
-        )
-        """
+
         ax.set_extent(
             [
                 lon_zoom.min(),
@@ -2845,17 +2777,6 @@ def plot_spread_skill_ratio_map(
     if n_vars == 1:
         axes = [axes]
 
-    # if timestamp is None:
-    #    fig.suptitle(
-    #        "Spread skill ratio map (time-averaged)",
-    #        y=1.05,
-    #    )
-    # if timestamp is not None:
-    #    fig.suptitle(
-    #        f"Spread skill ratio map {timestamp.strftime('%Y-%m-%d %H:%M')}",
-    #        y=1.05,
-    #    )
-
     for col_idx in range(n_vars):
         ax = axes[col_idx]
 
@@ -2918,17 +2839,6 @@ def plot_spread_skill_ratio_map(
         # ax.set_aspect("auto")
         ax.set_xticks([])
         ax.set_yticks([])
-
-        # props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        # place a text box in upper left in axes coords
-        # ax.text(
-        #    0.05,
-        #    1.15,
-        #    f"SSR = {np.mean(ssr_data_i):.2f}",
-        #    transform=ax.transAxes,
-        #    verticalalignment="top",
-        #    bbox=props,
-        # )
 
         ax.set_title(
             f"{plot_variable_names[col_idx]} (SSR={ssr_data_i_mean:.2f})",
@@ -3313,11 +3223,6 @@ def plot_validation_pdfs(
         correlation = np.corrcoef(pred_flat, target_flat)[0, 1]
         stats_text.append(f"Correlation: {correlation:.4f}")
 
-        # Add statistics as text box
-        # stats_str = '\n'.join(stats_text)
-        # ax.text(0.5, 1.02, stats_str, transform=ax.transAxes,
-        #        verticalalignment='bottom', horizontalalignment='center')
-
         # Log statistics instead of plotting them
         print(f"[PDF stats] {plot_name}")
         print(f"  Predictions: μ={pred_mean:.3f}, σ={pred_std:.3f}")
@@ -3340,9 +3245,6 @@ def plot_validation_pdfs(
 
         # Add legend
         ax.legend()
-
-        # Set consistent x-limits
-        # ax.set_xlim(x_min, x_max)
 
         # Set y-limits for log plot (handle cases where log values might be very negative)
         y_min = min(log_hist_pred.min(), log_hist_target.min())
@@ -3448,8 +3350,6 @@ def plot_power_spectra(
     if variable_names is None:
         variable_names = [f"Variable {i + 1}" for i in range(num_vars)]
 
-    # plot_variable_names = [PlotConfig.get_plot_name(var) for var in variable_names]
-
     # Calculate wavenumbers
     # FFT frequencies are in cycles per grid spacing
     fft_freq_lat = np.fft.fftfreq(nh, d=dlat)  # cycles per degree in lat direction
@@ -3488,13 +3388,6 @@ def plot_power_spectra(
     for ax in axes:
         ax.set_box_aspect(1)
 
-    """
-    # Handle single subplot case
-    if num_vars == 1:
-        axes = np.array([[axes[0]], [axes[1]]])
-    elif axes.ndim == 1:
-        axes = axes.reshape(nrows, ncols)
-    """
     if save_npz:
         spectra_npz_data = {}
 
@@ -3780,10 +3673,6 @@ def plot_qq_quantiles(
         ax = axes[i]
         plot_name = plot_variable_names[i]
 
-        # Flatten spatial dims and average over batch
-        # target_vals = targets[:, i]
-        # pred_vals = predictions[:, i]
-        # coarse_vals = coarse_inputs[:, i]
         pred_vals = PlotConfig.convert_units(var_name, predictions[:, i])
         target_vals = PlotConfig.convert_units(var_name, targets[:, i])
         coarse_vals = PlotConfig.convert_units(var_name, coarse_inputs[:, i])
@@ -3835,10 +3724,6 @@ def plot_qq_quantiles(
         ax.plot(
             [plot_min, plot_max], [plot_min, plot_max], "r--", alpha=0.7, label="1:1"
         )
-
-        # Set axis limits
-        # ax.set_xlim(plot_min, plot_max)
-        # ax.set_ylim(plot_min, plot_max)
 
         ax.xaxis.set_major_locator(ticker.MaxNLocator(4))
         ax.yaxis.set_major_locator(ticker.MaxNLocator(4))
@@ -4063,12 +3948,6 @@ def plot_dry_frequency_map(
     height = top - bottom
     cax1 = fig.add_axes([0.92, bottom, 0.03, height])
     fig.colorbar(im, cax=cax1, label="frequency")
-
-    # vmax_diff = max(
-    #     np.abs(np.max(dry_freq_pred_map - dry_freq_targ_map)),
-    #     np.abs(np.min(dry_freq_pred_map - dry_freq_targ_map)),
-    # )
-    # norm_diff = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax = 1)
 
     im = axes[2].pcolormesh(
         lon,

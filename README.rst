@@ -14,6 +14,10 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :target: https://github.com/kardaneh/IPSL-AID/actions
    :alt: CI Status
 
+.. |Documentation Status| image:: https://github.com/kardaneh/IPSL-AID/workflows/Documentation/badge.svg
+   :target: https://github.com/kardaneh/IPSL-AID/actions
+   :alt: Documentation Status
+
 .. |arXiv| image:: https://img.shields.io/badge/arXiv-2604.03275-b31b1b.svg
    :target: https://arxiv.org/abs/2604.03275
    :alt: arXiv preprint
@@ -21,10 +25,6 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
 .. |License| image:: https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg
    :target: LICENSE
    :alt: License
-
-.. |Documentation Status| image:: https://github.com/kardaneh/IPSL-AID/workflows/Documentation/badge.svg
-   :target: https://github.com/kardaneh/IPSL-AID/actions
-   :alt: Documentation Status
 
 
 Authors
@@ -59,6 +59,11 @@ Full license text is available in the `LICENSE` file or at:
 http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 For commercial licensing inquiries, please contact the authors.
+
+Funding
+~~~~~~~
+This work was supported by the project **S24JROI011** from the Grantham Foundation.
+
 
 Citation
 ~~~~~~~~

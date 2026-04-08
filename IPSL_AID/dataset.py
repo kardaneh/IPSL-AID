@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh, Kishanthan Kingston, Pierre Chapel
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.

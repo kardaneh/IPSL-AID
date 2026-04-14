@@ -15,7 +15,7 @@ based on **diffusion models**, designed for **GPU clusters and HPC systems**.
    :alt: CI Status
 
 .. |Documentation Status| image:: https://github.com/kardaneh/IPSL-AID/workflows/Documentation/badge.svg
-   :target: https://github.com/kardaneh/IPSL-AID/actions
+   :target: https://ipsl-aid.readthedocs.io/en/latest/
    :alt: Documentation Status
 
 .. |arXiv| image:: https://img.shields.io/badge/arXiv-2604.03275-b31b1b.svg
@@ -35,6 +35,11 @@ Authors
 - **Pierre Chapel**
 
 Developed at **IPSL / CNRS / Sorbonne University** (2026)
+
+Documentation
+-------------
+
+Full documentation is available at: https://ipsl-aid.readthedocs.io/en/latest/
 
 License
 ~~~~~~~

@@ -52,7 +52,6 @@ per_var_datadir=(
   "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
   )
 
-
 time_normalization="cos_sin"
 
 varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
@@ -79,8 +78,14 @@ dtype="fp32"
 arch="adm"
 precond="edm" # edm for edm (default model), unet for unet,
 # for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
-in_channels=6 # number of variables
-cond_channels=10 # number of variables + lat + lon + z + lsm, no cond_channels for unet
+in_channels=6
+
+if [[ "$precond" == "edm" ]]; then
+    cond_channels=10   # number of variables + lat + lon + z + lsm
+else
+    cond_channels=""   # no cond_channels for unet
+fi
+
 out_channels=6 # number of variables
 inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 
@@ -100,7 +105,7 @@ s_churn=40
 solver="heun"
 
 
-# NEW: Add apply_filter parameter
+# Add apply_filter parameter
 apply_filter=false
 
 # ======================
@@ -132,7 +137,11 @@ base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
 base_parts+=("in${in_channels}")
-base_parts+=("cond${cond_channels}") # need to be commented for unet
+
+if [[ "$precond" == "edm" ]]; then
+    base_parts+=("cond${cond_channels}")
+fi
+
 base_parts+=("out${out_channels}")
 filter_str=$([[ "$apply_filter" == true ]] && echo "filter" || echo "nofilter")
 base_parts+=("${filter_str}")
@@ -216,8 +225,8 @@ cat >> $sbatch_script <<EOF
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-# #SBATCH --mail-user=kkingston@ipsl.fr
-# #SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge
@@ -253,10 +262,12 @@ ipsl-aid \\
     --arch "$arch" \\
     --precond "$precond" \\
     --in_channels "$in_channels" \\
-    --cond_channels "$cond_channels" \\
     --out_channels "$out_channels" \\
     --apply_filter $apply_filter \\
 EOF
+
+# Add cond_channels only for EDM
+[[ "$precond" == "edm" ]] && echo "    --cond_channels \"$cond_channels\" \\" >> $sbatch_script
 
 # Add optional parameters
 [ -n "$pretrained_path" ] && echo "    --pretrained_path \"$pretrained_path\" \\" >> $sbatch_script

@@ -1,0 +1,6 @@
+# Sphinx and documentation dependencies
+sphinx>=7.1.2
+sphinx-rtd-theme>=3.1.0
+myst-parser>=3.0.1
+sphinx-copybutton>=0.5.0
+sphinx-autodoc-typehints>=1.24.0

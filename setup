@@ -225,8 +225,8 @@ cat >> $sbatch_script <<EOF
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-#SBATCH --mail-user=kkingston@ipsl.fr
-#SBATCH --mail-type=END,FAIL
+# #SBATCH --mail-user=kkingston@ipsl.fr
+# #SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge

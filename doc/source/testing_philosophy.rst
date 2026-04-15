@@ -33,19 +33,33 @@ Without proper testing, errors can:
 Recommended Workflow
 --------------------
 
-1. **Unit Tests**: Run tests for individual components
+1. **Unit Tests**: Run all tests
 
    .. code-block:: bash
 
-      python tests/test_all.py
+      python -m tests.test_all
 
-2. **Integration Tests**: Test data loading and model initialization
+2. **Targeted Tests**: Run specific modules, classes, or test methods
+
+   .. code-block:: bash
+
+      # Module
+      python -m unittest tests.test_utils
+      python -m unittest tests.test_model_utils
+
+      # Class
+      python -m unittest tests.test_utils.TestEasyDict
+
+      # Single test
+      python -m unittest tests.test_utils.TestEasyDict.test_empty_initialization
+
+3. **Integration Tests**: Test data loading and model initialization
 
    .. code-block:: bash
 
       python tests/test_integration.py
 
-3. **Small-scale Debug Runs**: Train on a small subset
+4. **Small-scale Debug Runs**: Train on a small subset
 
    .. code-block:: bash
 
@@ -54,7 +68,7 @@ Recommended Workflow
       num_epochs=1
       batch_size=4
 
-4. **Validation**: Check against known baselines
+5. **Validation**: Check against known baselines
 
 Test Coverage
 -------------

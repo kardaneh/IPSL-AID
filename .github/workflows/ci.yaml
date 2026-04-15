@@ -31,12 +31,12 @@ jobs:
 
       - name: Run unit tests
         run: |
-          uv run python -m tests.test_all utils
-          uv run python -m tests.test_all logger
-          uv run python -m tests.test_all model_utils
-          uv run python -m tests.test_all dataset
-          uv run python -m tests.test_all networks
-          uv run python -m tests.test_all loss
+          uv run python -m unittest tests.test_utils
+          uv run python -m unittest tests.test_logger
+          uv run python -m unittest tests.test_model_utils
+          uv run python -m unittest tests.test_dataset
+          uv run python -m unittest tests.test_networks
+          uv run python -m unittest tests.test_loss
 
 
       - name: Check package builds

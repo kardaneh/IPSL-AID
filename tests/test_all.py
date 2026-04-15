@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh
+# Authors: Kazem Ardaneh, Kishanthan Kingston
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -27,161 +27,196 @@ Skip modules can be configured via the SKIP_MODULES set.
 import sys
 import os
 import unittest
-import pkgutil
-import importlib
+from datetime import datetime
+import argparse
+import io
 
-# ---------------------------------------------------------------------
-# Make sure IPSL_AID package is importable
-# ---------------------------------------------------------------------
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)  # noqa: E402
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import IPSL_AID  # noqa: E402
-from IPSL_AID.logger import Logger  # noqa: E402
-
-# ---------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------
-SKIP_MODULES = {"__init__", "main"}
+from IPSL_AID.logger import Logger
 
 
-def load_module_tests(module_name, logger):
-    """Load all unittest.TestCase tests from a specified module.
+class TestRunner:
+    """
+    Test runner that uses the custom Logger for beautiful output.
 
     Parameters
     ----------
-    module_name : str
-        Name of the module (without package prefix) to load tests from.
-    logger : IPSL_AID.logger.Logger
-        Logger instance for output messages.
+    console_output : bool, optional
+        Whether to output to console. Default is True.
+    file_output : bool, optional
+        Whether to output to file. Default is True.
+    log_file : str, optional
+        Path to log file. Default is "test_results.log".
 
-    Returns
-    -------
-    unittest.TestSuite
-        Test suite containing all discovered test cases from the module.
-
-    Notes
-    -----
-    Attempts to instantiate TestCase classes with (method_name, logger)
-    signature. Falls back to standard instantiation if that fails.
-    Only methods starting with 'test_' are collected.
+    Examples
+    --------
+    >>> runner = TestRunner()
+    >>> runner.run_tests()
     """
-    module = importlib.import_module(f"IPSL_AID.{module_name}")
-    suite = unittest.TestSuite()
 
-    for attr_name in dir(module):
-        attr = getattr(module, attr_name)
+    def __init__(
+        self,
+        console_output=True,
+        file_output=False,
+        log_file="test_results.log",
+    ):
+        self.console_output = console_output
+        self.file_output = file_output
+        self.log_file = log_file
+        self.logger = Logger(
+            console_output=console_output,
+            file_output=file_output,
+            log_file=log_file,
+            pretty_print=True,
+            record=False,
+        )
 
-        if (
-            isinstance(attr, type)
-            and issubclass(attr, unittest.TestCase)
-            and attr is not unittest.TestCase
-        ):
-            test_methods = [name for name in dir(attr) if name.startswith("test_")]
+    def run_tests(self, test_pattern: str = "test_*.py") -> bool:
+        """
+        Run all tests matching the pattern.
 
-            logger.info(
-                f"📦 Loading {len(test_methods)} tests from "
-                f"{module.__name__}.{attr.__name__}"
+        Parameters
+        ----------
+        test_pattern : str, optional
+            Pattern to match test files. Default is "test_*.py".
+
+        Returns
+        -------
+        bool
+            True if all tests passed, False otherwise.
+        """
+
+        self.logger.show_header("IPSL-AID Test Suite")
+
+        # Start task
+        self.logger.start_task(
+            "Running Tests",
+            description=f"Running tests matching pattern: {test_pattern}",
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        )
+
+        # Discover tests
+        self.logger.info("Discovering test files...")
+        start_dir = os.path.dirname(__file__)
+        loader = unittest.TestLoader()
+        suite = loader.discover(start_dir, pattern=test_pattern)
+
+        # Count tests
+        test_count = suite.countTestCases()
+        self.logger.info(f"Found {test_count} test cases")
+
+        # # Create a custom test result class that uses our logger
+        class LoggerTestResult(unittest.TextTestResult):
+            def __init__(self, *args, logger=None, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.logger = logger
+                self.current_test = None
+
+            def startTest(self, test):
+                super().startTest(test)
+                self.logger.info(f"▶ Running: {test._testMethodName}")
+
+            def addSuccess(self, test):
+                super().addSuccess(test)
+                self.current_test = test
+                self.logger.success(f"✓ {test._testMethodName} passed")
+
+            def addError(self, test, err):
+                super().addError(test, err)
+                self.logger.error(f"✗ {test._testMethodName} failed with error", err[1])
+
+            def addFailure(self, test, err):
+                super().addFailure(test, err)
+                self.logger.error(
+                    f"✗ {test._testMethodName} failed with failure", err[1]
+                )
+
+        # # Create a stream for the test runner
+        stream = io.StringIO()
+
+        # Create runner with custom result class
+        runner = unittest.TextTestRunner(
+            stream=stream,
+            verbosity=0,
+            resultclass=lambda *args, **kwargs: LoggerTestResult(
+                *args, logger=self.logger, **kwargs
+            ),
+        )
+
+        # Run tests
+        self.logger.info("Starting test execution...")
+        result = runner.run(suite)
+
+        # # Print summary
+        passed = result.testsRun - len(result.failures) - len(result.errors)
+        self.logger.start_task(
+            "Test Summary",
+            description="Test execution completed",
+            total=result.testsRun,
+            passed=passed,
+            failures=len(result.failures),
+            errors=len(result.errors),
+            success_rate=f"{(passed / result.testsRun * 100):.1f}%",
+        )
+
+        # Log detailed results if there were failures
+        if result.failures or result.errors:
+            self.logger.warning("Detailed failure information:")
+            for test, traceback in result.failures:
+                self.logger.error(f"Failure in {test._testMethodName}:")
+                self.logger.info(traceback)
+            for test, traceback in result.errors:
+                self.logger.error(f"Error in {test._testMethodName}:")
+                self.logger.info(traceback)
+
+        # Final result
+        if result.wasSuccessful():
+            self.logger.success("✅ All tests passed!")
+            return True
+        else:
+            self.logger.error(
+                f"❌ Tests failed: {len(result.failures)} failures, {len(result.errors)} errors"
             )
-
-            for method_name in test_methods:
-                try:
-                    suite.addTest(attr(method_name, logger))
-                except TypeError:
-                    # Fallback for TestCase without logger in constructor
-                    suite.addTest(attr(method_name))
-
-    return suite
-
-
-def load_all_tests(logger):
-    """Load tests from all eligible modules in IPSL_AID package.
-
-    Parameters
-    ----------
-    logger : IPSL_AID.logger.Logger
-        Logger instance for output messages.
-
-    Returns
-    -------
-    unittest.TestSuite
-        Combined test suite containing tests from all non-skipped modules.
-
-    Notes
-    -----
-    Modules are discovered using pkgutil.iter_modules.
-    Modules in SKIP_MODULES or starting with '_' are skipped.
-    Package directories are also skipped.
-    """
-    suite = unittest.TestSuite()
-
-    for _, module_name, is_pkg in pkgutil.iter_modules(IPSL_AID.__path__):
-        if is_pkg or module_name in SKIP_MODULES or module_name.startswith("_"):
-            continue
-
-        try:
-            suite.addTests(load_module_tests(module_name, logger))
-        except Exception as e:
-            logger.info(f"[WARN] Failed to load tests from {module_name}: {e}")
-
-    return suite
+            return False
 
 
 def main():
-    """Main entry point for the test runner.
+    """Main entry point for running tests."""
 
-    Processes command line arguments to determine which tests to run,
-    executes them using unittest.TextTestRunner, and exits with
-    appropriate status code.
+    parser = argparse.ArgumentParser(
+        description="Run IPSL-AID tests with custom logger"
+    )
 
-    Returns
-    -------
-    None
-        Exits with sys.exit(0) on success, sys.exit(1) on failure.
+    parser.add_argument(
+        "--pattern",
+        type=str,
+        default="test_*.py",
+        help="Pattern to match test files (default: test_*.py)",
+    )
 
-    Notes
-    -----
-    Command line behavior:
-        - No arguments: Run all tests
-        - With arguments: Run tests from specified modules only
-    """
-    logger = Logger(console_output=True, file_output=False, record=True)
+    parser.add_argument(
+        "--no-console", action="store_true", help="Disable console output"
+    )
+    parser.add_argument("--no-file", action="store_true", help="Disable file output")
 
-    logger.show_header("IPSL-AID Test Suite")
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        default="test_results.log",
+        help="Path to log file (default: test_results.log)",
+    )
 
-    # -------------------------------------------------------------
-    # Decide what to run
-    # -------------------------------------------------------------
-    if len(sys.argv) == 1:
-        # Run all tests
-        suite = load_all_tests(logger)
-    else:
-        # Run selected modules
-        suite = unittest.TestSuite()
-        for module_name in sys.argv[1:]:
-            if module_name in SKIP_MODULES:
-                logger.info(f"Skipping module '{module_name}'")
-                continue
-            suite.addTests(load_module_tests(module_name, logger))
+    args = parser.parse_args()
 
-    # -------------------------------------------------------------
-    # Run
-    # -------------------------------------------------------------
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
+    runner = TestRunner(
+        console_output=not args.no_console,
+        file_output=not args.no_file,
+        log_file=args.log_file,
+    )
 
-    logger.info("-" * 70)
-    if result.wasSuccessful():
-        logger.info("✅ ALL TESTS PASSED")
-        sys.exit(0)
-    else:
-        logger.info(
-            f"❌ TESTS FAILED — "
-            f"{len(result.failures)} failures, "
-            f"{len(result.errors)} errors"
-        )
-        sys.exit(1)
+    success = runner.run_tests(test_pattern=args.pattern)
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

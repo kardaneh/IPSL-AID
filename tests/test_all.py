@@ -16,12 +16,14 @@ for consistent output formatting.
 Examples
 --------
 Run all tests in the package:
-    $ python test_all.py
+    $ python -m unittest tests.test_all
 
 Run tests from specific modules:
-    $ python test_all.py loss network
+    $ python -m unittest tests.test_utils
 
-Skip modules can be configured via the SKIP_MODULES set.
+Run specific test:
+    $ python -m unittest tests.test_utils.TestEasyDict.test_empty_initialization
+
 """
 
 import sys

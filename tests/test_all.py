@@ -16,7 +16,7 @@ for consistent output formatting.
 Examples
 --------
 Run all tests in the package:
-    $ python -m unittest tests.test_all
+    $ python -m tests.test_all
 
 Run tests from specific modules:
     $ python -m unittest tests.test_utils

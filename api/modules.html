@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPSL_AID &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="IPSL_AID package" href="IPSL_AID.html" />
+    <link rel="prev" title="Inference Modes" href="../inference_modes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">IPSL_AID</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html">IPSL_AID package</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">IPSL_AID</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="../inference_modes.html" class="btn btn-neutral float-left" title="Inference Modes" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="IPSL_AID.html" class="btn btn-neutral float-right" title="IPSL_AID package" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ipsl-aid">
+<h1>IPSL_AID<a class="headerlink" href="#ipsl-aid" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="IPSL_AID.html">IPSL_AID package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.dataset">IPSL_AID.dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.stats"><code class="docutils literal notranslate"><span class="pre">stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.coarse_down_up"><code class="docutils literal notranslate"><span class="pre">coarse_down_up()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.gaussian_filter"><code class="docutils literal notranslate"><span class="pre">gaussian_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.const_vars"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.const_vars</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.time"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.year"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.year</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.month"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.month</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.day"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.day</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.hour"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.hour</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.year_norm"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.year_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.doy_norm"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.doy_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.hour_norm"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.hour_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.time_batchs"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.time_batchs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.eval_slices"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.eval_slices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.random_centers"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.random_centers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.center_tracker"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.center_tracker</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.tindex_tracker"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.tindex_tracker</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.new_epoch"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.new_epoch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.sample_time_steps_by_doy"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.sample_time_steps_by_doy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.sample_random_time_indices"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.sample_random_time_indices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.load_dynamic_covariates"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.load_dynamic_covariates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.generate_random_batch_centers"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.generate_random_batch_centers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.generate_evaluation_slices"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.generate_evaluation_slices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.extract_batch"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.extract_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.filter_batch"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.filter_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.normalize"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.normalize_time"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.normalize_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.__len__"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.__len__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.__getitem__"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.__getitem__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.__init__"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id0"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.new_epoch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id1"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.sample_time_steps_by_doy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id2"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.sample_random_time_indices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id3"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.load_dynamic_covariates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.get_center_indices_from_latlon"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.get_center_indices_from_latlon()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id4"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.generate_random_batch_centers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id5"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.generate_evaluation_slices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.generate_region_slices"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.generate_region_slices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id6"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.extract_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.dataset.DataPreprocessor.build_fine_coarse_blocks"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.build_fine_coarse_blocks()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id7"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.filter_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id8"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id9"><code class="docutils literal notranslate"><span class="pre">DataPreprocessor.normalize_time()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.diagnostics">IPSL_AID.diagnostics module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig"><code class="docutils literal notranslate"><span class="pre">PlotConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.DEFAULT_SAVE_DIR"><code class="docutils literal notranslate"><span class="pre">PlotConfig.DEFAULT_SAVE_DIR</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER"><code class="docutils literal notranslate"><span class="pre">PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.COLORMAPS"><code class="docutils literal notranslate"><span class="pre">PlotConfig.COLORMAPS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.FIXED_DIFF_RANGES"><code class="docutils literal notranslate"><span class="pre">PlotConfig.FIXED_DIFF_RANGES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.FIXED_DIFF_RANGES_ERRORS"><code class="docutils literal notranslate"><span class="pre">PlotConfig.FIXED_DIFF_RANGES_ERRORS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.FIXED_MAE_RANGES"><code class="docutils literal notranslate"><span class="pre">PlotConfig.FIXED_MAE_RANGES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.FIXED_SSR_RANGES"><code class="docutils literal notranslate"><span class="pre">PlotConfig.FIXED_SSR_RANGES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.COASTLINE_w"><code class="docutils literal notranslate"><span class="pre">PlotConfig.COASTLINE_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.BORDER_w"><code class="docutils literal notranslate"><span class="pre">PlotConfig.BORDER_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.LAKE_w"><code class="docutils literal notranslate"><span class="pre">PlotConfig.LAKE_w</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.BORDER_STYLE"><code class="docutils literal notranslate"><span class="pre">PlotConfig.BORDER_STYLE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.COLORBAR_h"><code class="docutils literal notranslate"><span class="pre">PlotConfig.COLORBAR_h</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.COLORBAR_PAD"><code class="docutils literal notranslate"><span class="pre">PlotConfig.COLORBAR_PAD</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.get_colormap"><code class="docutils literal notranslate"><span class="pre">PlotConfig.get_colormap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.get_plot_name"><code class="docutils literal notranslate"><span class="pre">PlotConfig.get_plot_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.convert_units"><code class="docutils literal notranslate"><span class="pre">PlotConfig.convert_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.get_fixed_diff_range"><code class="docutils literal notranslate"><span class="pre">PlotConfig.get_fixed_diff_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.get_fixed_diff_range_errors"><code class="docutils literal notranslate"><span class="pre">PlotConfig.get_fixed_diff_range_errors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.get_fixed_mae_range"><code class="docutils literal notranslate"><span class="pre">PlotConfig.get_fixed_mae_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.PlotConfig.get_fixed_ssr_range"><code class="docutils literal notranslate"><span class="pre">PlotConfig.get_fixed_ssr_range()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_validation_hexbin"><code class="docutils literal notranslate"><span class="pre">plot_validation_hexbin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_comparison_hexbin"><code class="docutils literal notranslate"><span class="pre">plot_comparison_hexbin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_metric_histories"><code class="docutils literal notranslate"><span class="pre">plot_metric_histories()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_metrics_heatmap"><code class="docutils literal notranslate"><span class="pre">plot_metrics_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_loss_histories"><code class="docutils literal notranslate"><span class="pre">plot_loss_histories()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_average_metrics"><code class="docutils literal notranslate"><span class="pre">plot_average_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_spatiotemporal_histograms"><code class="docutils literal notranslate"><span class="pre">plot_spatiotemporal_histograms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_surface"><code class="docutils literal notranslate"><span class="pre">plot_surface()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_ensemble_surface"><code class="docutils literal notranslate"><span class="pre">plot_ensemble_surface()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_zoom_comparison"><code class="docutils literal notranslate"><span class="pre">plot_zoom_comparison()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_global_surface_robinson"><code class="docutils literal notranslate"><span class="pre">plot_global_surface_robinson()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_MAE_map"><code class="docutils literal notranslate"><span class="pre">plot_MAE_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_error_map"><code class="docutils literal notranslate"><span class="pre">plot_error_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.spread_skill_ratio"><code class="docutils literal notranslate"><span class="pre">spread_skill_ratio()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_spread_skill_ratio_map"><code class="docutils literal notranslate"><span class="pre">plot_spread_skill_ratio_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_spread_skill_ratio_hexbin"><code class="docutils literal notranslate"><span class="pre">plot_spread_skill_ratio_hexbin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_validation_pdfs"><code class="docutils literal notranslate"><span class="pre">plot_validation_pdfs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_power_spectra"><code class="docutils literal notranslate"><span class="pre">plot_power_spectra()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.calculate_psd2d_simple"><code class="docutils literal notranslate"><span class="pre">calculate_psd2d_simple()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.radial_average_psd"><code class="docutils literal notranslate"><span class="pre">radial_average_psd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_qq_quantiles"><code class="docutils literal notranslate"><span class="pre">plot_qq_quantiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.dry_frequency_map"><code class="docutils literal notranslate"><span class="pre">dry_frequency_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_dry_frequency_map"><code class="docutils literal notranslate"><span class="pre">plot_dry_frequency_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.calculate_pearsoncorr_nparray"><code class="docutils literal notranslate"><span class="pre">calculate_pearsoncorr_nparray()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_validation_mvcorr_space"><code class="docutils literal notranslate"><span class="pre">plot_validation_mvcorr_space()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_validation_mvcorr"><code class="docutils literal notranslate"><span class="pre">plot_validation_mvcorr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_temporal_series_comparison"><code class="docutils literal notranslate"><span class="pre">plot_temporal_series_comparison()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.ranks"><code class="docutils literal notranslate"><span class="pre">ranks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_ranks"><code class="docutils literal notranslate"><span class="pre">plot_ranks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.get_divergence"><code class="docutils literal notranslate"><span class="pre">get_divergence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.get_curl"><code class="docutils literal notranslate"><span class="pre">get_curl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_mean_divergence_map"><code class="docutils literal notranslate"><span class="pre">plot_mean_divergence_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.diagnostics.plot_mean_curl_map"><code class="docutils literal notranslate"><span class="pre">plot_mean_curl_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.evaluater">IPSL_AID.evaluater module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker"><code class="docutils literal notranslate"><span class="pre">MetricTracker</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.value"><code class="docutils literal notranslate"><span class="pre">MetricTracker.value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.count"><code class="docutils literal notranslate"><span class="pre">MetricTracker.count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.__init__"><code class="docutils literal notranslate"><span class="pre">MetricTracker.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.reset"><code class="docutils literal notranslate"><span class="pre">MetricTracker.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.update"><code class="docutils literal notranslate"><span class="pre">MetricTracker.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.getmean"><code class="docutils literal notranslate"><span class="pre">MetricTracker.getmean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.getstd"><code class="docutils literal notranslate"><span class="pre">MetricTracker.getstd()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.MetricTracker.getsqrtmean"><code class="docutils literal notranslate"><span class="pre">MetricTracker.getsqrtmean()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.mae_all"><code class="docutils literal notranslate"><span class="pre">mae_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.nmae_all"><code class="docutils literal notranslate"><span class="pre">nmae_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.crps_ensemble_all"><code class="docutils literal notranslate"><span class="pre">crps_ensemble_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.rmse_all"><code class="docutils literal notranslate"><span class="pre">rmse_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.r2_all"><code class="docutils literal notranslate"><span class="pre">r2_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.pearson_all"><code class="docutils literal notranslate"><span class="pre">pearson_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.kl_divergence_all"><code class="docutils literal notranslate"><span class="pre">kl_divergence_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.denormalize"><code class="docutils literal notranslate"><span class="pre">denormalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.edm_sampler"><code class="docutils literal notranslate"><span class="pre">edm_sampler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.sampler"><code class="docutils literal notranslate"><span class="pre">sampler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.reconstruct_original_layout"><code class="docutils literal notranslate"><span class="pre">reconstruct_original_layout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.generate_residuals_norm"><code class="docutils literal notranslate"><span class="pre">generate_residuals_norm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.evaluater.run_validation"><code class="docutils literal notranslate"><span class="pre">run_validation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.logger">IPSL_AID.logger module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger"><code class="docutils literal notranslate"><span class="pre">Logger</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.__init__"><code class="docutils literal notranslate"><span class="pre">Logger.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.clear_logs"><code class="docutils literal notranslate"><span class="pre">Logger.clear_logs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.show_header"><code class="docutils literal notranslate"><span class="pre">Logger.show_header()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.start_task"><code class="docutils literal notranslate"><span class="pre">Logger.start_task()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.log_metrics"><code class="docutils literal notranslate"><span class="pre">Logger.log_metrics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.info"><code class="docutils literal notranslate"><span class="pre">Logger.info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.warning"><code class="docutils literal notranslate"><span class="pre">Logger.warning()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.success"><code class="docutils literal notranslate"><span class="pre">Logger.success()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.step"><code class="docutils literal notranslate"><span class="pre">Logger.step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.exception"><code class="docutils literal notranslate"><span class="pre">Logger.exception()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.logger.Logger.error"><code class="docutils literal notranslate"><span class="pre">Logger.error()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.loss">IPSL_AID.loss module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss"><code class="docutils literal notranslate"><span class="pre">VPLoss</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss.beta_d"><code class="docutils literal notranslate"><span class="pre">VPLoss.beta_d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss.beta_min"><code class="docutils literal notranslate"><span class="pre">VPLoss.beta_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss.epsilon_t"><code class="docutils literal notranslate"><span class="pre">VPLoss.epsilon_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss.__call__"><code class="docutils literal notranslate"><span class="pre">VPLoss.__call__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss.sigma"><code class="docutils literal notranslate"><span class="pre">VPLoss.sigma()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VPLoss.__init__"><code class="docutils literal notranslate"><span class="pre">VPLoss.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#id13"><code class="docutils literal notranslate"><span class="pre">VPLoss.sigma()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VELoss"><code class="docutils literal notranslate"><span class="pre">VELoss</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VELoss.sigma_min"><code class="docutils literal notranslate"><span class="pre">VELoss.sigma_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VELoss.sigma_max"><code class="docutils literal notranslate"><span class="pre">VELoss.sigma_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VELoss.__call__"><code class="docutils literal notranslate"><span class="pre">VELoss.__call__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.VELoss.__init__"><code class="docutils literal notranslate"><span class="pre">VELoss.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.EDMLoss"><code class="docutils literal notranslate"><span class="pre">EDMLoss</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.EDMLoss.P_mean"><code class="docutils literal notranslate"><span class="pre">EDMLoss.P_mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.EDMLoss.P_std"><code class="docutils literal notranslate"><span class="pre">EDMLoss.P_std</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.EDMLoss.sigma_data"><code class="docutils literal notranslate"><span class="pre">EDMLoss.sigma_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.EDMLoss.__call__"><code class="docutils literal notranslate"><span class="pre">EDMLoss.__call__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.EDMLoss.__init__"><code class="docutils literal notranslate"><span class="pre">EDMLoss.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.UnetLoss"><code class="docutils literal notranslate"><span class="pre">UnetLoss</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.UnetLoss.loss_type"><code class="docutils literal notranslate"><span class="pre">UnetLoss.loss_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.UnetLoss.reduction"><code class="docutils literal notranslate"><span class="pre">UnetLoss.reduction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.UnetLoss.loss_fn"><code class="docutils literal notranslate"><span class="pre">UnetLoss.loss_fn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.loss.UnetLoss.__init__"><code class="docutils literal notranslate"><span class="pre">UnetLoss.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.main">IPSL_AID.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.make_divisible_hw"><code class="docutils literal notranslate"><span class="pre">make_divisible_hw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.setup_directories_and_logging"><code class="docutils literal notranslate"><span class="pre">setup_directories_and_logging()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.log_configuration"><code class="docutils literal notranslate"><span class="pre">log_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.setup_data_paths"><code class="docutils literal notranslate"><span class="pre">setup_data_paths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.setup_training_environment"><code class="docutils literal notranslate"><span class="pre">setup_training_environment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.create_data_loaders"><code class="docutils literal notranslate"><span class="pre">create_data_loaders()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.setup_model"><code class="docutils literal notranslate"><span class="pre">setup_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.resolve_region_center"><code class="docutils literal notranslate"><span class="pre">resolve_region_center()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.model">IPSL_AID.model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model.load_model_and_loss"><code class="docutils literal notranslate"><span class="pre">load_model_and_loss()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.model_utils">IPSL_AID.model_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils"><code class="docutils literal notranslate"><span class="pre">ModelUtils</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.__init__"><code class="docutils literal notranslate"><span class="pre">ModelUtils.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.get_parameter_number"><code class="docutils literal notranslate"><span class="pre">ModelUtils.get_parameter_number()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.print_model_layers"><code class="docutils literal notranslate"><span class="pre">ModelUtils.print_model_layers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">ModelUtils.save_checkpoint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.load_checkpoint"><code class="docutils literal notranslate"><span class="pre">ModelUtils.load_checkpoint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.load_training_checkpoint"><code class="docutils literal notranslate"><span class="pre">ModelUtils.load_training_checkpoint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.count_parameters_by_layer"><code class="docutils literal notranslate"><span class="pre">ModelUtils.count_parameters_by_layer()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.log_model_summary"><code class="docutils literal notranslate"><span class="pre">ModelUtils.log_model_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.save_training_checkpoint"><code class="docutils literal notranslate"><span class="pre">ModelUtils.save_training_checkpoint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.save_emergency_checkpoint"><code class="docutils literal notranslate"><span class="pre">ModelUtils.save_emergency_checkpoint()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.networks">IPSL_AID.networks module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.weight_init"><code class="docutils literal notranslate"><span class="pre">weight_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Linear"><code class="docutils literal notranslate"><span class="pre">Linear</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Linear.weight"><code class="docutils literal notranslate"><span class="pre">Linear.weight</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Linear.bias"><code class="docutils literal notranslate"><span class="pre">Linear.bias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Linear.__init__"><code class="docutils literal notranslate"><span class="pre">Linear.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Linear.forward"><code class="docutils literal notranslate"><span class="pre">Linear.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Conv2d"><code class="docutils literal notranslate"><span class="pre">Conv2d</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Conv2d.weight"><code class="docutils literal notranslate"><span class="pre">Conv2d.weight</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Conv2d.bias"><code class="docutils literal notranslate"><span class="pre">Conv2d.bias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Conv2d.resample_filter"><code class="docutils literal notranslate"><span class="pre">Conv2d.resample_filter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Conv2d.__init__"><code class="docutils literal notranslate"><span class="pre">Conv2d.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.Conv2d.forward"><code class="docutils literal notranslate"><span class="pre">Conv2d.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.GroupNorm"><code class="docutils literal notranslate"><span class="pre">GroupNorm</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.GroupNorm.weight"><code class="docutils literal notranslate"><span class="pre">GroupNorm.weight</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.GroupNorm.bias"><code class="docutils literal notranslate"><span class="pre">GroupNorm.bias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.GroupNorm.__init__"><code class="docutils literal notranslate"><span class="pre">GroupNorm.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.GroupNorm.forward"><code class="docutils literal notranslate"><span class="pre">GroupNorm.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.AttentionOp"><code class="docutils literal notranslate"><span class="pre">AttentionOp</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.AttentionOp.forward"><code class="docutils literal notranslate"><span class="pre">AttentionOp.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.AttentionOp.backward"><code class="docutils literal notranslate"><span class="pre">AttentionOp.backward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.UNetBlock"><code class="docutils literal notranslate"><span class="pre">UNetBlock</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.UNetBlock.affine"><code class="docutils literal notranslate"><span class="pre">UNetBlock.affine</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.UNetBlock.skip"><code class="docutils literal notranslate"><span class="pre">UNetBlock.skip</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.UNetBlock.__init__"><code class="docutils literal notranslate"><span class="pre">UNetBlock.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.UNetBlock.forward"><code class="docutils literal notranslate"><span class="pre">UNetBlock.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.PositionalEmbedding"><code class="docutils literal notranslate"><span class="pre">PositionalEmbedding</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.PositionalEmbedding.num_channels"><code class="docutils literal notranslate"><span class="pre">PositionalEmbedding.num_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.PositionalEmbedding.max_positions"><code class="docutils literal notranslate"><span class="pre">PositionalEmbedding.max_positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.PositionalEmbedding.endpoint"><code class="docutils literal notranslate"><span class="pre">PositionalEmbedding.endpoint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.PositionalEmbedding.__init__"><code class="docutils literal notranslate"><span class="pre">PositionalEmbedding.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.PositionalEmbedding.forward"><code class="docutils literal notranslate"><span class="pre">PositionalEmbedding.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.FourierEmbedding"><code class="docutils literal notranslate"><span class="pre">FourierEmbedding</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.FourierEmbedding.freqs"><code class="docutils literal notranslate"><span class="pre">FourierEmbedding.freqs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.FourierEmbedding.__init__"><code class="docutils literal notranslate"><span class="pre">FourierEmbedding.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.FourierEmbedding.forward"><code class="docutils literal notranslate"><span class="pre">FourierEmbedding.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet"><code class="docutils literal notranslate"><span class="pre">SongUNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.img_resolution"><code class="docutils literal notranslate"><span class="pre">SongUNet.img_resolution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.img_height"><code class="docutils literal notranslate"><span class="pre">SongUNet.img_height</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.img_width"><code class="docutils literal notranslate"><span class="pre">SongUNet.img_width</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.label_dropout"><code class="docutils literal notranslate"><span class="pre">SongUNet.label_dropout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.map_noise"><code class="docutils literal notranslate"><span class="pre">SongUNet.map_noise</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.map_label"><code class="docutils literal notranslate"><span class="pre">SongUNet.map_label</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.map_augment"><code class="docutils literal notranslate"><span class="pre">SongUNet.map_augment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.enc"><code class="docutils literal notranslate"><span class="pre">SongUNet.enc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.dec"><code class="docutils literal notranslate"><span class="pre">SongUNet.dec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.__init__"><code class="docutils literal notranslate"><span class="pre">SongUNet.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.SongUNet.forward"><code class="docutils literal notranslate"><span class="pre">SongUNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.img_resolution"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.img_resolution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.img_height"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.img_height</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.img_width"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.img_width</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.label_dropout"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.label_dropout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.map_noise"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.map_noise</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.map_label"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.map_label</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.map_augment"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.map_augment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.enc"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.enc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.dec"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.dec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.out_norm"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.out_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.out_conv"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.out_conv</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.__init__"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.DhariwalUNet.forward"><code class="docutils literal notranslate"><span class="pre">DhariwalUNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond"><code class="docutils literal notranslate"><span class="pre">VPPrecond</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.img_resolution"><code class="docutils literal notranslate"><span class="pre">VPPrecond.img_resolution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.in_channels"><code class="docutils literal notranslate"><span class="pre">VPPrecond.in_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.out_channels"><code class="docutils literal notranslate"><span class="pre">VPPrecond.out_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.label_dim"><code class="docutils literal notranslate"><span class="pre">VPPrecond.label_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.use_fp16"><code class="docutils literal notranslate"><span class="pre">VPPrecond.use_fp16</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.sigma_min"><code class="docutils literal notranslate"><span class="pre">VPPrecond.sigma_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.sigma_max"><code class="docutils literal notranslate"><span class="pre">VPPrecond.sigma_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.model"><code class="docutils literal notranslate"><span class="pre">VPPrecond.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.__init__"><code class="docutils literal notranslate"><span class="pre">VPPrecond.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.forward"><code class="docutils literal notranslate"><span class="pre">VPPrecond.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.sigma"><code class="docutils literal notranslate"><span class="pre">VPPrecond.sigma()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.sigma_inv"><code class="docutils literal notranslate"><span class="pre">VPPrecond.sigma_inv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VPPrecond.round_sigma"><code class="docutils literal notranslate"><span class="pre">VPPrecond.round_sigma()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond"><code class="docutils literal notranslate"><span class="pre">VEPrecond</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.img_resolution"><code class="docutils literal notranslate"><span class="pre">VEPrecond.img_resolution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.in_channels"><code class="docutils literal notranslate"><span class="pre">VEPrecond.in_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.out_channels"><code class="docutils literal notranslate"><span class="pre">VEPrecond.out_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.label_dim"><code class="docutils literal notranslate"><span class="pre">VEPrecond.label_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.use_fp16"><code class="docutils literal notranslate"><span class="pre">VEPrecond.use_fp16</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.sigma_min"><code class="docutils literal notranslate"><span class="pre">VEPrecond.sigma_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.sigma_max"><code class="docutils literal notranslate"><span class="pre">VEPrecond.sigma_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.model"><code class="docutils literal notranslate"><span class="pre">VEPrecond.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.__init__"><code class="docutils literal notranslate"><span class="pre">VEPrecond.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.forward"><code class="docutils literal notranslate"><span class="pre">VEPrecond.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.VEPrecond.round_sigma"><code class="docutils literal notranslate"><span class="pre">VEPrecond.round_sigma()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.img_resolution"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.img_resolution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.in_channels"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.in_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.out_channels"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.out_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.label_dim"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.label_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.use_fp16"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.use_fp16</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.sigma_min"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.sigma_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.sigma_max"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.sigma_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.u"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.u</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.model"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.__init__"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.forward"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.alpha_bar"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.alpha_bar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.iDDPMPrecond.round_sigma"><code class="docutils literal notranslate"><span class="pre">iDDPMPrecond.round_sigma()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond"><code class="docutils literal notranslate"><span class="pre">EDMPrecond</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.img_resolution"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.img_resolution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.in_channels"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.in_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.out_channels"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.out_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.label_dim"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.label_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.use_fp16"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.use_fp16</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.sigma_min"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.sigma_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.sigma_max"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.sigma_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.sigma_data"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.sigma_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.model"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.__init__"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.forward"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.networks.EDMPrecond.round_sigma"><code class="docutils literal notranslate"><span class="pre">EDMPrecond.round_sigma()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.utils">IPSL_AID.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.utils.EasyDict"><code class="docutils literal notranslate"><span class="pre">EasyDict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.utils.FileUtils"><code class="docutils literal notranslate"><span class="pre">FileUtils</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.utils.FileUtils.__init__"><code class="docutils literal notranslate"><span class="pre">FileUtils.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.utils.FileUtils.makedir"><code class="docutils literal notranslate"><span class="pre">FileUtils.makedir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.utils.FileUtils.makefile"><code class="docutils literal notranslate"><span class="pre">FileUtils.makefile()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.download_ERA5_cds">IPSL_AID.download_ERA5_cds module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.download_ERA5_cds.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.download_ERA5_cds.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="IPSL_AID.html#module-IPSL_AID.generate_all_data_ERA5">IPSL_AID.generate_all_data_ERA5 module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.generate_all_data_ERA5.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="IPSL_AID.html#IPSL_AID.generate_all_data_ERA5.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../inference_modes.html" class="btn btn-neutral float-left" title="Inference Modes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="IPSL_AID.html" class="btn btn-neutral float-right" title="IPSL_AID package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

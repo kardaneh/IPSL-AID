@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-install">Quick Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hpc-configuration">HPC Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-requirements">Hardware Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-installation">Development Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-help">Getting Help</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>IPSL-AID uses <strong>uv</strong> for fast, portable, and reproducible environment management.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Python 3.8 or higher</p></li>
+<li><p>CUDA-compatible GPU (for training and inference)</p></li>
+<li><p>Git (for cloning the repository)</p></li>
+</ul>
+</section>
+<section id="quick-install">
+<h2>Quick Install<a class="headerlink" href="#quick-install" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Clone the repository:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kardaneh/IPSL-AID.git
+<span class="nb">cd</span><span class="w"> </span>IPSL-AID
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create and activate a virtual environment:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="o">=</span>python3.11
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Install the package in development mode:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p>This will install all dependencies defined in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and make the
+<code class="docutils literal notranslate"><span class="pre">ipsl-aid</span></code> command available in your environment.</p>
+</section>
+<section id="verification">
+<h2>Verification<a class="headerlink" href="#verification" title="Link to this heading"></a></h2>
+<p>After installation, verify that the package is correctly installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check version (may take a few minutes on first run - loading dependencies)</span>
+ipsl-aid<span class="w"> </span>--version
+
+<span class="c1"># Check help (may also take a few minutes on first run)</span>
+ipsl-aid<span class="w"> </span>--help
+
+<span class="c1"># Faster alternative for version check</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import IPSL_AID; print(IPSL_AID.__version__)&quot;</span>
+
+<span class="c1"># Verify CUDA availability</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; print(f&#39;CUDA available: {torch.cuda.is_available()}&#39;)&quot;</span>
+<span class="k">if</span><span class="w"> </span>torch.cuda.is_available<span class="o">()</span>:
+<span class="w">    </span>print<span class="o">(</span>f<span class="s1">&#39;CUDA version: {torch.version.cuda}&#39;</span><span class="o">)</span>
+<span class="w">    </span>print<span class="o">(</span>f<span class="s1">&#39;GPU count: {torch.cuda.device_count()}&#39;</span><span class="o">)</span>
+
+<span class="c1"># Test import</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import IPSL_AID; print(&#39;IPSL-AID imported successfully&#39;)&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The first execution of <code class="docutils literal notranslate"><span class="pre">ipsl-aid</span> <span class="pre">--version</span></code> or <code class="docutils literal notranslate"><span class="pre">ipsl-aid</span> <span class="pre">--help</span></code>
+can take up to couple of minutes. This is due to the current CLI implementation:
+heavy dependencies (such as PyTorch, Torchvision, NumPy, etc.)
+are imported at startup, even for lightweight commands.</p>
+<p>On HPC machines, many of these libraries are already available via
+<code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">load</span></code>, which significantly reduce startup time. Users are
+encouraged to rely on these system-provided modules rather than
+reinstalling them in their virtual environment. In this case,
+the dependencies already available on the system need be commented out in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.</p>
+</div>
+</section>
+<section id="hpc-configuration">
+<h2>HPC Configuration<a class="headerlink" href="#hpc-configuration" title="Link to this heading"></a></h2>
+<p>On HPC systems (like Leonardo), additional configuration may be necessary:</p>
+<ol class="arabic simple">
+<li><p><strong>Load CUDA modules</strong> (if not automatically loaded):</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module<span class="w"> </span>load<span class="w"> </span>cuda/12.1
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Set up Cartopy data directory</strong> (to avoid downloading during runtime):</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">CARTOPY_DATA_DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/cartopy_data&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Configure environment variables</strong> for data paths:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">IPSL_AID_DATA_DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/your/data&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">IPSL_AID_OUTPUT_DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/your/outputs&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p><strong>SLURM job submission</strong>:</p></li>
+</ol>
+<p>The package includes a bash script generator that creates SLURM submission
+scripts. Example usage:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate SBATCH script with your configuration</span>
+./your_setup_script.sh
+
+<span class="c1"># Submit the job</span>
+sbatch<span class="w"> </span>slurm/sbatch_diffusion_*.sh
+</pre></div>
+</div>
+</section>
+<section id="hardware-requirements">
+<h2>Hardware Requirements<a class="headerlink" href="#hardware-requirements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Training</strong>: Multi-GPU systems (tested with 4× NVIDIA A100 64GB)</p></li>
+<li><p><strong>Inference</strong>: Single GPU or multi-GPU for parallel generation</p></li>
+<li><p><strong>Storage</strong>: Sufficient disk space for climate datasets (ERA5 ~TB scale)</p></li>
+<li><p><strong>Memory</strong>: Adequate RAM for data loading and preprocessing</p></li>
+</ul>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading"></a></h2>
+<p>IPSL-AID requires the following key dependencies (automatically installed):</p>
+<ul class="simple">
+<li><p>PyTorch &gt;= 2.5.1</p></li>
+<li><p>NumPy, SciPy, Pandas, Xarray</p></li>
+<li><p>Matplotlib, Cartopy, Seaborn</p></li>
+<li><p>tqdm, Rich, TensorBoard</p></li>
+<li><p>CDS API client (for data download)</p></li>
+</ul>
+</section>
+<section id="optional-dependencies">
+<h2>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Link to this heading"></a></h2>
+<p>For development and documentation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install development dependencies</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+
+<span class="c1"># Install documentation dependencies</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="development-installation">
+<h2>Development Installation<a class="headerlink" href="#development-installation" title="Link to this heading"></a></h2>
+<p>For developers working on the codebase:</p>
+<ol class="arabic simple">
+<li><p>Install in editable mode with development dependencies:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Set up pre-commit hooks:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>install
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Run tests:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>tests/test_all.py
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p><strong>Issue</strong>: <code class="docutils literal notranslate"><span class="pre">ipsl-aid:</span> <span class="pre">command</span> <span class="pre">not</span> <span class="pre">found</span></code></p>
+<p><strong>Solution</strong>: Ensure the virtual environment is activated:
+<code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">.venv/bin/activate</span></code></p>
+<p><strong>Issue</strong>: CUDA not available</p>
+<p><strong>Solution</strong>: Check PyTorch installation:
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-c</span> <span class="pre">&quot;import</span> <span class="pre">torch;</span> <span class="pre">print(torch.cuda.is_available())&quot;</span></code>
+If False, reinstall PyTorch with CUDA support.</p>
+<p><strong>Issue</strong>: Import errors</p>
+<p><strong>Solution</strong>: Verify package installation:
+<code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">list</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">ipsl</span></code>
+If not found, reinstall: <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code></p>
+<p><strong>Issue</strong>: Slow startup with <code class="docutils literal notranslate"><span class="pre">--version</span></code> or <code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
+<p><strong>Solution</strong>: This is expected on first run as PyTorch and other heavy modules load.
+We are actively working on implementing a fast CLI handler. For quick verification,
+use the alternative commands shown in the Verification section.</p>
+<p><strong>Issue</strong>: <code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError:</span> <span class="pre">No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'IPSL_AID'</span></code></p>
+<p><strong>Solution</strong>: Ensure the package is installed and the virtual environment is activated.
+Run: <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code> from the project root directory.</p>
+<p><strong>Issue</strong>: Cartopy data download fails</p>
+<p><strong>Solution</strong>: Set the Cartopy data directory to a shared location:
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">CARTOPY_DATA_DIR=&quot;/path/to/cartopy_data&quot;</span></code></p>
+</section>
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Repository</strong>: <a class="reference external" href="https://github.com/kardaneh/IPSL-AID">https://github.com/kardaneh/IPSL-AID</a></p></li>
+<li><p><strong>Issues</strong>: <a class="reference external" href="https://github.com/kardaneh/IPSL-AID/issues">https://github.com/kardaneh/IPSL-AID/issues</a></p></li>
+<li><p><strong>Contact</strong>: <a class="reference external" href="mailto:kardaneh&#37;&#52;&#48;ipsl&#46;fr">kardaneh<span>&#64;</span>ipsl<span>&#46;</span>fr</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

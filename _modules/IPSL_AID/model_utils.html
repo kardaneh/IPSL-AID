@@ -1,0 +1,700 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPSL_AID.model_utils &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">IPSL_AID.model_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for IPSL_AID.model_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 IPSL / CNRS / Sorbonne University</span>
+<span class="c1"># Authors: Kazem Ardaneh</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+
+<div class="viewcode-block" id="ModelUtils">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelUtils</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility class for model inspection, checkpointing, and memory profiling.</span>
+
+<span class="sd">    This class provides static methods for common model operations including</span>
+<span class="sd">    parameter counting, memory usage analysis, checkpoint management, and</span>
+<span class="sd">    model inspection.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; utils = ModelUtils()</span>
+<span class="sd">    &gt;&gt;&gt; param_counts = ModelUtils.get_parameter_number(model)</span>
+<span class="sd">    &gt;&gt;&gt; ModelUtils.save_checkpoint(state, &quot;checkpoint.pth.tar&quot;, logger)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ModelUtils.__init__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize ModelUtils instance.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.get_parameter_number">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.get_parameter_number">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_parameter_number</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the total and trainable number of parameters in a model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            PyTorch model to inspect</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionary containing:</span>
+<span class="sd">            - &#39;Total&#39;: Total number of parameters</span>
+<span class="sd">            - &#39;Trainable&#39;: Number of trainable parameters</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; model = torch.nn.Linear(10, 5)</span>
+<span class="sd">        &gt;&gt;&gt; counts = ModelUtils.get_parameter_number(model, logger)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_num</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+        <span class="n">trainable_num</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Model Parameters - Total: </span><span class="si">{</span><span class="n">total_num</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">, Trainable: </span><span class="si">{</span><span class="n">trainable_num</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span> <span class="n">total_num</span><span class="p">,</span> <span class="s2">&quot;Trainable&quot;</span><span class="p">:</span> <span class="n">trainable_num</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.print_model_layers">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.print_model_layers">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">print_model_layers</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print model parameter names along with their gradient requirements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            PyTorch model to inspect</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output, by default None</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; model = torch.nn.Sequential(</span>
+<span class="sd">        ...     torch.nn.Linear(10, 5),</span>
+<span class="sd">        ...     torch.nn.ReLU(),</span>
+<span class="sd">        ...     torch.nn.Linear(5, 1)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; ModelUtils.print_model_layers(model, logger)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model Layer Information:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Layer: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, Requires Grad: </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Layer: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">,</span><span class="se">\t</span><span class="s2"> Requires Grad: </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.save_checkpoint">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.save_checkpoint">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;checkpoint.pth.tar&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save model and optimizer state to a file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : dict</span>
+<span class="sd">            Dictionary containing model state_dict and other training information.</span>
+<span class="sd">            Typically includes:</span>
+<span class="sd">            - &#39;state_dict&#39;: Model parameters</span>
+<span class="sd">            - &#39;optimizer&#39;: Optimizer state</span>
+<span class="sd">            - &#39;epoch&#39;: Current epoch</span>
+<span class="sd">            - &#39;loss&#39;: Current loss value</span>
+<span class="sd">        filename : str, optional</span>
+<span class="sd">            File path to save the checkpoint, by default &quot;checkpoint.pth.tar&quot;</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output, by default None</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; state = {</span>
+<span class="sd">        ...     &#39;state_dict&#39;: model.state_dict(),</span>
+<span class="sd">        ...     &#39;optimizer&#39;: optimizer.state_dict(),</span>
+<span class="sd">        ...     &#39;epoch&#39;: epoch,</span>
+<span class="sd">        ...     &#39;loss&#39;: loss</span>
+<span class="sd">        ... }</span>
+<span class="sd">        &gt;&gt;&gt; ModelUtils.save_checkpoint(state, &#39;model_checkpoint.pth.tar&#39;, logger)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving checkpoint to: </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=&gt; Saving checkpoint to: </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.load_checkpoint">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.load_checkpoint">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load model and optimizer state from a checkpoint file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        checkpoint : dict</span>
+<span class="sd">            Loaded checkpoint dictionary</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Model to load weights into</span>
+<span class="sd">        optimizer : torch.optim.Optimizer, optional</span>
+<span class="sd">            Optimizer to restore state, by default None</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output, by default None</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; checkpoint = torch.load(&#39;model_checkpoint.pth.tar&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; ModelUtils.load_checkpoint(checkpoint, model, optimizer, logger)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading checkpoint&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&gt; Loading checkpoint&quot;</span><span class="p">)</span>
+
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;state_dict&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Optimizer state restored&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpoint loaded successfully&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.load_training_checkpoint">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.load_training_checkpoint">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_training_checkpoint</span><span class="p">(</span>
+        <span class="n">checkpoint_path</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load comprehensive training checkpoint.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        checkpoint_path : str</span>
+<span class="sd">            Path to checkpoint file</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Model to load weights into</span>
+<span class="sd">        optimizer : torch.optim.Optimizer</span>
+<span class="sd">            Optimizer to restore state</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device to load checkpoint to</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (epoch, samples_processed, batches_processed, best_val_loss, best_epoch, checkpoint)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checkpoint not found at: </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading checkpoint from: &#39;</span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpoint loaded into memory&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checkpoint keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">checkpoint</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Handle DataParallel compatibility</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">):</span>
+            <span class="c1"># Check if checkpoint was saved from DataParallel</span>
+            <span class="n">first_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;state_dict&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">first_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;module.&quot;</span><span class="p">):</span>
+                <span class="c1"># Wrap state dict with &#39;module.&#39; prefix for DataParallel</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+
+                <span class="n">new_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;state_dict&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">new_state_dict</span><span class="p">[</span><span class="s2">&quot;module.&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;state_dict&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_state_dict</span>
+
+        <span class="c1"># Load model and optimizer states</span>
+        <span class="n">ModelUtils</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">)</span>
+
+        <span class="c1"># Extract training state</span>
+        <span class="n">epoch</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;epoch&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">samples_processed</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;samples_processed&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">batches_processed</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batches_processed&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">best_val_loss</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;best_val_loss&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">))</span>
+        <span class="n">best_epoch</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;best_epoch&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Checkpoint loaded: epoch </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">samples_processed</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> samples&quot;</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Training state extracted:&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; └── epoch: </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; └── samples_processed: </span><span class="si">{</span><span class="n">samples_processed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; └── batches_processed: </span><span class="si">{</span><span class="n">batches_processed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; └── best_val_loss: </span><span class="si">{</span><span class="n">best_val_loss</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; └── best_epoch: </span><span class="si">{</span><span class="n">best_epoch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">epoch</span><span class="p">,</span>
+            <span class="n">samples_processed</span><span class="p">,</span>
+            <span class="n">batches_processed</span><span class="p">,</span>
+            <span class="n">best_val_loss</span><span class="p">,</span>
+            <span class="n">best_epoch</span><span class="p">,</span>
+            <span class="n">checkpoint</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.count_parameters_by_layer">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.count_parameters_by_layer">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_parameters_by_layer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Count parameters for each layer in the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            PyTorch model to analyze</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionary with layer names as keys and parameter counts as values</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; layer_params = ModelUtils.count_parameters_by_layer(model, logger)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">layer_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="n">layer_params</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parameter count by layer:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">layer</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">layer_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> parameters&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">layer_params</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.log_model_summary">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.log_model_summary">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_model_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Log comprehensive model summary including parameters and architecture.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            PyTorch model to summarize</span>
+<span class="sd">        input_shape : tuple, optional</span>
+<span class="sd">            Input shape for memory analysis, by default None</span>
+<span class="sd">        logger : Logger, optional</span>
+<span class="sd">            Logger instance for output, by default None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MODEL SUMMARY&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+            <span class="c1"># Parameter counts</span>
+            <span class="n">param_counts</span> <span class="o">=</span> <span class="n">ModelUtils</span><span class="o">.</span><span class="n">get_parameter_number</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Parameters: </span><span class="si">{</span><span class="n">param_counts</span><span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trainable Parameters: </span><span class="si">{</span><span class="n">param_counts</span><span class="p">[</span><span class="s1">&#39;Trainable&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Layer information</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Layer Details:&quot;</span><span class="p">)</span>
+            <span class="n">ModelUtils</span><span class="o">.</span><span class="n">print_model_layers</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">logger</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.save_training_checkpoint">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.save_training_checkpoint">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_training_checkpoint</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">,</span>
+        <span class="n">epoch</span><span class="p">,</span>
+        <span class="n">samples_processed</span><span class="p">,</span>
+        <span class="n">batches_processed</span><span class="p">,</span>
+        <span class="n">train_loss_history</span><span class="p">,</span>
+        <span class="n">valid_loss_history</span><span class="p">,</span>
+        <span class="n">valid_metrics_history</span><span class="p">,</span>
+        <span class="n">best_val_loss</span><span class="p">,</span>
+        <span class="n">best_epoch</span><span class="p">,</span>
+        <span class="n">avg_val_loss</span><span class="p">,</span>
+        <span class="n">avg_epoch_loss</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">,</span>
+        <span class="n">paths</span><span class="p">,</span>
+        <span class="n">logger</span><span class="p">,</span>
+        <span class="n">checkpoint_type</span><span class="o">=</span><span class="s2">&quot;epoch&quot;</span><span class="p">,</span>
+        <span class="n">save_full_model</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save comprehensive training checkpoint with consistent formatting.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Model to save</span>
+<span class="sd">        optimizer : torch.optim.Optimizer</span>
+<span class="sd">            Optimizer to save</span>
+<span class="sd">        epoch : int</span>
+<span class="sd">            Current epoch</span>
+<span class="sd">        samples_processed : int</span>
+<span class="sd">            Number of samples processed so far</span>
+<span class="sd">        batches_processed : int</span>
+<span class="sd">            Number of batches processed so far</span>
+<span class="sd">        train_loss_history : list</span>
+<span class="sd">            History of training losses</span>
+<span class="sd">        valid_loss_history : list</span>
+<span class="sd">            History of validation losses</span>
+<span class="sd">        valid_metrics_history : dict</span>
+<span class="sd">            History of validation metrics</span>
+<span class="sd">        best_val_loss : float</span>
+<span class="sd">            Best validation loss so far</span>
+<span class="sd">        best_epoch : int</span>
+<span class="sd">            Epoch with best validation loss</span>
+<span class="sd">        avg_val_loss : float</span>
+<span class="sd">            Current epoch validation loss</span>
+<span class="sd">        avg_epoch_loss : float</span>
+<span class="sd">            Current epoch training loss</span>
+<span class="sd">        args : argparse.Namespace</span>
+<span class="sd">            Command line arguments</span>
+<span class="sd">        paths : EasyDict</span>
+<span class="sd">            Directory paths</span>
+<span class="sd">        logger : Logger</span>
+<span class="sd">            Logger instance</span>
+<span class="sd">        checkpoint_type : str</span>
+<span class="sd">            Type of checkpoint: &quot;samples&quot;, &quot;epoch&quot;, &quot;best&quot;, &quot;final&quot;</span>
+<span class="sd">        save_full_model : bool</span>
+<span class="sd">            Whether to also save the full model separately</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (checkpoint_filename, full_model_filename)</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; checkpoint_file, full_model_file = ModelUtils.save_training_checkpoint(</span>
+<span class="sd">        ...     model, optimizer, epoch, samples_processed, batches_processed,</span>
+<span class="sd">        ...     train_loss_history, valid_loss_history, valid_metrics_history,</span>
+<span class="sd">        ...     best_val_loss, best_epoch, avg_val_loss, avg_epoch_loss,</span>
+<span class="sd">        ...     args, paths, logger, checkpoint_type=&quot;best&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Handle DataParallel for state dict</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">):</span>
+            <span class="n">state_dict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">state_dict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+
+        <span class="c1"># Base checkpoint state</span>
+        <span class="n">checkpoint_state</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;epoch&quot;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
+            <span class="s2">&quot;state_dict&quot;</span><span class="p">:</span> <span class="n">state_dict</span><span class="p">,</span>
+            <span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+            <span class="s2">&quot;samples_processed&quot;</span><span class="p">:</span> <span class="n">samples_processed</span><span class="p">,</span>
+            <span class="s2">&quot;batches_processed&quot;</span><span class="p">:</span> <span class="n">batches_processed</span><span class="p">,</span>
+            <span class="s2">&quot;train_loss_history&quot;</span><span class="p">:</span> <span class="n">train_loss_history</span><span class="p">,</span>
+            <span class="s2">&quot;valid_loss_history&quot;</span><span class="p">:</span> <span class="n">valid_loss_history</span><span class="p">,</span>
+            <span class="s2">&quot;valid_metrics_history&quot;</span><span class="p">:</span> <span class="n">valid_metrics_history</span><span class="p">,</span>
+            <span class="s2">&quot;best_val_loss&quot;</span><span class="p">:</span> <span class="n">best_val_loss</span><span class="p">,</span>
+            <span class="s2">&quot;best_epoch&quot;</span><span class="p">:</span> <span class="n">best_epoch</span><span class="p">,</span>
+            <span class="s2">&quot;val_loss&quot;</span><span class="p">:</span> <span class="n">avg_val_loss</span><span class="p">,</span>
+            <span class="s2">&quot;train_loss&quot;</span><span class="p">:</span> <span class="n">avg_epoch_loss</span><span class="p">,</span>
+            <span class="s2">&quot;checkpoint_type&quot;</span><span class="p">:</span> <span class="n">checkpoint_type</span><span class="p">,</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;__dict__&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">args</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Determine filename based on checkpoint type</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">)</span>
+        <span class="n">save_checkpoint_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;save_checkpoint_name&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">checkpoint_type</span> <span class="o">==</span> <span class="s2">&quot;samples&quot;</span><span class="p">:</span>
+            <span class="n">checkpoint_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_epoch</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">_samples</span><span class="si">{</span><span class="n">samples_processed</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">.pth.tar&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">full_model_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_epoch</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">_samples</span><span class="si">{</span><span class="n">samples_processed</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">_full.pth&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">checkpoint_type</span> <span class="o">==</span> <span class="s2">&quot;epoch&quot;</span><span class="p">:</span>
+            <span class="n">checkpoint_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_epoch</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">.pth.tar&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">full_model_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_epoch</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">_full.pth&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">checkpoint_type</span> <span class="o">==</span> <span class="s2">&quot;best&quot;</span><span class="p">:</span>
+            <span class="n">checkpoint_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_best_model.pth.tar&quot;</span>
+            <span class="p">)</span>
+            <span class="n">full_model_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_best_model_full.pth&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">checkpoint_type</span> <span class="o">==</span> <span class="s2">&quot;final&quot;</span><span class="p">:</span>
+            <span class="n">num_epochs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;num_epochs&quot;</span><span class="p">,</span> <span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">checkpoint_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_final_model_epoch</span><span class="si">{</span><span class="n">num_epochs</span><span class="si">}</span><span class="s2">.pth.tar&quot;</span>
+            <span class="p">)</span>
+            <span class="n">full_model_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_final_model_epoch</span><span class="si">{</span><span class="n">num_epochs</span><span class="si">}</span><span class="s2">_full.pth&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">checkpoint_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;emergency&quot;</span><span class="p">):</span>
+            <span class="n">checkpoint_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">checkpoint_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">.pth.tar&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">full_model_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">checkpoint_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">_full.pth&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unknown checkpoint_type: </span><span class="si">{</span><span class="n">checkpoint_type</span><span class="si">}</span><span class="s2">, using epoch&quot;</span>
+                <span class="p">)</span>
+            <span class="n">checkpoint_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_epoch</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">.pth.tar&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">full_model_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">checkpoints</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_epoch</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">save_checkpoint_name</span><span class="si">}</span><span class="s2">_full.pth&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Save checkpoint using existing method</span>
+        <span class="n">ModelUtils</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">checkpoint_state</span><span class="p">,</span> <span class="n">checkpoint_filename</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">)</span>
+
+        <span class="c1"># Save full model separately if requested</span>
+        <span class="k">if</span> <span class="n">save_full_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">model</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span>
+            <span class="p">):</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">full_model_filename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">full_model_filename</span><span class="p">)</span>
+
+        <span class="c1"># Log information</span>
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">checkpoint_type</span> <span class="o">==</span> <span class="s2">&quot;best&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Best model saved: </span><span class="si">{</span><span class="n">checkpoint_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; └── Validation loss: </span><span class="si">{</span><span class="n">avg_val_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">checkpoint_type</span> <span class="o">==</span> <span class="s2">&quot;final&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Final model saved: </span><span class="si">{</span><span class="n">checkpoint_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot; └── Total samples: </span><span class="si">{</span><span class="n">samples_processed</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">, Total batches: </span><span class="si">{</span><span class="n">batches_processed</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Checkpoint saved: </span><span class="si">{</span><span class="n">checkpoint_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelUtils.save_emergency_checkpoint">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.model_utils.ModelUtils.save_emergency_checkpoint">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_emergency_checkpoint</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">,</span>
+        <span class="n">epoch</span><span class="p">,</span>
+        <span class="n">samples_processed</span><span class="p">,</span>
+        <span class="n">batches_processed</span><span class="p">,</span>
+        <span class="n">train_loss_history</span><span class="p">,</span>
+        <span class="n">valid_loss_history</span><span class="p">,</span>
+        <span class="n">valid_metrics_history</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">,</span>
+        <span class="n">paths</span><span class="p">,</span>
+        <span class="n">logger</span><span class="p">,</span>
+        <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;emergency&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save emergency checkpoint for recovery.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reason : str</span>
+<span class="sd">            Reason for emergency save (e.g., &quot;crash&quot;, &quot;interrupt&quot;, &quot;error&quot;)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (checkpoint_filename, full_model_filename)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ModelUtils</span><span class="o">.</span><span class="n">save_training_checkpoint</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
+            <span class="n">samples_processed</span><span class="o">=</span><span class="n">samples_processed</span><span class="p">,</span>
+            <span class="n">batches_processed</span><span class="o">=</span><span class="n">batches_processed</span><span class="p">,</span>
+            <span class="n">train_loss_history</span><span class="o">=</span><span class="n">train_loss_history</span><span class="p">,</span>
+            <span class="n">valid_loss_history</span><span class="o">=</span><span class="n">valid_loss_history</span><span class="p">,</span>
+            <span class="n">valid_metrics_history</span><span class="o">=</span><span class="n">valid_metrics_history</span><span class="p">,</span>
+            <span class="n">best_val_loss</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+            <span class="n">best_epoch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">avg_val_loss</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">avg_epoch_loss</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="n">checkpoint_type</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;emergency_</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">save_full_model</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

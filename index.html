@@ -1,0 +1,340 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPSL-AID &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">IPSL-AID</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-right" title="Overview" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ipsl-aid">
+<h1>IPSL-AID<a class="headerlink" href="#ipsl-aid" title="Link to this heading"></a></h1>
+<p><strong>IPSL-AID</strong> is a high-performance research framework for <strong>climate data downscaling</strong>
+based on <strong>diffusion models</strong>, and <strong>UNet-based neural networks</strong>, designed for <strong>GPU clusters and HPC systems</strong>.</p>
+<p>The framework supports <strong>global training</strong>, <strong>regional or global inference</strong>, and
+multiple <strong>diffusion formulations</strong> and <strong>UNet-based architectures</strong>, with a strong
+emphasis on <strong>reproducibility, comprehensive testing, and configurability</strong>.</p>
+<div class="important admonition">
+<p class="admonition-title">Development Status</p>
+<p><strong>IPSL-AID is in active development.</strong></p>
+<p>This framework is currently undergoing rapid development and has not yet
+reached a stable release. Please be aware that:</p>
+<ul class="simple">
+<li><p>APIs and interfaces may change without notice</p></li>
+<li><p>Feature names and module structures are subject to modification</p></li>
+<li><p>Core architectural decisions may be revised</p></li>
+</ul>
+<p><strong>Recommendations for users:</strong></p>
+<ul class="simple">
+<li><p>Regularly update from the main branch</p></li>
+<li><p>Rebase local branches frequently to avoid conflicts</p></li>
+<li><p>Submit pull requests for broadly useful enhancements</p></li>
+<li><p>Report issues for unexpected behavior or bugs.</p></li>
+</ul>
+</div>
+<hr class="docutils" />
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#key-features">Key Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#background">Background</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#quick-install">Quick Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#verification">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#hpc-configuration">HPC Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#hardware-requirements">Hardware Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#development-installation">Development Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#getting-help">Getting Help</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#basic-workflow">Basic Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#running-the-model">Running the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#example-configuration">Example Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#data-preparation">Data Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing_philosophy.html#why-testing-is-essential">Why Testing is Essential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing_philosophy.html#recommended-workflow">Recommended Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing_philosophy.html#test-coverage">Test Coverage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing_philosophy.html#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="project_structure.html#key-modules-explained">Key Modules Explained</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_structure.html#data-flow">Data Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_structure.html#configuration-management">Configuration Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_structure.html#testing-strategy">Testing Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_structure.html#hpc-integration">HPC Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_structure.html#development-workflow">Development Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#branch-strategy-overview">Branch Strategy Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#branch-types-and-their-purposes">Branch Types and Their Purposes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#when-to-use-each-branch">When to Use Each Branch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#why-this-workflow-matters">Why This Workflow Matters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#understanding-your-current-branches">Understanding Your Current Branches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#branch-specific-workflows">Branch-Specific Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#fetch-latest-changes-from-remote">1. Fetch Latest Changes From Remote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#check-branch-status">2. Check Branch Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#rebase-onto-latest-remote-branch">3. Rebase Onto Latest Remote Branch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#conflict-resolution-guide">Conflict Resolution Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#step-1-identify-conflicted-files">Step 1 — Identify Conflicted Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#step-2-examine-the-conflict">Step 2 — Examine the Conflict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#step-3-resolve-the-conflict">Step 3 — Resolve the Conflict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#step-4-mark-as-resolved">Step 4 — Mark as Resolved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#step-5-continue-the-rebase">Step 5 — Continue the Rebase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#abort-rebase-emergency-option">Abort Rebase (Emergency Option)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#standardize-code-with-pre-commit-hooks">4. Standardize Code with Pre-commit Hooks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#run-the-test-suite">5. Run the Test Suite</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#commit-changes-if-needed">6. Commit Changes (If Needed)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#push-your-changes">7. Push Your Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#quick-reference-daily-workflow">Quick Reference: Daily Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#common-pitfalls-to-avoid">Common Pitfalls to Avoid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#important-rules-summary">Important Rules Summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_push_workflow.html#branch-workflow-diagram">Branch Workflow Diagram</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cartopy_configuration.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cartopy_configuration.html#hpc-considerations">HPC Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cartopy_configuration.html#common-issues-and-solutions">Common Issues and Solutions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cartopy_configuration.html#usage-in-diagnostics">Usage in Diagnostics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cartopy_configuration.html#performance-tips">Performance Tips</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#edm-preconditioning">EDM Preconditioning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#loss-function">Loss Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#sampling">Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#theoretical-background">Theoretical Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#implementation-details">Implementation Details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#configuration-example">Configuration Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_models.html#comparison-of-formulations">Comparison of Formulations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#default-configuration">Default Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#architecture-components">Architecture Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#embedding-layers">Embedding Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#conditioning-strategies">Conditioning Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#input-output-specification">Input/Output Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#climate-specific-adaptations">Climate-Specific Adaptations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#configuration-examples">Configuration Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_architectures.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#random-block-sampling">Random Block Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#coarse-down-up-procedure">Coarse-Down-Up Procedure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#conditioning-inputs">Conditioning Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#training-schedule">Training Schedule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#computational-requirements">Computational Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#hyperparameter-tuning">Hyperparameter Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#monitoring-and-logging">Monitoring and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#early-stopping">Early Stopping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#multi-gpu-training">Multi-GPU Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_strategy.html#reproducibility">Reproducibility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#global-inference">Global Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#regional-inference">Regional Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#sampling-procedure">Sampling Procedure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#sampling-parameters">Sampling Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#ensemble-generation">Ensemble Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#postprocessing">Postprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#performance-optimization">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#real-time-applications">Real-time Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#validation-and-evaluation">Validation and Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_modes.html#example-usage">Example Usage</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/IPSL_AID.html">IPSL_AID package</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<hr class="docutils" />
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="overview.html"><span class="doc">Overview</span></a> - Framework capabilities and key features</p></li>
+<li><p><a class="reference internal" href="installation.html"><span class="doc">Installation</span></a> - Setup instructions using uv</p></li>
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> - Basic workflow and example usage</p></li>
+<li><p><a class="reference internal" href="testing_philosophy.html"><span class="doc">Testing Philosophy (Read This First)</span></a> - Essential reading before running experiments</p></li>
+</ul>
+</section>
+<section id="core-components">
+<h2>Core Components<a class="headerlink" href="#core-components" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="diffusion_models.html"><span class="doc">Diffusion Models</span></a> - VE, VP, EDM, iDDPM implementations</p></li>
+<li><p><a class="reference internal" href="neural_architectures.html"><span class="doc">Neural Architectures</span></a> - UNet-based architectures for climate data</p></li>
+<li><p><a class="reference internal" href="training_strategy.html"><span class="doc">Training Strategy</span></a> - Global training with random block strategy</p></li>
+<li><p><a class="reference internal" href="inference_modes.html"><span class="doc">Inference Modes</span></a> - Global, regional, and sampler-based inference</p></li>
+</ul>
+</section>
+<section id="project-information">
+<h2>Project Information<a class="headerlink" href="#project-information" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="project_structure.html"><span class="doc">Project Structure</span></a> - Codebase organization</p></li>
+<li><p><a class="reference internal" href="pre_push_workflow.html"><span class="doc">Pre-Push Workflow</span></a> - Development workflow and contribution guidelines</p></li>
+<li><p><a class="reference internal" href="cartopy_configuration.html"><span class="doc">Cartopy Configuration</span></a> - Geospatial visualization setup</p></li>
+</ul>
+</section>
+<section id="api-documentation">
+<h2>API Documentation<a class="headerlink" href="#api-documentation" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="api/modules.html"><span class="doc">IPSL_AID</span></a> - Complete module reference</p></li>
+</ul>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and Tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

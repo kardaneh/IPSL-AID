@@ -1,0 +1,651 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quickstart &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Testing Philosophy (Read This First)" href="testing_philosophy.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-workflow">Basic Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-model">Running the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-configuration">Example Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-preparation">Data Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="testing_philosophy.html" class="btn btn-neutral float-right" title="Testing Philosophy (Read This First)" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h1>
+<section id="basic-workflow">
+<h2>Basic Workflow<a class="headerlink" href="#basic-workflow" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Setup environment</strong> (see <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a>)</p></li>
+<li><p><strong>Configure your experiment</strong> via setup script</p></li>
+<li><p><strong>Test components</strong> (see <a class="reference internal" href="testing_philosophy.html"><span class="doc">Testing Philosophy (Read This First)</span></a>)</p></li>
+<li><p><strong>Run training or inference</strong></p></li>
+</ol>
+</section>
+<section id="running-the-model">
+<h2>Running the Model<a class="headerlink" href="#running-the-model" title="Link to this heading"></a></h2>
+<p>Model execution is controlled via the <strong>ipsl-aid</strong> command-line interface (CLI) or
+a <strong>setup bash script</strong> that generates SLURM submission scripts.</p>
+<p><strong>Option 1: Direct CLI Usage</strong></p>
+<p>The simplest way to run the model is using the <code class="docutils literal notranslate"><span class="pre">ipsl-aid</span></code> command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show version and help</span>
+ipsl-aid<span class="w"> </span>--version
+ipsl-aid<span class="w"> </span>--help
+
+<span class="c1"># Train a model</span>
+ipsl-aid<span class="w"> </span>--mode<span class="w"> </span>train<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--arch<span class="w"> </span>adm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--precond<span class="w"> </span>edm<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--in_channels<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--out_channels<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--batch_size<span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--num_epochs<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data_dir<span class="w"> </span>./data<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output_dir<span class="w"> </span>./runs
+
+<span class="c1"># Run inference</span>
+ipsl-aid<span class="w"> </span>--mode<span class="w"> </span>inference<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--checkpoint<span class="w"> </span>./checkpoints/model.pth<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data_dir<span class="w"> </span>./data/test<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--inference_type<span class="w"> </span>sampler
+</pre></div>
+</div>
+<p><strong>Option 2: SLURM Batch Submission (Recommended for HPC)</strong></p>
+<p>For HPC environments, use the setup script that:</p>
+<ul class="simple">
+<li><p>Defines all model, data, and training parameters</p></li>
+<li><p>Generates a SLURM submission script</p></li>
+<li><p>Encodes the full configuration in the output folder structure</p></li>
+</ul>
+<p>Typical workflow:</p>
+<ol class="arabic simple">
+<li><p>Edit the setup script:
+- Select diffusion model (VE / VP / EDM / iDDPM)
+- Select architecture (e.g. ADM UNet)
+- Define variables, normalization, batch sizes
+- Choose training or inference mode</p></li>
+<li><p>Generate the SBATCH script:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./setup
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Submit the job:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sbatch<span class="w"> </span>slurm/sbatch_diffusion_*.sh
+</pre></div>
+</div>
+<p>This approach ensures <strong>full reproducibility</strong>, as every run is uniquely tagged
+by its configuration.</p>
+</section>
+<section id="example-configuration">
+<h2>Example Configuration<a class="headerlink" href="#example-configuration" title="Link to this heading"></a></h2>
+<p>Below is a comprehensive reference of all command line arguments accepted by the
+IPSL-AID diffusion model. These arguments can be set in the setup bash script
+and are passed to the Python training script.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Command Line Arguments</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 27.8%" />
+<col style="width: 16.7%" />
+<col style="width: 55.6%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head stub"><p>Argument</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><th class="stub"><p><strong>Execution Mode</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--debug</span></code></p></th>
+<td><p>bool</p></td>
+<td><p>Enable debug mode for reduced logging and testing (default: False)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--run_type</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Run mode: <code class="docutils literal notranslate"><span class="pre">train</span></code>, <code class="docutils literal notranslate"><span class="pre">resume_train</span></code>, <code class="docutils literal notranslate"><span class="pre">inference</span></code>, or <code class="docutils literal notranslate"><span class="pre">inference_regional</span></code> (default: train)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--region</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Geographic region: <code class="docutils literal notranslate"><span class="pre">us</span></code>, <code class="docutils literal notranslate"><span class="pre">europe</span></code>, or <code class="docutils literal notranslate"><span class="pre">asia</span></code> (for regional inference)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--inference_type</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Inference mode: <code class="docutils literal notranslate"><span class="pre">direct</span></code> (deterministic) or <code class="docutils literal notranslate"><span class="pre">sampler</span></code> (stochastic) (default: direct)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><strong>Data Configuration</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--datadir</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Main dataset directory path (<strong>required</strong>)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--per_var_datadir</span></code></p></th>
+<td><p>list</p></td>
+<td><p>Per-variable data directories as <code class="docutils literal notranslate"><span class="pre">VAR=path</span></code> pairs</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--varnames_list</span></code></p></th>
+<td><p>list</p></td>
+<td><p>Variable names to train on (default: VAR_2T VAR_10U VAR_10V)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--constant_varnames_list</span></code></p></th>
+<td><p>list</p></td>
+<td><p>Constant variable names (static fields) (default: z lsm)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--constant_varnames_file</span></code></p></th>
+<td><p>str</p></td>
+<td><p>NetCDF file with constant variables (default: ERA5_const_sfc_variables.nc)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--normalization_types</span></code></p></th>
+<td><p>list</p></td>
+<td><p>Normalization per variable as <code class="docutils literal notranslate"><span class="pre">var=type</span></code> pairs (e.g., VAR_2T=standard)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--units_list</span></code></p></th>
+<td><p>list</p></td>
+<td><p>Units for each variable (default: K m/s m/s)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--dynamic_covariates</span></code></p></th>
+<td><p>list</p></td>
+<td><p>List of dynamic covariate names</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--dynamic_covariates_dir</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Directory for dynamic covariates (default: ../data_covariates/)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><strong>Time Range</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--year_start</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Start year for training dataset (default: 1980)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--year_end</span></code></p></th>
+<td><p>int</p></td>
+<td><p>End year for training dataset (default: 2020)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--year_start_test</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Start year for test dataset (default: 2020)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--year_end_test</span></code></p></th>
+<td><p>int</p></td>
+<td><p>End year for test dataset (default: 2022)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--time_normalization</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Time normalization type (e.g., linear, cos_sin) (default: linear)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><strong>Training Configuration</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--num_epochs</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of training epochs (default: 100)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--batch_size</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Batch size for training (default: 8)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--learning_rate</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Learning rate (default: 1e-4)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--num_workers</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of DataLoader workers (default: 16)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--tbatch</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Temporal batch length for processing (default: 1)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--sbatch</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of spatial batches per timestamp (default: 8)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--train_temporal_batch_mode</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Mode: <code class="docutils literal notranslate"><span class="pre">full</span></code> (whole sequence) or <code class="docutils literal notranslate"><span class="pre">partial</span></code> (batched) (default: partial)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--tbatch_train</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Temporal batch length when mode=partial (default: 1)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--test_temporal_batch_mode</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Test mode: <code class="docutils literal notranslate"><span class="pre">full</span></code> or <code class="docutils literal notranslate"><span class="pre">partial</span></code> (default: full)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--tbatch_test</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Test temporal batch length (overrides if set)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--test_spatial_batch_mode</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Test spatial mode: <code class="docutils literal notranslate"><span class="pre">full</span></code> or <code class="docutils literal notranslate"><span class="pre">partial</span></code> (default: full)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--sbatch_test</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Test spatial batches (overrides if set)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--batch_size_lat</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Latitude grid points per spatial batch (must be odd) (default: 145)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--batch_size_lon</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Longitude grid points per spatial batch (must be odd) (default: 145)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><strong>Data Processing</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--epsilon</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Epsilon parameter for filtering (default: 0.02)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--beta</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Beta parameter for loss function (default: 1.0)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--margin</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Margin parameter for filtering (default: 8)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><strong>Output Configuration</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--main_folder</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Main output folder name (default: experiment)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--sub_folder</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Sub-folder name for current run (default: experiment)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--prefix</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Prefix for saved files (default: run)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--dtype</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Precision: <code class="docutils literal notranslate"><span class="pre">fp16</span></code>, <code class="docutils literal notranslate"><span class="pre">fp32</span></code>, or <code class="docutils literal notranslate"><span class="pre">fp64</span></code> (default: fp32)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><strong>Model Architecture</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--arch</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Architecture: <code class="docutils literal notranslate"><span class="pre">ddpmpp</span></code>, <code class="docutils literal notranslate"><span class="pre">ncsnpp</span></code>, or <code class="docutils literal notranslate"><span class="pre">adm</span></code> (default: adm)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--precond</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Preconditioner: <code class="docutils literal notranslate"><span class="pre">vp</span></code>, <code class="docutils literal notranslate"><span class="pre">ve</span></code>, <code class="docutils literal notranslate"><span class="pre">edm</span></code>, or <code class="docutils literal notranslate"><span class="pre">unet</span></code> (default: edm)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--in_channels</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of input variable channels (default: 3)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--cond_channels</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of conditioning channels (default: 0)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--out_channels</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of output channels (default: 3)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><strong>Checkpoint Configuration</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--save_model</span></code></p></th>
+<td><p>bool</p></td>
+<td><p>Enable model checkpoint saving (default: False)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--apply_filter</span></code></p></th>
+<td><p>bool</p></td>
+<td><p>Apply fine filtering for coarse data generation (default: False)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--save_checkpoint_name</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Name for saved checkpoints (default: diffusion_model_checkpoint)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--save_per_samples</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Save checkpoint every N samples (default: 10000)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--load_checkpoint_name</span></code></p></th>
+<td><p>str</p></td>
+<td><p>Checkpoint file to load for resume/inference (default: model.pth.tar)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><strong>Regional Inference</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--region_center</span></code></p></th>
+<td><p>float list (2)</p></td>
+<td><p>[latitude, longitude] center for regional inference</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--region_size</span></code></p></th>
+<td><p>int list (2)</p></td>
+<td><p>[lat_size, lon_size] in grid points for regional inference</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><strong>EDM Sampler Configuration</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><p>(for stochastic inference with <code class="docutils literal notranslate"><span class="pre">inference_type=sampler</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--num_steps</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Number of sampling steps (default: 20)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--sigma_min</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Minimum noise level (default: 0.002)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--sigma_max</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Maximum noise level (default: 80.0)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--rho</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Exponent for time step discretization (default: 7.0)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--s_churn</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Stochasticity strength (default: 40)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--s_min</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Minimum noise for stochasticity (default: 0)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--s_max</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Maximum noise for stochasticity (default: inf)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--s_noise</span></code></p></th>
+<td><p>float</p></td>
+<td><p>Noise scale when stochasticity enabled (default: 1.0)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--solver</span></code></p></th>
+<td><p>str</p></td>
+<td><p>ODE solver: <code class="docutils literal notranslate"><span class="pre">heun</span></code> or <code class="docutils literal notranslate"><span class="pre">euler</span></code> (default: heun)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><strong>CRPS Evaluation</strong></p></th>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--compute_crps</span></code></p></th>
+<td><p>bool</p></td>
+<td><p>Compute Continuous Ranked Probability Score (default: False)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--crps_ensemble_size</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Ensemble size for CRPS calculation (default: 10)</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p><code class="docutils literal notranslate"><span class="pre">--crps_batch_size</span></code></p></th>
+<td><p>int</p></td>
+<td><p>Batch size for CRPS computation (default: 2)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Here is an example setup script snippet with commonly used parameters:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">debug</span><span class="o">=</span><span class="nb">true</span>
+<span class="nv">run_type</span><span class="o">=</span><span class="s2">&quot;train&quot;</span>
+<span class="nv">region</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+<span class="nv">save_model</span><span class="o">=</span><span class="nb">true</span>
+<span class="nv">save_checkpoint_name</span><span class="o">=</span><span class="s2">&quot;difusion_model&quot;</span>
+<span class="nv">load_checkpoint_name</span><span class="o">=</span><span class="s2">&quot;difusion_model&quot;</span>
+<span class="nv">save_per_samples</span><span class="o">=</span><span class="m">10000</span>
+
+<span class="nv">year_start</span><span class="o">=</span><span class="m">2019</span>
+<span class="nv">year_end</span><span class="o">=</span><span class="m">2019</span>
+<span class="nv">year_start_test</span><span class="o">=</span><span class="m">2020</span>
+<span class="nv">year_end_test</span><span class="o">=</span><span class="m">2020</span>
+
+<span class="nv">batch_size</span><span class="o">=</span><span class="m">70</span>
+<span class="nv">num_epochs</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">learning_rate</span><span class="o">=</span><span class="m">0</span>.0001
+<span class="nv">num_workers</span><span class="o">=</span><span class="m">8</span>
+
+<span class="nv">datadir</span><span class="o">=</span><span class="s2">&quot;/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily&quot;</span>
+<span class="nv">per_var_datadir</span><span class="o">=(</span>
+<span class="w">  </span><span class="s2">&quot;VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily&quot;</span>
+<span class="w">  </span><span class="o">)</span>
+
+<span class="nv">time_normalization</span><span class="o">=</span><span class="s2">&quot;cos_sin&quot;</span>
+
+<span class="nv">varnames_list</span><span class="o">=(</span><span class="s2">&quot;VAR_2T&quot;</span><span class="o">)</span>
+<span class="nv">constant_varnames_list</span><span class="o">=(</span><span class="s2">&quot;z&quot;</span><span class="w"> </span><span class="s2">&quot;lsm&quot;</span><span class="o">)</span>
+<span class="nv">constant_varnames_file</span><span class="o">=</span><span class="s2">&quot;ERA5_const_sfc_variables.nc&quot;</span>
+<span class="nv">normalization_types</span><span class="o">=(</span><span class="s2">&quot;VAR_2T=standard&quot;</span><span class="o">)</span>
+<span class="nv">units_list</span><span class="o">=(</span><span class="s2">&quot;K&quot;</span><span class="o">)</span>
+<span class="nv">dynamic_covariates</span><span class="o">=()</span>
+<span class="nv">dynamic_covariates_dir</span><span class="o">=</span><span class="s2">&quot;../data_covariates/&quot;</span>
+
+<span class="nv">sbatch</span><span class="o">=</span><span class="m">12</span>
+<span class="nv">tbatch</span><span class="o">=</span><span class="m">1800</span>
+<span class="nv">batch_size_lat</span><span class="o">=</span><span class="m">145</span>
+<span class="nv">batch_size_lon</span><span class="o">=</span><span class="m">361</span>
+
+<span class="nv">epsilon</span><span class="o">=</span><span class="m">0</span>.02
+<span class="nv">beta</span><span class="o">=</span><span class="m">1</span>.0
+<span class="nv">margin</span><span class="o">=</span><span class="m">8</span>
+
+<span class="nv">pretrained_path</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+<span class="nv">model_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+
+<span class="nv">dtype</span><span class="o">=</span><span class="s2">&quot;fp32&quot;</span>
+<span class="nv">arch</span><span class="o">=</span><span class="s2">&quot;adm&quot;</span>
+<span class="nv">precond</span><span class="o">=</span><span class="s2">&quot;edm&quot;</span>
+<span class="nv">in_channels</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">cond_channels</span><span class="o">=</span><span class="m">5</span>
+<span class="nv">out_channels</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">inference_type</span><span class="o">=</span><span class="s2">&quot;sampler&quot;</span>
+
+<span class="nv">compute_crps</span><span class="o">=</span><span class="nb">false</span>
+
+<span class="nv">num_steps</span><span class="o">=</span><span class="m">10</span>
+<span class="nv">sigma_min</span><span class="o">=</span><span class="m">0</span>.002
+<span class="nv">sigma_max</span><span class="o">=</span><span class="m">80</span>.0
+<span class="nv">rho</span><span class="o">=</span><span class="m">7</span>
+<span class="nv">s_churn</span><span class="o">=</span><span class="m">40</span>
+<span class="nv">solver</span><span class="o">=</span><span class="s2">&quot;heun&quot;</span>
+
+<span class="nv">apply_filter</span><span class="o">=</span><span class="nb">false</span>
+</pre></div>
+</div>
+</section>
+<section id="data-preparation">
+<h2>Data Preparation<a class="headerlink" href="#data-preparation" title="Link to this heading"></a></h2>
+<p>IPSL-AID is designed to work with ERA5 reanalysis data:</p>
+<ol class="arabic simple">
+<li><p>Download ERA5 data (0.25° resolution)</p></li>
+<li><p>Preprocess using the provided scripts</p></li>
+<li><p>Set up train/validation/test splits (typically 2015-2019 train, 2020 validation, 2021 test)</p></li>
+</ol>
+</section>
+<section id="evaluation-metrics">
+<h2>Evaluation Metrics<a class="headerlink" href="#evaluation-metrics" title="Link to this heading"></a></h2>
+<p>The model is evaluated using:</p>
+<ul class="simple">
+<li><p><strong>Mean Absolute Error (MAE)</strong>: Pointwise accuracy</p></li>
+<li><p><strong>Root Mean Square Error (RMSE)</strong>: Overall deviation</p></li>
+<li><p><strong>Coefficient of Determination (R²)</strong>: Variance explained</p></li>
+<li><p><strong>Continuous Ranked Probability Score (CRPS)</strong>: Probabilistic performance</p></li>
+<li><p><strong>Power Spectral Density (PSD)</strong>: Spatial scale fidelity</p></li>
+<li><p><strong>Probability Density Functions (PDFs)</strong>: Distribution matching</p></li>
+</ul>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Read the <a class="reference internal" href="testing_philosophy.html"><span class="doc">Testing Philosophy (Read This First)</span></a> before running large experiments</p></li>
+<li><p>Explore <a class="reference internal" href="diffusion_models.html"><span class="doc">Diffusion Models</span></a> to understand model choices</p></li>
+<li><p>Check the <a class="reference internal" href="api/modules.html"><span class="doc">IPSL_AID</span></a> for detailed module documentation</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="testing_philosophy.html" class="btn btn-neutral float-right" title="Testing Philosophy (Read This First)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

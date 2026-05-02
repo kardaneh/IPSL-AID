@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diffusion Models &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "processEscapes": true}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Neural Architectures" href="neural_architectures.html" />
+    <link rel="prev" title="Cartopy Configuration" href="cartopy_configuration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Diffusion Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#edm-preconditioning">EDM Preconditioning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loss-function">Loss Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sampling">Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#theoretical-background">Theoretical Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation-details">Implementation Details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-example">Configuration Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparison-of-formulations">Comparison of Formulations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Diffusion Models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/diffusion_models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="cartopy_configuration.html" class="btn btn-neutral float-left" title="Cartopy Configuration" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="neural_architectures.html" class="btn btn-neutral float-right" title="Neural Architectures" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="diffusion-models">
+<h1>Diffusion Models<a class="headerlink" href="#diffusion-models" title="Link to this heading"></a></h1>
+<p>Diffusion models are a class of generative models that progressively transform
+simple noise into complex data distributions, such as images or climate fields.
+Intuitively, they work in two phases:</p>
+<ol class="arabic simple">
+<li><p><strong>Forward diffusion</strong>: A clean signal is gradually corrupted by adding Gaussian noise,
+eventually transforming it into a nearly pure Gaussian distribution.</p></li>
+<li><p><strong>Reverse denoising</strong>: A neural network is trained to gradually remove the noise,
+step by step, reconstructing the original data distribution from the noisy signal.</p></li>
+</ol>
+<p>This can be visualized as follows:</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/diffusion.png"><img alt="_images/diffusion.png" src="_images/diffusion.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Two original Gaussian distributions are progressively transformed into normal distribution.
+A denoising network then reconstructs the original distributions.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The framework implements several diffusion formulations commonly used in
+state-of-the-art generative modeling:</p>
+<ul class="simple">
+<li><p><strong>VE (Variance Exploding)</strong></p></li>
+<li><p><strong>VP (Variance Preserving)</strong></p></li>
+<li><p><strong>EDM (Elucidated Diffusion Models)</strong></p></li>
+<li><p><strong>iDDPM (Improved DDPM)</strong></p></li>
+</ul>
+<p>These formulations are selectable via configuration and can be paired with
+different neural architectures.</p>
+<section id="edm-preconditioning">
+<h2>EDM Preconditioning<a class="headerlink" href="#edm-preconditioning" title="Link to this heading"></a></h2>
+<p>The EDM preconditioned model stabilizes training by standardizing the scales of
+inputs, outputs, and targets across varying noise levels:</p>
+<div class="math notranslate nohighlight">
+\[D_\theta(\mathbf{x}; \sigma) =  c_{\rm {skip}}(\sigma) \mathbf{x} + c_{\rm{out}}(\sigma) F_\theta\big(c_{\rm{in}}(\sigma) \mathbf{x}; c_\mathrm{noise}(\sigma)\big)\]</div>
+<p>Where:
+- <span class="math notranslate nohighlight">\(\mathbf{x}=\mathbf{y}+\sigma\mathbf{n}\)</span> is the noisy input
+- <span class="math notranslate nohighlight">\(\mathbf{y}\)</span> is the clean signal
+- <span class="math notranslate nohighlight">\(\mathbf{n} \sim \mathcal{N}(\mathbf{0}, \mathbf{1})\)</span> is standard Gaussian noise
+- <span class="math notranslate nohighlight">\(\sigma\)</span> is the noise level
+- <span class="math notranslate nohighlight">\(F_\theta\)</span> is the underlying neural network</p>
+<p>Coefficients:</p>
+<div class="math notranslate nohighlight">
+\[c_\mathrm{in}(\sigma) = 1 / (\sigma_\mathrm{data}^2 + \sigma^2)^{1/2}\]</div>
+<div class="math notranslate nohighlight">
+\[c_\mathrm{skip}(\sigma) = \sigma_\mathrm{data}^2 / (\sigma_\mathrm{data}^2 + \sigma^2)\]</div>
+<div class="math notranslate nohighlight">
+\[c_\mathrm{out}(\sigma) = \sigma \, \sigma_\mathrm{data} / (\sigma_\mathrm{data}^2 + \sigma^2)^{1/2}\]</div>
+<div class="math notranslate nohighlight">
+\[c_\mathrm{noise}(\sigma) =1/4 \log \sigma\]</div>
+</section>
+<section id="loss-function">
+<h2>Loss Function<a class="headerlink" href="#loss-function" title="Link to this heading"></a></h2>
+<p>For each training sample, Gaussian noise <span class="math notranslate nohighlight">\(\sigma \mathbf{n}\)</span> with a randomly
+selected noise level <span class="math notranslate nohighlight">\(\sigma\)</span> is added to the image. The network is trained
+with weighted denoising loss:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L} = \mathbb{E}_{\sigma, \mathbf{y}, \mathbf{n}} \left[ \lambda(\sigma) \left\| D_{\theta}(\mathbf{y} + \sigma\mathbf{n}, \sigma) - \mathbf{y} \right\|_2^2 \right]\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\lambda(\sigma) = (\sigma^2 + \sigma_{\mathrm{data}}^2) / (\sigma \, \sigma_{\mathrm{data}})^2\)</span>.</p>
+</section>
+<section id="sampling">
+<h2>Sampling<a class="headerlink" href="#sampling" title="Link to this heading"></a></h2>
+<p>High-resolution samples are generated by numerically solving the reverse-time
+stochastic differential equation (SDE):</p>
+<ol class="arabic simple">
+<li><p>Initialize with Gaussian noise <span class="math notranslate nohighlight">\(\mathbf{x}_0 \sim \mathcal{N}(\mathbf{0}, t_0^2 \mathbf{1})\)</span></p></li>
+<li><p>For each step <span class="math notranslate nohighlight">\(i\)</span> from 0 to <span class="math notranslate nohighlight">\(N-1\)</span>:
+- Optionally add temporary noise increment
+- Compute denoising direction
+- Update latent with Euler/Heun scheme</p></li>
+<li><p>Return final denoised sample</p></li>
+</ol>
+</section>
+<section id="theoretical-background">
+<h2>Theoretical Background<a class="headerlink" href="#theoretical-background" title="Link to this heading"></a></h2>
+<p>For theoretical background, see:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://arxiv.org/abs/2006.11239">DDPM</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2011.13456">Score-Based Generative Models</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2206.00364">EDM</a></p></li>
+</ul>
+</section>
+<section id="implementation-details">
+<h2>Implementation Details<a class="headerlink" href="#implementation-details" title="Link to this heading"></a></h2>
+<p>Each diffusion formulation is implemented as a separate class with:</p>
+<ul class="simple">
+<li><p><strong>Noise scheduling</strong>: Defines <span class="math notranslate nohighlight">\(\sigma(t)\)</span> progression</p></li>
+<li><p><strong>Sampling methods</strong>: Different ODE/SDE solvers</p></li>
+<li><p><strong>Loss computation</strong>: Formulation-specific weighting</p></li>
+<li><p><strong>Conditioning</strong>: Support for various conditioning strategies</p></li>
+</ul>
+</section>
+<section id="configuration-example">
+<h2>Configuration Example<a class="headerlink" href="#configuration-example" title="Link to this heading"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">diffusion</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EDM&quot;</span>
+<span class="w">  </span><span class="nt">sigma_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">  </span><span class="nt">sigma_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.002</span>
+<span class="w">  </span><span class="nt">sigma_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80.0</span>
+<span class="w">  </span><span class="nt">rho</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7.0</span>
+<span class="w">  </span><span class="nt">p_mean</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1.2</span>
+<span class="w">  </span><span class="nt">p_std</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.2</span>
+
+<span class="nt">sampling</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">  </span><span class="nt">sampler</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;heun&quot;</span>
+<span class="w">  </span><span class="nt">s_churn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40.0</span>
+<span class="w">  </span><span class="nt">s_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span>
+<span class="w">  </span><span class="nt">s_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+<span class="w">  </span><span class="nt">s_noise</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.003</span>
+</pre></div>
+</div>
+</section>
+<section id="comparison-of-formulations">
+<h2>Comparison of Formulations<a class="headerlink" href="#comparison-of-formulations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>VE</strong>: Simple, stable, good for continuous data</p></li>
+<li><p><strong>VP</strong>: Common in image generation, well-studied</p></li>
+<li><p><strong>EDM</strong>: State-of-the-art, excellent sample quality</p></li>
+<li><p><strong>iDDPM</strong>: Improved training stability and sample quality</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cartopy_configuration.html" class="btn btn-neutral float-left" title="Cartopy Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="neural_architectures.html" class="btn btn-neutral float-right" title="Neural Architectures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

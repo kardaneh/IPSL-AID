@@ -1,0 +1,224 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing Philosophy (Read This First) &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Project Structure" href="project_structure.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Testing Philosophy (Read This First)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-testing-is-essential">Why Testing is Essential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommended-workflow">Recommended Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#test-coverage">Test Coverage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging-tips">Debugging Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Testing Philosophy (Read This First)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/testing_philosophy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="project_structure.html" class="btn btn-neutral float-right" title="Project Structure" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="testing-philosophy-read-this-first">
+<h1>Testing Philosophy (Read This First)<a class="headerlink" href="#testing-philosophy-read-this-first" title="Link to this heading"></a></h1>
+<p>Each module in IPSL-AID comes with its <strong>own dedicated tests</strong>.</p>
+<p>Before running large-scale training, users are <strong>strongly encouraged</strong> to:</p>
+<ol class="arabic simple">
+<li><p>Explore the test suite</p></li>
+<li><p>Understand data handling and normalization</p></li>
+<li><p>Validate diffusion and architecture choices</p></li>
+<li><p>Tune hyperparameters using small debug runs</p></li>
+</ol>
+<p>This approach minimizes wasted compute time and ensures correct scientific usage.</p>
+<section id="why-testing-is-essential">
+<h2>Why Testing is Essential<a class="headerlink" href="#why-testing-is-essential" title="Link to this heading"></a></h2>
+<p>Climate downscaling models involve:</p>
+<ul class="simple">
+<li><p>Complex neural architectures</p></li>
+<li><p>Sophisticated diffusion formulations</p></li>
+<li><p>Large-scale data processing</p></li>
+<li><p>Multi-GPU parallelization</p></li>
+<li><p>Numerical precision requirements</p></li>
+</ul>
+<p>Without proper testing, errors can:</p>
+<ol class="arabic simple">
+<li><p><strong>Waste computational resources</strong> (days of GPU time)</p></li>
+<li><p><strong>Produce scientifically invalid results</strong></p></li>
+<li><p><strong>Mask underlying implementation bugs</strong></p></li>
+<li><p><strong>Compromise reproducibility</strong></p></li>
+</ol>
+</section>
+<section id="recommended-workflow">
+<h2>Recommended Workflow<a class="headerlink" href="#recommended-workflow" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p><strong>Unit Tests</strong>: Run all tests</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>tests.test_all
+</pre></div>
+</div>
+</li>
+<li><p><strong>Targeted Tests</strong>: Run specific modules, classes, or test methods</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Module</span>
+python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>tests.test_utils
+python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>tests.test_model_utils
+
+<span class="c1"># Class</span>
+python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>tests.test_utils.TestEasyDict
+
+<span class="c1"># Single test</span>
+python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>tests.test_utils.TestEasyDict.test_empty_initialization
+</pre></div>
+</div>
+</li>
+<li><p><strong>Integration Tests</strong>: Test data loading and model initialization</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>tests/test_integration.py
+</pre></div>
+</div>
+</li>
+<li><p><strong>Small-scale Debug Runs</strong>: Train on a small subset</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use debug mode in setup script</span>
+<span class="nv">debug</span><span class="o">=</span><span class="nb">true</span>
+<span class="nv">num_epochs</span><span class="o">=</span><span class="m">1</span>
+<span class="nv">batch_size</span><span class="o">=</span><span class="m">4</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Validation</strong>: Check against known baselines</p></li>
+</ol>
+</section>
+<section id="test-coverage">
+<h2>Test Coverage<a class="headerlink" href="#test-coverage" title="Link to this heading"></a></h2>
+<p>IPSL-AID includes tests for:</p>
+<ul class="simple">
+<li><p>Data loading and preprocessing</p></li>
+<li><p>Diffusion model implementations (VE, VP, EDM, iDDPM)</p></li>
+<li><p>UNet architectures and variants</p></li>
+<li><p>Loss functions and training loops</p></li>
+<li><p>Inference and sampling procedures</p></li>
+<li><p>Evaluation metrics and diagnostics</p></li>
+</ul>
+</section>
+<section id="debugging-tips">
+<h2>Debugging Tips<a class="headerlink" href="#debugging-tips" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Use <cite>torch.autograd.set_detect_anomaly(True)</cite> during development</p></li>
+<li><p>Monitor GPU memory usage with <cite>nvidia-smi</cite></p></li>
+<li><p>Check numerical stability with gradient norms</p></li>
+<li><p>Validate data normalization and scaling</p></li>
+</ul>
+<p>Remember: <strong>Test first, scale later</strong>. A few hours of testing can save days of wasted computation.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="project_structure.html" class="btn btn-neutral float-right" title="Project Structure" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pre-Push Workflow &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cartopy Configuration" href="cartopy_configuration.html" />
+    <link rel="prev" title="Project Structure" href="project_structure.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pre-Push Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#branch-strategy-overview">Branch Strategy Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#branch-types-and-their-purposes">Branch Types and Their Purposes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#when-to-use-each-branch">When to Use Each Branch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-this-workflow-matters">Why This Workflow Matters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#understanding-your-current-branches">Understanding Your Current Branches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#branch-specific-workflows">Branch-Specific Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#workflow-a-working-on-dev-team-collaboration">Workflow A: Working on <code class="docutils literal notranslate"><span class="pre">Dev</span></code> (Team Collaboration)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-switch-to-dev-and-fetch-latest">Step 1: Switch to Dev and Fetch Latest</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-pull-with-rebase-mandatory">Step 2: Pull with Rebase (Mandatory)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-make-your-changes">Step 3: Make Your Changes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-run-pre-commit-hooks">Step 4: Run Pre-commit Hooks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-run-tests">Step 5: Run Tests</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-push-to-dev">Step 6: Push to Dev</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#workflow-b-working-on-feature-individual-development">Workflow B: Working on <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> (Individual Development)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-create-or-switch-to-feature-branch">Step 1: Create or Switch to Feature Branch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-work-freely-but-smartly">Step 2: Work Freely (But Smartly)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-sync-with-dev-regularly">Step 3: Sync with <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Regularly</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-prepare-for-integration-before-push-to-remote">Step 4: Prepare for Integration (Before Push to Remote)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-create-pull-request-to-dev">Step 5: Create Pull Request to <code class="docutils literal notranslate"><span class="pre">Dev</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#fetch-latest-changes-from-remote">1. Fetch Latest Changes From Remote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#check-branch-status">2. Check Branch Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rebase-onto-latest-remote-branch">3. Rebase Onto Latest Remote Branch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#for-feature-branches-individual">For <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#for-dev-branch-team">For <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conflict-resolution-guide">Conflict Resolution Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#on-dev-branch-team-collaboration">On <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team Collaboration)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-identify-conflicted-files">Step 1 — Identify Conflicted Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-2-examine-the-conflict">Step 2 — Examine the Conflict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-3-resolve-the-conflict">Step 3 — Resolve the Conflict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-4-mark-as-resolved">Step 4 — Mark as Resolved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-5-continue-the-rebase">Step 5 — Continue the Rebase</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#on-feature-branches-individual">On <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#abort-rebase-emergency-option">Abort Rebase (Emergency Option)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standardize-code-with-pre-commit-hooks">4. Standardize Code with Pre-commit Hooks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#branch-specific-requirements">Branch-Specific Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#run-the-test-suite">5. Run the Test Suite</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#branch-specific-testing-requirements">Branch-Specific Testing Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#commit-changes-if-needed">6. Commit Changes (If Needed)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#push-your-changes">7. Push Your Changes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pushing-to-dev-branch-team">Pushing to <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pushing-to-feature-branch-individual">Pushing to <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branch (Individual)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-reference-daily-workflow">Quick Reference: Daily Workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#for-dev-branch-team-collaboration">For <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team Collaboration)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#for-feature-branch-individual-development">For <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branch (Individual Development)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-workflow-example-your-current-situation">Complete Workflow Example (Your Current Situation)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#common-pitfalls-to-avoid">Common Pitfalls to Avoid</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#on-dev-branch-team">On <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">On <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general-pitfalls">General Pitfalls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#important-rules-summary">Important Rules Summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#branch-workflow-diagram">Branch Workflow Diagram</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Pre-Push Workflow</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pre_push_workflow.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="project_structure.html" class="btn btn-neutral float-left" title="Project Structure" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cartopy_configuration.html" class="btn btn-neutral float-right" title="Cartopy Configuration" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pre-push-workflow">
+<h1>Pre-Push Workflow<a class="headerlink" href="#pre-push-workflow" title="Link to this heading"></a></h1>
+<p>This section outlines the standardized workflow to follow <strong>before pushing
+changes to the IPSL-AID repository</strong>. Adhering to this workflow ensures that
+your contributions are clean, tested, and compatible with the latest codebase,
+facilitating smooth collaboration and maintaining code quality.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#branch-strategy-overview" id="id2">Branch Strategy Overview</a></p></li>
+<li><p><a class="reference internal" href="#branch-types-and-their-purposes" id="id3">Branch Types and Their Purposes</a></p></li>
+<li><p><a class="reference internal" href="#when-to-use-each-branch" id="id4">When to Use Each Branch</a></p></li>
+<li><p><a class="reference internal" href="#why-this-workflow-matters" id="id5">Why This Workflow Matters</a></p></li>
+<li><p><a class="reference internal" href="#prerequisites" id="id6">Prerequisites</a></p></li>
+<li><p><a class="reference internal" href="#understanding-your-current-branches" id="id7">Understanding Your Current Branches</a></p></li>
+<li><p><a class="reference internal" href="#branch-specific-workflows" id="id8">Branch-Specific Workflows</a></p>
+<ul>
+<li><p><a class="reference internal" href="#workflow-a-working-on-dev-team-collaboration" id="id9">Workflow A: Working on <code class="docutils literal notranslate"><span class="pre">Dev</span></code> (Team Collaboration)</a></p></li>
+<li><p><a class="reference internal" href="#workflow-b-working-on-feature-individual-development" id="id10">Workflow B: Working on <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> (Individual Development)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#fetch-latest-changes-from-remote" id="id11">1. Fetch Latest Changes From Remote</a></p></li>
+<li><p><a class="reference internal" href="#check-branch-status" id="id12">2. Check Branch Status</a></p></li>
+<li><p><a class="reference internal" href="#rebase-onto-latest-remote-branch" id="id13">3. Rebase Onto Latest Remote Branch</a></p>
+<ul>
+<li><p><a class="reference internal" href="#for-feature-branches-individual" id="id14">For <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a></p></li>
+<li><p><a class="reference internal" href="#for-dev-branch-team" id="id15">For <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#conflict-resolution-guide" id="id16">Conflict Resolution Guide</a></p>
+<ul>
+<li><p><a class="reference internal" href="#on-dev-branch-team-collaboration" id="id17">On <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team Collaboration)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#step-1-identify-conflicted-files" id="id18">Step 1 — Identify Conflicted Files</a></p></li>
+<li><p><a class="reference internal" href="#step-2-examine-the-conflict" id="id19">Step 2 — Examine the Conflict</a></p></li>
+<li><p><a class="reference internal" href="#step-3-resolve-the-conflict" id="id20">Step 3 — Resolve the Conflict</a></p></li>
+<li><p><a class="reference internal" href="#step-4-mark-as-resolved" id="id21">Step 4 — Mark as Resolved</a></p></li>
+<li><p><a class="reference internal" href="#step-5-continue-the-rebase" id="id22">Step 5 — Continue the Rebase</a></p>
+<ul>
+<li><p><a class="reference internal" href="#on-feature-branches-individual" id="id23">On <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#abort-rebase-emergency-option" id="id24">Abort Rebase (Emergency Option)</a></p></li>
+<li><p><a class="reference internal" href="#standardize-code-with-pre-commit-hooks" id="id25">4. Standardize Code with Pre-commit Hooks</a></p>
+<ul>
+<li><p><a class="reference internal" href="#branch-specific-requirements" id="id26">Branch-Specific Requirements</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#run-the-test-suite" id="id27">5. Run the Test Suite</a></p>
+<ul>
+<li><p><a class="reference internal" href="#branch-specific-testing-requirements" id="id28">Branch-Specific Testing Requirements</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#commit-changes-if-needed" id="id29">6. Commit Changes (If Needed)</a></p></li>
+<li><p><a class="reference internal" href="#push-your-changes" id="id30">7. Push Your Changes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#pushing-to-dev-branch-team" id="id31">Pushing to <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a></p></li>
+<li><p><a class="reference internal" href="#pushing-to-feature-branch-individual" id="id32">Pushing to <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branch (Individual)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#quick-reference-daily-workflow" id="id33">Quick Reference: Daily Workflow</a></p>
+<ul>
+<li><p><a class="reference internal" href="#for-dev-branch-team-collaboration" id="id34">For <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team Collaboration)</a></p></li>
+<li><p><a class="reference internal" href="#for-feature-branch-individual-development" id="id35">For <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branch (Individual Development)</a></p></li>
+<li><p><a class="reference internal" href="#complete-workflow-example-your-current-situation" id="id36">Complete Workflow Example (Your Current Situation)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#common-pitfalls-to-avoid" id="id37">Common Pitfalls to Avoid</a></p>
+<ul>
+<li><p><a class="reference internal" href="#on-dev-branch-team" id="id38">On <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a></p></li>
+<li><p><a class="reference internal" href="#id1" id="id39">On <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a></p></li>
+<li><p><a class="reference internal" href="#general-pitfalls" id="id40">General Pitfalls</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#important-rules-summary" id="id41">Important Rules Summary</a></p></li>
+<li><p><a class="reference internal" href="#branch-workflow-diagram" id="id42">Branch Workflow Diagram</a></p></li>
+</ul>
+</nav>
+<section id="branch-strategy-overview">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Branch Strategy Overview</a><a class="headerlink" href="#branch-strategy-overview" title="Link to this heading"></a></h2>
+<p>IPSL-AID uses a <strong>two-tier branch system</strong> to balance collaboration and
+individual development. Based on your repository structure:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>git<span class="w"> </span>branch<span class="w"> </span>-a
+<span class="w">  </span>feature/you<span class="w">               </span><span class="c1"># Your individual feature branch</span>
+*<span class="w"> </span>main<span class="w">                      </span><span class="c1"># Production branch (protected)</span>
+<span class="w">  </span>remotes/origin/Dev<span class="w">        </span><span class="c1"># Team integration branch (capital D!)</span>
+<span class="w">  </span>remotes/origin/feature/you
+<span class="w">  </span>remotes/origin/gh-pages<span class="w">   </span><span class="c1"># Documentation branch</span>
+<span class="w">  </span>remotes/origin/main
+</pre></div>
+</div>
+</section>
+<section id="branch-types-and-their-purposes">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Branch Types and Their Purposes</a><a class="headerlink" href="#branch-types-and-their-purposes" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 35.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Branch</p></th>
+<th class="head"><p>Pattern</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Who Can Push</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Development</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Dev</span></code> (note: capital D)</p></td>
+<td><p>Integration branch for team collaboration</p></td>
+<td><p>All team members</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Feature</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">feature/*</span></code></p></td>
+<td><p>Individual development sandboxes</p></td>
+<td><p>Only the creator</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Main</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">main</span></code></p></td>
+<td><p>Production-ready code</p></td>
+<td><p>Admin/PR only</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Documentation</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gh-pages</span></code></p></td>
+<td><p>Project documentation</p></td>
+<td><p>Admin only</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="when-to-use-each-branch">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">When to Use Each Branch</a><a class="headerlink" href="#when-to-use-each-branch" title="Link to this heading"></a></h2>
+<p><strong>Use ``Dev`` (team branch) when:</strong>
+- Multiple people are contributing to the same feature
+- You need immediate integration with teammates’ work
+- Fixing critical bugs that affect everyone
+- Doing rapid prototyping with pair programming</p>
+<p><strong>Use ``feature/*`` (individual branch) when:</strong>
+- Working alone on a specific feature (like <code class="docutils literal notranslate"><span class="pre">feature/you</span></code>)
+- Experimenting with new approaches
+- Developing code that might break things
+- Creating a safe sandbox for exploration</p>
+<p><strong>Important Notes:</strong>
+- <code class="docutils literal notranslate"><span class="pre">main</span></code> is <strong>protected</strong> - never push directly to it
+- <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> is for documentation only
+- All work flows from <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> → <code class="docutils literal notranslate"><span class="pre">Dev</span></code> → <code class="docutils literal notranslate"><span class="pre">main</span></code>
+- <strong>Note the capitalization:</strong> The team branch is <code class="docutils literal notranslate"><span class="pre">Dev</span></code> (capital D), not <code class="docutils literal notranslate"><span class="pre">dev</span></code></p>
+</section>
+<section id="why-this-workflow-matters">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Why This Workflow Matters</a><a class="headerlink" href="#why-this-workflow-matters" title="Link to this heading"></a></h2>
+<p>A disciplined pre-push workflow ensures:</p>
+<ul class="simple">
+<li><p><strong>Reproducibility</strong> of experiments</p></li>
+<li><p><strong>Model versioning</strong> and experiment tracking</p></li>
+<li><p><strong>Code quality</strong> for both ML and data processing components</p></li>
+<li><p><strong>Smooth collaboration</strong> between researchers with different expertise</p></li>
+<li><p><strong>Clean branch history</strong> distinguishing team work (<code class="docutils literal notranslate"><span class="pre">Dev</span></code>) from individual
+exploration (<code class="docutils literal notranslate"><span class="pre">feature/*</span></code>)</p></li>
+</ul>
+</section>
+<section id="prerequisites">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Prerequisites</a><a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<p>Before starting, ensure you have:</p>
+<ul>
+<li><p>A clean working directory (or stashed changes)</p></li>
+<li><p>Access to the IPSL-AID repository</p></li>
+<li><p>Required tools installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>--version<span class="w">          </span><span class="c1"># Fast Python package manager</span>
+pre-commit<span class="w"> </span>--version<span class="w">  </span><span class="c1"># Git hooks for code quality</span>
+git<span class="w"> </span>--version<span class="w">         </span><span class="c1"># Version control</span>
+python<span class="w"> </span>--version<span class="w">      </span><span class="c1"># Python 3.9+ recommended</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="understanding-your-current-branches">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Understanding Your Current Branches</a><a class="headerlink" href="#understanding-your-current-branches" title="Link to this heading"></a></h2>
+<p>Based on a typical IPSL-AID setup:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># View all branches (local and remote)</span>
+git<span class="w"> </span>fetch
+git<span class="w"> </span>branch<span class="w"> </span>-a
+
+<span class="c1"># You should see:</span>
+<span class="w">  </span>feature/you<span class="w">           </span><span class="c1"># Your personal feature branch</span>
+*<span class="w"> </span>main<span class="w">                      </span><span class="c1"># You&#39;re currently on main (production)</span>
+<span class="w">  </span>remotes/origin/Dev<span class="w">        </span><span class="c1"># Team development branch (capital D!)</span>
+<span class="w">  </span>remotes/origin/feature/you
+<span class="w">  </span>remotes/origin/gh-pages
+<span class="w">  </span>remotes/origin/main
+</pre></div>
+</div>
+<p><strong>Important:</strong> Note that the team branch is <code class="docutils literal notranslate"><span class="pre">Dev</span></code> (capital D), not <code class="docutils literal notranslate"><span class="pre">dev</span></code>.
+Always use the exact capitalization:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>Dev<span class="w">            </span><span class="c1"># ✅ Correct</span>
+git<span class="w"> </span>checkout<span class="w"> </span>dev<span class="w">            </span><span class="c1"># ❌ Wrong - branch doesn&#39;t exist</span>
+</pre></div>
+</div>
+<p>—</p>
+</section>
+<section id="branch-specific-workflows">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Branch-Specific Workflows</a><a class="headerlink" href="#branch-specific-workflows" title="Link to this heading"></a></h2>
+<section id="workflow-a-working-on-dev-team-collaboration">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Workflow A: Working on <code class="docutils literal notranslate"><span class="pre">Dev</span></code> (Team Collaboration)</a><a class="headerlink" href="#workflow-a-working-on-dev-team-collaboration" title="Link to this heading"></a></h3>
+<p><strong>⚠️ CRITICAL:</strong> <code class="docutils literal notranslate"><span class="pre">Dev</span></code> is a shared branch where ALL team members can push
+directly. Strict discipline is required.</p>
+<section id="step-1-switch-to-dev-and-fetch-latest">
+<h4>Step 1: Switch to Dev and Fetch Latest<a class="headerlink" href="#step-1-switch-to-dev-and-fetch-latest" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>Dev
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>status
+</pre></div>
+</div>
+<p>Expected output: “Your branch is up to date with ‘origin/Dev’”</p>
+</section>
+<section id="step-2-pull-with-rebase-mandatory">
+<h4>Step 2: Pull with Rebase (Mandatory)<a class="headerlink" href="#step-2-pull-with-rebase-mandatory" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+</pre></div>
+</div>
+<p><strong>Why mandatory on ``Dev``:</strong> Multiple team members push frequently. Rebase
+prevents unnecessary merge commits.</p>
+</section>
+<section id="step-3-make-your-changes">
+<h4>Step 3: Make Your Changes<a class="headerlink" href="#step-3-make-your-changes" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make focused, small commits</span>
+git<span class="w"> </span>add<span class="w"> </span>&lt;specific-file.py&gt;
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: correct normalization in preprocessing&quot;</span>
+
+<span class="c1"># For larger features, commit frequently</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;wip: add attention mechanism (unfinished)&quot;</span>
+</pre></div>
+</div>
+<p><strong>Commit rules for ``Dev``:</strong>
+- ✅ Small, logical commits
+- ✅ Use conventional commits (feat:, fix:, docs:, test:)
+- ✅ Reference issue numbers when possible
+- ❌ No half-broken code on Dev</p>
+</section>
+<section id="step-4-run-pre-commit-hooks">
+<h4>Step 4: Run Pre-commit Hooks<a class="headerlink" href="#step-4-run-pre-commit-hooks" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p>If hooks modify files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w">  </span><span class="c1"># Verify clean</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-run-tests">
+<h4>Step 5: Run Tests<a class="headerlink" href="#step-5-run-tests" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Full test suite (mandatory for Dev)</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># Or specific module if changes are isolated</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_preprocessing.py<span class="w"> </span>-v
+</pre></div>
+</div>
+<p><strong>Success criteria for ``Dev``:</strong>
+- ✅ <strong>All</strong> tests must pass (100%)
+- ✅ Coverage must not decrease
+- ✅ No new warnings</p>
+</section>
+<section id="step-6-push-to-dev">
+<h4>Step 6: Push to Dev<a class="headerlink" href="#step-6-push-to-dev" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>Dev
+</pre></div>
+</div>
+<p><strong>If push is rejected</strong> (someone pushed while you were working):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+<span class="c1"># Resolve any conflicts</span>
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>Dev
+</pre></div>
+</div>
+<p><strong>🚫 NEVER use ``–force`` or ``–force-with-lease`` on ``Dev``</strong> - this will
+overwrite teammates’ work!</p>
+</section>
+</section>
+<section id="workflow-b-working-on-feature-individual-development">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Workflow B: Working on <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> (Individual Development)</a><a class="headerlink" href="#workflow-b-working-on-feature-individual-development" title="Link to this heading"></a></h3>
+<p><strong>Note:</strong> <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> branches are your <strong>private sandbox</strong>. You have complete
+freedom, but follow these guidelines for smooth integration later.</p>
+<section id="step-1-create-or-switch-to-feature-branch">
+<h4>Step 1: Create or Switch to Feature Branch<a class="headerlink" href="#step-1-create-or-switch-to-feature-branch" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create new feature branch from latest Dev</span>
+git<span class="w"> </span>checkout<span class="w"> </span>Dev
+git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/your-name-description
+
+<span class="c1"># Example: feature/you-attention-unet</span>
+
+<span class="c1"># Or switch to existing feature branch (like yours)</span>
+git<span class="w"> </span>checkout<span class="w"> </span>feature/you
+</pre></div>
+</div>
+<p><strong>Branch naming convention:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>feature/{developer-name}-{brief-description}
+Examples:
+- feature/you                    # Simple name (ok for personal use)
+- feature/you-attention-unet     # Descriptive (recommended)
+- feature/sarah-data-augmentation
+- feature/kevin-loss-function-experiment
+</pre></div>
+</div>
+</section>
+<section id="step-2-work-freely-but-smartly">
+<h4>Step 2: Work Freely (But Smartly)<a class="headerlink" href="#step-2-work-freely-but-smartly" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make changes, experiment, break things - it&#39;s your sandbox!</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;experiment: try deeper U-Net with 5 downsampling layers&quot;</span>
+
+<span class="c1"># Commit often - you can squash later</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;wip: testing different activation functions&quot;</span>
+
+<span class="c1"># Create checkpoint before risky changes</span>
+git<span class="w"> </span>tag<span class="w"> </span>experiment-checkpoint-1
+</pre></div>
+</div>
+<p><strong>Freedom on ``feature/*``:</strong>
+- ✅ Commit broken code temporarily
+- ✅ Experiment with different approaches
+- ✅ Rewrite history (rebase, squash, amend)
+- ✅ Push whenever you want</p>
+<p><strong>But remember:</strong>
+- ⚠️ Keep commits meaningful (even experiments should be documented)
+- ⚠️ Don’t commit large datasets or model checkpoints
+- ⚠️ Clean up before creating Pull Request to <code class="docutils literal notranslate"><span class="pre">Dev</span></code></p>
+</section>
+<section id="step-3-sync-with-dev-regularly">
+<h4>Step 3: Sync with <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Regularly<a class="headerlink" href="#step-3-sync-with-dev-regularly" title="Link to this heading"></a></h4>
+<p>Even on feature branches, stay updated with team changes:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fetch latest Dev changes</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+
+<span class="c1"># Rebase your feature onto latest Dev (keeps history clean)</span>
+git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+
+<span class="c1"># Or merge if you prefer (creates merge commit)</span>
+git<span class="w"> </span>merge<span class="w"> </span>origin/Dev
+</pre></div>
+</div>
+<p><strong>When to sync:</strong>
+- Daily at start of work
+- Before running experiments (ensure latest preprocessing)
+- Before creating Pull Request to <code class="docutils literal notranslate"><span class="pre">Dev</span></code></p>
+</section>
+<section id="step-4-prepare-for-integration-before-push-to-remote">
+<h4>Step 4: Prepare for Integration (Before Push to Remote)<a class="headerlink" href="#step-4-prepare-for-integration-before-push-to-remote" title="Link to this heading"></a></h4>
+<p>When your feature is ready to share with the team:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Ensure you&#39;re on your feature branch</span>
+git<span class="w"> </span>branch<span class="w">  </span><span class="c1"># Should show * feature/you</span>
+
+<span class="c1"># 2. Rebase onto latest Dev</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+
+<span class="c1"># 3. Run pre-commit hooks</span>
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+
+<span class="c1"># 4. Run tests (your feature should pass all tests)</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># 5. Squash messy commits (optional but recommended)</span>
+git<span class="w"> </span>rebase<span class="w"> </span>-i<span class="w"> </span>origin/Dev
+<span class="c1"># Change &#39;pick&#39; to &#39;squash&#39; for intermediate commits</span>
+
+<span class="c1"># 6. Push to remote (first time or after rebase)</span>
+git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>feature/your-name
+
+<span class="c1"># After rebase (history rewritten), force-push safely:</span>
+git<span class="w"> </span>push<span class="w"> </span>--force-with-lease<span class="w"> </span>origin<span class="w"> </span>feature/your-name
+</pre></div>
+</div>
+</section>
+<section id="step-5-create-pull-request-to-dev">
+<h4>Step 5: Create Pull Request to <code class="docutils literal notranslate"><span class="pre">Dev</span></code><a class="headerlink" href="#step-5-create-pull-request-to-dev" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># From GitHub UI or using gh CLI</span>
+gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span>Dev<span class="w"> </span>--head<span class="w"> </span>feature/your-name<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;feat: add attention mechanism to U-Net&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--body<span class="w"> </span><span class="s2">&quot;## Summary\n- Implements multi-head attention\n- Improves downscaling accuracy by 15%\n\n## Testing\n- [x] Unit tests pass\n- [x] Integration tests pass\n- [x] Pre-commit hooks pass&quot;</span>
+</pre></div>
+</div>
+<p><strong>PR requirements for merging to ``Dev``:</strong>
+- ✅ All tests pass
+- ✅ No merge conflicts with <code class="docutils literal notranslate"><span class="pre">Dev</span></code>
+- ✅ At least one review from another team member
+- ✅ Pre-commit hooks passed</p>
+<p>—</p>
+</section>
+</section>
+</section>
+<section id="fetch-latest-changes-from-remote">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">1. Fetch Latest Changes From Remote</a><a class="headerlink" href="#fetch-latest-changes-from-remote" title="Link to this heading"></a></h2>
+<p>Always begin by updating your local knowledge of the remote repository without
+modifying your working files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>fetch<span class="w"> </span>origin
+</pre></div>
+</div>
+<p>This command:
+- Downloads new data from remote branches
+- Updates <code class="docutils literal notranslate"><span class="pre">origin/*</span></code> references
+- Does <strong>not</strong> merge or rebase your working files</p>
+<p><strong>Why this matters for IPSL-AID:</strong> Multiple researchers may be working on
+different modules, preprocessing pipelines, or evaluation metrics simultaneously.</p>
+<p><strong>For ``Dev`` branch:</strong> Run this frequently to see what teammates have pushed.</p>
+<p><strong>For ``feature/*`` branch:</strong> Run this to stay aware of changes in <code class="docutils literal notranslate"><span class="pre">Dev</span></code>
+without affecting your work.</p>
+</section>
+<section id="check-branch-status">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">2. Check Branch Status</a><a class="headerlink" href="#check-branch-status" title="Link to this heading"></a></h2>
+<p>Examine your current branch status:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>status
+</pre></div>
+</div>
+<p><strong>Interpretation Guide:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42.9%" />
+<col style="width: 57.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Status Message</p></th>
+<th class="head"><p>Required Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>“Your branch is up to date”</p></td>
+<td><p>Proceed to step 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>“Your branch is ahead”</p></td>
+<td><p>Your changes are ready to push</p></td>
+</tr>
+<tr class="row-even"><td><p>“Your branch is behind”</p></td>
+<td><p><strong>MUST</strong> update before pushing (see step 3)</p></td>
+</tr>
+<tr class="row-odd"><td><p>“Changes not staged”</p></td>
+<td><p>Stage your changes with <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">add</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>“Unmerged paths”</p></td>
+<td><p>You have unresolved conflicts</p></td>
+</tr>
+</tbody>
+</table>
+<p>If you see:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Your branch is behind &#39;origin/Dev&#39; by X commits
+</pre></div>
+</div>
+<p>You must update your branch before pushing to avoid integration issues.</p>
+</section>
+<section id="rebase-onto-latest-remote-branch">
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">3. Rebase Onto Latest Remote Branch</a><a class="headerlink" href="#rebase-onto-latest-remote-branch" title="Link to this heading"></a></h2>
+<section id="for-feature-branches-individual">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">For <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a><a class="headerlink" href="#for-feature-branches-individual" title="Link to this heading"></a></h3>
+<p>Rebase your feature branch onto the latest version of <code class="docutils literal notranslate"><span class="pre">Dev</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+</pre></div>
+</div>
+</section>
+<section id="for-dev-branch-team">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">For <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a><a class="headerlink" href="#for-dev-branch-team" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+</pre></div>
+</div>
+<p><strong>Why rebase instead of merge?</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 40.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Approach</p></th>
+<th class="head"><p>Result</p></th>
+<th class="head"><p>Use Case</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Merge</strong></p></td>
+<td><p>Creates merge commits, more complex history</p></td>
+<td><p>When preserving experiment history for papers</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Rebase</strong></p></td>
+<td><p>Linear, clean history</p></td>
+<td><p>For feature branches before PR to <code class="docutils literal notranslate"><span class="pre">Dev</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>For IPSL-AID development, <strong>rebase is preferred</strong> for feature branches to maintain
+a readable project history, especially when tracking model iterations.</p>
+</section>
+</section>
+<section id="conflict-resolution-guide">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Conflict Resolution Guide</a><a class="headerlink" href="#conflict-resolution-guide" title="Link to this heading"></a></h2>
+<p>Conflicts occur when Git cannot automatically reconcile changes. This is common
+in collaborative development, especially when multiple researchers modify:</p>
+<ul class="simple">
+<li><p><strong>Model architecture definitions</strong> (<code class="docutils literal notranslate"><span class="pre">networks.py</span></code>)</p></li>
+<li><p><strong>Training Module</strong> (<code class="docutils literal notranslate"><span class="pre">main.py</span></code>)</p></li>
+<li><p><strong>Data preprocessing pipelines</strong> (<code class="docutils literal notranslate"><span class="pre">dataset.py</span></code>)</p></li>
+<li><p><strong>Dependency specifications</strong> (<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>)</p></li>
+</ul>
+<section id="on-dev-branch-team-collaboration">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">On <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team Collaboration)</a><a class="headerlink" href="#on-dev-branch-team-collaboration" title="Link to this heading"></a></h3>
+<p><strong>Conflicts on ``Dev`` are serious</strong> - they block everyone. Resolve immediately:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+<span class="c1"># If conflict appears:</span>
+</pre></div>
+</div>
+<p><strong>When a conflict occurs</strong>, Git will pause and display:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>CONFLICT (content): Merge conflict in networks.py
+error: could not apply abc1234... feat: add attention mechanism to U-Net
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-1-identify-conflicted-files">
+<h2><a class="toc-backref" href="#id18" role="doc-backlink">Step 1 — Identify Conflicted Files</a><a class="headerlink" href="#step-1-identify-conflicted-files" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>status
+</pre></div>
+</div>
+<p>Look for files under:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Unmerged paths:
+  both modified:   IPSL_AID/networks.py
+  both modified:   IPSL_AID/dataset.py
+</pre></div>
+</div>
+</section>
+<section id="step-2-examine-the-conflict">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Step 2 — Examine the Conflict</a><a class="headerlink" href="#step-2-examine-the-conflict" title="Link to this heading"></a></h2>
+<p>Open each conflicted file. You’ll see conflict markers:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> <span class="n">HEAD</span>
+<span class="c1"># Your local changes - experimenting with deeper network</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DownscalingUNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">)</span>
+<span class="o">=======</span>
+<span class="c1"># Remote changes from origin/Dev - added residual connections</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DownscalingUNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">],</span>
+                 <span class="n">use_residual</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">,</span> <span class="n">use_residual</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span> <span class="n">origin</span><span class="o">/</span><span class="n">Dev</span>
+</pre></div>
+</div>
+<p><strong>Understanding the markers:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> <span class="pre">HEAD</span></code> → Your current branch’s version</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=======</span></code> → Separator between conflicting versions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span> <span class="pre">origin/Dev</span></code> → Remote branch’s version</p></li>
+</ul>
+</section>
+<section id="step-3-resolve-the-conflict">
+<h2><a class="toc-backref" href="#id20" role="doc-backlink">Step 3 — Resolve the Conflict</a><a class="headerlink" href="#step-3-resolve-the-conflict" title="Link to this heading"></a></h2>
+<p>Edit the file to create the correct version. For model code:</p>
+<ol class="arabic simple">
+<li><p><strong>Preserve both innovations</strong> if they’re compatible</p></li>
+<li><p><strong>Test the combined architecture</strong> mentally or with quick local tests</p></li>
+<li><p><strong>Check parameter compatibility</strong> with existing training configs</p></li>
+<li><p><strong>Document architectural decisions</strong> in comments</p></li>
+</ol>
+<p>Example resolution combining both approaches:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Resolved: deeper network with residual connections</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DownscalingUNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">],</span>
+                 <span class="n">use_residual</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">,</span> <span class="n">use_residual</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Critical:</strong> Remove <strong>ALL</strong> conflict markers:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+=======
+&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+</pre></div>
+</div>
+</section>
+<section id="step-4-mark-as-resolved">
+<h2><a class="toc-backref" href="#id21" role="doc-backlink">Step 4 — Mark as Resolved</a><a class="headerlink" href="#step-4-mark-as-resolved" title="Link to this heading"></a></h2>
+<p>After fixing each file, and passing the pre-commit hooks (see next section),
+stage the resolved files:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>IPSL_AID/networks.py
+git<span class="w"> </span>add<span class="w"> </span>IPSL_AID/dataset.py
+</pre></div>
+</div>
+<p><strong>Do not</strong> use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">add</span> <span class="pre">.</span></code> blindly - ensure only resolved files are staged.</p>
+</section>
+<section id="step-5-continue-the-rebase">
+<h2><a class="toc-backref" href="#id22" role="doc-backlink">Step 5 — Continue the Rebase</a><a class="headerlink" href="#step-5-continue-the-rebase" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>rebase<span class="w"> </span>--continue
+</pre></div>
+</div>
+<p>If more conflicts appear, repeat the process. Git will apply each commit one by one.</p>
+<p>After resolving conflicts on <code class="docutils literal notranslate"><span class="pre">Dev</span></code>, immediately notify the team:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># In Slack #ipsl-aid:</span>
+<span class="s2">&quot;Resolved merge conflicts in networks.py - please pull latest Dev&quot;</span>
+</pre></div>
+</div>
+<section id="on-feature-branches-individual">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">On <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a><a class="headerlink" href="#on-feature-branches-individual" title="Link to this heading"></a></h3>
+<p>Conflicts on feature branches are <strong>your responsibility only</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+<span class="c1"># Resolve conflicts using same process above</span>
+git<span class="w"> </span>add<span class="w"> </span>&lt;resolved-files&gt;
+git<span class="w"> </span>rebase<span class="w"> </span>--continue
+</pre></div>
+</div>
+<p><strong>You have more flexibility:</strong>
+- Can abort rebase: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">rebase</span> <span class="pre">--abort</span></code>
+- Can squash conflicting commits
+- Can start over with fresh branch</p>
+</section>
+</section>
+<section id="abort-rebase-emergency-option">
+<h2><a class="toc-backref" href="#id24" role="doc-backlink">Abort Rebase (Emergency Option)</a><a class="headerlink" href="#abort-rebase-emergency-option" title="Link to this heading"></a></h2>
+<p>If the rebase becomes too complex or you need to start over:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>rebase<span class="w"> </span>--abort
+</pre></div>
+</div>
+<p>This returns your branch to its state before starting the rebase.</p>
+<p><strong>When to abort:</strong>
+- You’re unsure about conflict resolutions
+- You need to discuss architectural changes with the team
+- You accidentally started rebase on wrong branch</p>
+</section>
+<section id="standardize-code-with-pre-commit-hooks">
+<h2><a class="toc-backref" href="#id25" role="doc-backlink">4. Standardize Code with Pre-commit Hooks</a><a class="headerlink" href="#standardize-code-with-pre-commit-hooks" title="Link to this heading"></a></h2>
+<p>IPSL-AID uses pre-commit hooks to enforce code quality standards. After successful
+rebase, run all hooks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p><strong>What these hooks check (Python-focused):</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28.6%" />
+<col style="width: 71.4%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Hook</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>black</strong></p></td>
+<td><p>Consistent Python code formatting</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>isort</strong></p></td>
+<td><p>Sorts imports alphabetically</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>flake8</strong></p></td>
+<td><p>PEP 8 compliance and style issues</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>mypy</strong></p></td>
+<td><p>Type hint checking (critical for ML code)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>pylint</strong></p></td>
+<td><p>Code quality and best practices</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>pydocstyle</strong></p></td>
+<td><p>Docstring conventions for documentation</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>nbqa</strong></p></td>
+<td><p>Applies tools to Jupyter notebooks (if present)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>yaml validators</strong></p></td>
+<td><p>Configuration file syntax (for model configs)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>trailing-whitespace</strong></p></td>
+<td><p>Clean diffs</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>check-json</strong></p></td>
+<td><p>Validates JSON files (for experiment configs)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Because the hooks modify files automatically:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+</pre></div>
+</div>
+<p>Then run pre-commit again to confirm everything is clean:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p><strong>Expected output:</strong> “All files passed” or similar success message.</p>
+<section id="branch-specific-requirements">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Branch-Specific Requirements</a><a class="headerlink" href="#branch-specific-requirements" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Hook</p></th>
+<th class="head"><p>Required on <code class="docutils literal notranslate"><span class="pre">Dev</span></code></p></th>
+<th class="head"><p>Required on <code class="docutils literal notranslate"><span class="pre">feature/*</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>black</p></td>
+<td><p>✅ Always</p></td>
+<td><p>✅ Before PR</p></td>
+</tr>
+<tr class="row-odd"><td><p>isort</p></td>
+<td><p>✅ Always</p></td>
+<td><p>✅ Before PR</p></td>
+</tr>
+<tr class="row-even"><td><p>flake8</p></td>
+<td><p>✅ Always</p></td>
+<td><p>✅ Before PR</p></td>
+</tr>
+<tr class="row-odd"><td><p>mypy</p></td>
+<td><p>✅ Always</p></td>
+<td><p>Recommended</p></td>
+</tr>
+<tr class="row-even"><td><p>pylint</p></td>
+<td><p>✅ Always</p></td>
+<td><p>Recommended</p></td>
+</tr>
+<tr class="row-odd"><td><p>trailing-whitespace</p></td>
+<td><p>✅ Always</p></td>
+<td><p>✅ Always</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="run-the-test-suite">
+<h2><a class="toc-backref" href="#id27" role="doc-backlink">5. Run the Test Suite</a><a class="headerlink" href="#run-the-test-suite" title="Link to this heading"></a></h2>
+<p>Before pushing, verify your changes don’t break existing functionality:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run the full test suite with pytest</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># For a specific module</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_networks.py<span class="w"> </span>-v
+</pre></div>
+</div>
+<p><strong>Success criteria:</strong></p>
+<ul class="simple">
+<li><p>✅ All tests pass (0 failures)</p></li>
+<li><p>✅ Coverage doesn’t decrease significantly</p></li>
+<li><p>✅ No warnings about deprecated functions</p></li>
+<li><p>✅ Tests complete in reasonable time</p></li>
+</ul>
+<p><strong>If tests fail:</strong></p>
+<ul class="simple">
+<li><p>Examine error messages carefully</p></li>
+<li><p>Check if failures relate to your changes</p></li>
+<li><p>Fix issues locally</p></li>
+<li><p>Re-run tests until they pass</p></li>
+</ul>
+<section id="branch-specific-testing-requirements">
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Branch-Specific Testing Requirements</a><a class="headerlink" href="#branch-specific-testing-requirements" title="Link to this heading"></a></h3>
+<p><strong>On ``Dev`` branch (Strict):</strong>
+- Full test suite <strong>must</strong> pass
+- Coverage must not decrease
+- No skipped tests allowed</p>
+<p><strong>On ``feature/*`` branch (Flexible):</strong>
+- During development: test specific modules
+- Before PR to <code class="docutils literal notranslate"><span class="pre">Dev</span></code>: full suite must pass
+- Document any known failures in PR description</p>
+</section>
+</section>
+<section id="commit-changes-if-needed">
+<h2><a class="toc-backref" href="#id29" role="doc-backlink">6. Commit Changes (If Needed)</a><a class="headerlink" href="#commit-changes-if-needed" title="Link to this heading"></a></h2>
+<p>If you made additional fixes (conflict resolution, formatting, test fixes):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: resolve merge conflicts and apply formatting&quot;</span>
+</pre></div>
+</div>
+<p><strong>Commit message guidelines for IPSL-AID (Conventional Commits):</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 23.1%" />
+<col style="width: 76.9%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">feat:</span></code></p></td>
+<td><p>feat: add attention U-Net for precipitation downscaling</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fix:</span></code></p></td>
+<td><p>fix: correct normalization in data preprocessing</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">docs:</span></code></p></td>
+<td><p>docs: update model card for U-Net architecture</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">test:</span></code></p></td>
+<td><p>test: add validation tests for GAN discriminator</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">refactor:</span></code></p></td>
+<td><p>refactor: simplify loss function computation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">perf:</span></code></p></td>
+<td><p>perf: optimize dataloading with parallel workers</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">config:</span></code></p></td>
+<td><p>config: update training hyperparameters for v2</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">experiment:</span></code></p></td>
+<td><p>experiment: log results of downscaling ablation</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>If no changes were needed</strong> after rebase and hooks, you may not need a new commit.</p>
+</section>
+<section id="push-your-changes">
+<h2><a class="toc-backref" href="#id30" role="doc-backlink">7. Push Your Changes</a><a class="headerlink" href="#push-your-changes" title="Link to this heading"></a></h2>
+<section id="pushing-to-dev-branch-team">
+<h3><a class="toc-backref" href="#id31" role="doc-backlink">Pushing to <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a><a class="headerlink" href="#pushing-to-dev-branch-team" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>Dev
+</pre></div>
+</div>
+<p><strong>⚠️ CRITICAL:</strong> Never use force push on <code class="docutils literal notranslate"><span class="pre">Dev</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>--force<span class="w"> </span>origin<span class="w"> </span>Dev<span class="w">              </span><span class="c1"># ❌ DANGEROUS - overwrites teammates&#39; work</span>
+git<span class="w"> </span>push<span class="w"> </span>--force-with-lease<span class="w"> </span>origin<span class="w"> </span>Dev<span class="w">   </span><span class="c1"># ❌ Also dangerous on shared branches</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>Dev<span class="w">                      </span><span class="c1"># ✅ Only safe option</span>
+</pre></div>
+</div>
+</section>
+<section id="pushing-to-feature-branch-individual">
+<h3><a class="toc-backref" href="#id32" role="doc-backlink">Pushing to <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branch (Individual)</a><a class="headerlink" href="#pushing-to-feature-branch-individual" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/you
+</pre></div>
+</div>
+<p><strong>If push is rejected</strong> (due to history rewrite from rebase):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>--force-with-lease<span class="w"> </span>origin<span class="w"> </span>feature/you
+</pre></div>
+</div>
+<p>⚠ <strong>Critical:</strong> Always use <code class="docutils literal notranslate"><span class="pre">--force-with-lease</span></code> on feature branches, never
+plain <code class="docutils literal notranslate"><span class="pre">--force</span></code>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28.6%" />
+<col style="width: 71.4%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Safety</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--force</span></code></p></td>
+<td><p>Overwrites remote branch <strong>blindly</strong> - DANGEROUS</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--force-with-lease</span></code></p></td>
+<td><p>Checks if remote branch has changed since your last fetch - <strong>SAFER</strong></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="quick-reference-daily-workflow">
+<h2><a class="toc-backref" href="#id33" role="doc-backlink">Quick Reference: Daily Workflow</a><a class="headerlink" href="#quick-reference-daily-workflow" title="Link to this heading"></a></h2>
+<section id="for-dev-branch-team-collaboration">
+<h3><a class="toc-backref" href="#id34" role="doc-backlink">For <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team Collaboration)</a><a class="headerlink" href="#for-dev-branch-team-collaboration" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start of day</span>
+git<span class="w"> </span>checkout<span class="w"> </span>Dev
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+
+<span class="c1"># Make changes</span>
+git<span class="w"> </span>add<span class="w"> </span>&lt;files&gt;
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;type: description&quot;</span>
+
+<span class="c1"># Before push</span>
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># Push (never force!)</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>Dev
+</pre></div>
+</div>
+</section>
+<section id="for-feature-branch-individual-development">
+<h3><a class="toc-backref" href="#id35" role="doc-backlink">For <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branch (Individual Development)</a><a class="headerlink" href="#for-feature-branch-individual-development" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start new feature</span>
+git<span class="w"> </span>checkout<span class="w"> </span>Dev
+git<span class="w"> </span>pull<span class="w"> </span>--rebase<span class="w"> </span>origin<span class="w"> </span>Dev
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/your-name-description
+
+<span class="c1"># Daily work (sync with Dev)</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+
+<span class="c1"># Make commits freely</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;experiment: try X&quot;</span>
+
+<span class="c1"># Before sharing (PR to Dev)</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># Push to remote</span>
+git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>feature/your-name-description
+
+<span class="c1"># After rebasing (history rewritten)</span>
+git<span class="w"> </span>push<span class="w"> </span>--force-with-lease<span class="w"> </span>origin<span class="w"> </span>feature/your-name-description
+</pre></div>
+</div>
+</section>
+<section id="complete-workflow-example-your-current-situation">
+<h3><a class="toc-backref" href="#id36" role="doc-backlink">Complete Workflow Example (Your Current Situation)</a><a class="headerlink" href="#complete-workflow-example-your-current-situation" title="Link to this heading"></a></h3>
+<p>Based on your branches (<code class="docutils literal notranslate"><span class="pre">feature/you</span></code> and <code class="docutils literal notranslate"><span class="pre">Dev</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You&#39;re currently on main - switch to your feature branch</span>
+git<span class="w"> </span>checkout<span class="w"> </span>feature/you
+
+<span class="c1"># Sync with latest Dev changes</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>rebase<span class="w"> </span>origin/Dev
+
+<span class="c1"># Make your changes</span>
+<span class="c1"># ... edit files ...</span>
+
+<span class="c1"># Stage and commit</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add attention mechanism to downscaling model&quot;</span>
+
+<span class="c1"># Run quality checks</span>
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+
+<span class="c1"># Push to your feature branch</span>
+git<span class="w"> </span>push<span class="w"> </span>--force-with-lease<span class="w"> </span>origin<span class="w"> </span>feature/you
+
+<span class="c1"># Create Pull Request to Dev when ready</span>
+gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span>Dev<span class="w"> </span>--head<span class="w"> </span>feature/you
+</pre></div>
+</div>
+</section>
+</section>
+<section id="common-pitfalls-to-avoid">
+<h2><a class="toc-backref" href="#id37" role="doc-backlink">Common Pitfalls to Avoid</a><a class="headerlink" href="#common-pitfalls-to-avoid" title="Link to this heading"></a></h2>
+<section id="on-dev-branch-team">
+<h3><a class="toc-backref" href="#id38" role="doc-backlink">On <code class="docutils literal notranslate"><span class="pre">Dev</span></code> Branch (Team)</a><a class="headerlink" href="#on-dev-branch-team" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42.9%" />
+<col style="width: 57.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Pitfall</p></th>
+<th class="head"><p>Solution</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Using <code class="docutils literal notranslate"><span class="pre">--force</span></code> on Dev</p></td>
+<td><p>Wipes teammates’ work - <strong>NEVER DO THIS</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>Pushing without pulling</p></td>
+<td><p>Rejection, wasted time</p></td>
+</tr>
+<tr class="row-even"><td><p>Skipping tests</p></td>
+<td><p>Breaking CI/CD for everyone</p></td>
+</tr>
+<tr class="row-odd"><td><p>Large commits</p></td>
+<td><p>Hard to review, harder to revert</p></td>
+</tr>
+<tr class="row-even"><td><p>Pushing broken code</p></td>
+<td><p>Blocks all team members</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id1">
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">On <code class="docutils literal notranslate"><span class="pre">feature/*</span></code> Branches (Individual)</a><a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42.9%" />
+<col style="width: 57.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Pitfall</p></th>
+<th class="head"><p>Solution</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Never syncing with Dev</p></td>
+<td><p>Massive conflicts at PR time</p></td>
+</tr>
+<tr class="row-odd"><td><p>Committing large models</p></td>
+<td><p>Repository bloat</p></td>
+</tr>
+<tr class="row-even"><td><p>Notebooks with outputs</p></td>
+<td><p>Huge diffs, conflicts</p></td>
+</tr>
+<tr class="row-odd"><td><p>Hardcoded paths</p></td>
+<td><p>Breaks on other machines</p></td>
+</tr>
+<tr class="row-even"><td><p>Changing random seeds</p></td>
+<td><p>Non-reproducible experiments</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="general-pitfalls">
+<h3><a class="toc-backref" href="#id40" role="doc-backlink">General Pitfalls</a><a class="headerlink" href="#general-pitfalls" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42.9%" />
+<col style="width: 57.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Pitfall</p></th>
+<th class="head"><p>Solution</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Committing large model checkpoints</p></td>
+<td><p>Use DVC or model registry instead</p></td>
+</tr>
+<tr class="row-odd"><td><p>Notebooks with huge outputs</p></td>
+<td><p>Clear outputs before commit</p></td>
+</tr>
+<tr class="row-even"><td><p>Hardcoded paths</p></td>
+<td><p>Use pathlib and relative paths</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ignoring type hints</p></td>
+<td><p>Add mypy to pre-commit and fix warnings</p></td>
+</tr>
+<tr class="row-even"><td><p>Changing random seeds without documentation</p></td>
+<td><p>Document or make configurable</p></td>
+</tr>
+<tr class="row-odd"><td><p>Forgetting to update dependencies</p></td>
+<td><p>Run <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">list</span></code> and update <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="important-rules-summary">
+<h2><a class="toc-backref" href="#id41" role="doc-backlink">Important Rules Summary</a><a class="headerlink" href="#important-rules-summary" title="Link to this heading"></a></h2>
+<p>✅ <strong>DO:</strong></p>
+<p><strong>On all branches:</strong>
+- Fetch before working
+- Run pre-commit hooks
+- Test thoroughly
+- Use conventional commits
+- Document experiments
+- Version control configurations</p>
+<p><strong>On ``Dev`` specifically:</strong>
+- Pull with rebase before push
+- Keep Dev always green
+- Communicate large changes
+- <strong>Never force push</strong></p>
+<p><strong>On ``feature/*`` specifically:</strong>
+- Sync with Dev daily
+- Use descriptive branch names
+- Clean up before PR
+- Use <code class="docutils literal notranslate"><span class="pre">--force-with-lease</span></code> safely</p>
+<p>❌ <strong>DON’T:</strong></p>
+<p><strong>On any branch:</strong>
+- Ignore conflicts
+- Leave conflict markers
+- Skip tests after changes
+- Commit large data files
+- Commit notebooks with outputs
+- Hardcode model paths or seeds</p>
+<p><strong>On ``Dev`` specifically:</strong>
+- <strong>NEVER use ``–force`` or ``–force-with-lease``</strong>
+- Push without running tests
+- Make massive commits
+- Bypass pre-commit hooks</p>
+<p><strong>On ``feature/*`` specifically:</strong>
+- Let branch get too stale (&gt;1 week without rebase)
+- Create PR without testing
+- Forget to squash messy commits</p>
+</section>
+<section id="branch-workflow-diagram">
+<h2><a class="toc-backref" href="#id42" role="doc-backlink">Branch Workflow Diagram</a><a class="headerlink" href="#branch-workflow-diagram" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Team Collaboration Flow:
+┌─────────────────┐
+│  feature/X      │──┐
+└─────────────────┘  │
+                     │
+┌─────────────────┐  │    ┌─────┐    ┌──────┐
+│  feature/xox    │──┼───→│ Dev │───→│ main │
+└─────────────────┘  │    └─────┘    └──────┘
+                     │
+┌─────────────────┐  │
+│ feature/you     │──┘
+└─────────────────┘
+
+Individual Work (Your Current Setup):
+feature/you ──PR──→ Dev ──Release──→ main
+      ↑                        ↑
+  Your sandbox            Team integration
+  - Experiment freely      - Stable
+  - Can break             - Always tested
+  - Push anytime          - Protected
+</pre></div>
+</div>
+<p>Following this workflow ensures that your contributions to IPSL-AID integrate
+smoothly with the work of other researchers while maintaining the flexibility
+needed for individual exploration. Remember: <code class="docutils literal notranslate"><span class="pre">Dev</span></code> is for team collaboration,
+<code class="docutils literal notranslate"><span class="pre">feature/*</span></code> is your personal sandbox!</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="project_structure.html" class="btn btn-neutral float-left" title="Project Structure" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cartopy_configuration.html" class="btn btn-neutral float-right" title="Cartopy Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

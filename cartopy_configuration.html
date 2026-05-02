@@ -1,0 +1,219 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cartopy Configuration &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Diffusion Models" href="diffusion_models.html" />
+    <link rel="prev" title="Pre-Push Workflow" href="pre_push_workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cartopy Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hpc-considerations">HPC Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-issues-and-solutions">Common Issues and Solutions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-in-diagnostics">Usage in Diagnostics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-tips">Performance Tips</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Cartopy Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cartopy_configuration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="pre_push_workflow.html" class="btn btn-neutral float-left" title="Pre-Push Workflow" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="diffusion_models.html" class="btn btn-neutral float-right" title="Diffusion Models" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cartopy-configuration">
+<h1>Cartopy Configuration<a class="headerlink" href="#cartopy-configuration" title="Link to this heading"></a></h1>
+<p>For geospatial diagnostics, IPSL-AID uses <a class="reference external" href="https://scitools.org.uk/cartopy/">Cartopy</a>.</p>
+<p>On HPC systems, a shared data directory must be defined to avoid repeated downloads:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cartopy</span>
+<span class="n">cartopy</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/path/to/shared/cartopy_data&quot;</span>
+</pre></div>
+</div>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Cartopy can be installed via pip or conda:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using pip</span>
+pip<span class="w"> </span>install<span class="w"> </span>cartopy
+
+<span class="c1"># Using conda</span>
+conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>cartopy
+</pre></div>
+</div>
+</section>
+<section id="hpc-considerations">
+<h2>HPC Considerations<a class="headerlink" href="#hpc-considerations" title="Link to this heading"></a></h2>
+<p>On shared HPC systems:</p>
+<ol class="arabic simple">
+<li><p><strong>Set shared data directory</strong>: Avoids duplicate downloads across users</p></li>
+<li><p><strong>Pre-download data</strong>: Download Natural Earth and other datasets once</p></li>
+<li><p><strong>Set appropriate permissions</strong>: Ensure all users can read the data</p></li>
+</ol>
+<p>Example setup script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download Cartopy data to shared location</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>/shared/cartopy_data
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cartopy; cartopy.config[&#39;data_dir&#39;] = &#39;/shared/cartopy_data&#39;&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import cartopy.feature as cfeature; print(&#39;Testing Cartopy...&#39;)&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="common-issues-and-solutions">
+<h2>Common Issues and Solutions<a class="headerlink" href="#common-issues-and-solutions" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Missing Natural Earth data</strong>:
+- Download manually from: <a class="reference external" href="https://www.naturalearthdata.com/downloads/">https://www.naturalearthdata.com/downloads/</a>
+- Place in Cartopy data directory</p></li>
+<li><p><strong>Permission errors</strong>:
+- Ensure shared directory has read permissions for all users
+- Use <cite>chmod -R 755 /shared/cartopy_data</cite></p></li>
+<li><p><strong>Proxy/firewall issues</strong>:
+- Set HTTP_PROXY/HTTPS_PROXY environment variables
+- Use offline installation with pre-downloaded data</p></li>
+</ol>
+</section>
+<section id="usage-in-diagnostics">
+<h2>Usage in Diagnostics<a class="headerlink" href="#usage-in-diagnostics" title="Link to this heading"></a></h2>
+<p>Cartopy is used for:</p>
+<ul class="simple">
+<li><p><strong>Spatial error maps</strong>: MAE, RMSE across regions</p></li>
+<li><p><strong>Geographical overlays</strong>: Coastlines, country borders</p></li>
+<li><p><strong>Projections</strong>: Various map projections for visualization</p></li>
+<li><p><strong>Regional focus</strong>: Zooming into specific regions of interest</p></li>
+</ul>
+<p>Example visualization code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPSL_AID.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_MAE_map</span>
+
+<span class="n">expected_path</span> <span class="o">=</span> <span class="n">plot_MAE_map</span><span class="p">(</span>
+   <span class="n">predictions</span><span class="o">=</span><span class="n">predictions</span><span class="p">,</span>
+   <span class="n">targets</span><span class="o">=</span><span class="n">targets</span><span class="p">,</span>
+   <span class="n">lat_1d</span><span class="o">=</span><span class="n">lat_1d</span><span class="p">,</span>
+   <span class="n">lon_1d</span><span class="o">=</span><span class="n">lon_1d</span><span class="p">,</span>
+   <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+   <span class="n">save_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+   <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;validation_mae_map_standard.png&quot;</span>
+   <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-tips">
+<h2>Performance Tips<a class="headerlink" href="#performance-tips" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Cache projections</strong>: Reuse projection objects</p></li>
+<li><p><strong>Batch plotting</strong>: Minimize figure creation overhead</p></li>
+<li><p><strong>Reduce resolution</strong>: Use lower-resolution coastlines for faster rendering</p></li>
+<li><p><strong>Parallel rendering</strong>: Use multiple processes for multiple plots</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pre_push_workflow.html" class="btn btn-neutral float-left" title="Pre-Push Workflow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="diffusion_models.html" class="btn btn-neutral float-right" title="Diffusion Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

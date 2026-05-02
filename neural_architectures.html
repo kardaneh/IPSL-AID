@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neural Architectures &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "processEscapes": true}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Training Strategy" href="training_strategy.html" />
+    <link rel="prev" title="Diffusion Models" href="diffusion_models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Neural Architectures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#default-configuration">Default Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-components">Architecture Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#embedding-layers">Embedding Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conditioning-strategies">Conditioning Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#input-output-specification">Input/Output Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#climate-specific-adaptations">Climate-Specific Adaptations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-examples">Configuration Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Neural Architectures</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/neural_architectures.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="diffusion_models.html" class="btn btn-neutral float-left" title="Diffusion Models" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="training_strategy.html" class="btn btn-neutral float-right" title="Training Strategy" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neural-architectures">
+<h1>Neural Architectures<a class="headerlink" href="#neural-architectures" title="Link to this heading"></a></h1>
+<p>IPSL-AID relies on <strong>UNet-based architectures</strong>, adapted for climate data:</p>
+<ul class="simple">
+<li><p>ADM-style UNet</p></li>
+<li><p>Conditional UNet variants</p></li>
+<li><p>Support for static and dynamic covariates</p></li>
+<li><p>Flexible input / output channel definitions</p></li>
+</ul>
+<p>Architectures are selected using runtime parameters, allowing rapid experimentation
+without code changes.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/unet.png"><img alt="_images/unet.png" src="_images/unet.png" style="width: 90%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Shematic of the UNet architecture used in IPSL-AID, showing encoder, decoder, and attention components.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<section id="default-configuration">
+<h2>Default Configuration<a class="headerlink" href="#default-configuration" title="Link to this heading"></a></h2>
+<p>The U-Net configuration includes:</p>
+<ul class="simple">
+<li><p>Base channel count: <span class="math notranslate nohighlight">\(C_\mathrm{base} = 128\)</span></p></li>
+<li><p>Channel multipliers per resolution: <cite>[1, 2, 3, 4]</cite></p></li>
+<li><p>Residual blocks per resolution: 3</p></li>
+<li><p>Self-attention at resolutions: <cite>[32, 16, 8]</cite></p></li>
+<li><p>Dropout probability: <span class="math notranslate nohighlight">\(p = 0.10\)</span></p></li>
+<li><p>Embedding dimension: <span class="math notranslate nohighlight">\(C_\mathrm{emb} = 4 \times C_\mathrm{base}\)</span></p></li>
+</ul>
+</section>
+<section id="architecture-components">
+<h2>Architecture Components<a class="headerlink" href="#architecture-components" title="Link to this heading"></a></h2>
+<dl>
+<dt><strong>Encoder</strong></dt><dd><p>Progressive downsampling with convolutional and residual blocks.
+At level <span class="math notranslate nohighlight">\(l\)</span>, feature map has height <span class="math notranslate nohighlight">\(H_{\mathrm l} = \lfloor H / 2^{\mathrm l} \rfloor\)</span>
+and width <span class="math notranslate nohighlight">\(W_{\mathrm l} = \lfloor W / 2^{\mathrm l} \rfloor\)</span>.</p>
+</dd>
+<dt><strong>Decoder</strong></dt><dd><p>Mirror of encoder with upsampling and skip connections from encoder.</p>
+</dd>
+<dt><strong>Attention</strong></dt><dd><p>Multi-head self-attention at specific resolutions (64 channels per head):</p>
+<div class="math notranslate nohighlight">
+\[\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\Big({\mathbf{Q}^\top \mathbf{K}}/{\sqrt{d_{\mathrm k}}}\Big)\mathbf{V}\]</div>
+</dd>
+<dt><strong>Conditioning</strong></dt><dd><p>Support for:
+- Noise level embeddings
+- Class conditioning (e.g., season, region)
+- Augmentation embeddings
+- Spatiotemporal context (latitude, longitude, time)</p>
+</dd>
+</dl>
+</section>
+<section id="embedding-layers">
+<h2>Embedding Layers<a class="headerlink" href="#embedding-layers" title="Link to this heading"></a></h2>
+<p>Noise levels <span class="math notranslate nohighlight">\(\sigma\)</span> are represented using sinusoidal positional embedding:</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{e}_\sigma = \text{PE}(\sigma) \in \mathbb{R}^{C_\mathrm{base}}\]</div>
+<p>Processed by two fully connected layers with SiLU activations.</p>
+</section>
+<section id="conditioning-strategies">
+<h2>Conditioning Strategies<a class="headerlink" href="#conditioning-strategies" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Spatial Conditioning</strong>: Low-resolution inputs concatenated channel-wise</p></li>
+<li><p><strong>Global Conditioning</strong>: Scalar features projected and added to embeddings</p></li>
+<li><p><strong>Adaptive Normalization</strong>: Feature-wise modulation based on conditioning</p></li>
+<li><p><strong>Cross-Attention</strong>: Attention between features and conditioning vectors</p></li>
+</ol>
+</section>
+<section id="input-output-specification">
+<h2>Input/Output Specification<a class="headerlink" href="#input-output-specification" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DhariwalUNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span>
+      <span class="n">img_resolution</span><span class="p">,</span>                     <span class="c1"># Image resolution as tuple (height, width)</span>
+      <span class="n">in_channels</span><span class="p">,</span>                        <span class="c1"># Number of color channels at input.</span>
+      <span class="n">out_channels</span><span class="p">,</span>                       <span class="c1"># Number of color channels at output.</span>
+      <span class="n">label_dim</span>           <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>            <span class="c1"># Number of class labels, 0 = unconditional.</span>
+      <span class="n">augment_dim</span>         <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>            <span class="c1"># Augmentation label dimensionality, 0 = no augmentation.</span>
+      <span class="n">model_channels</span>      <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>          <span class="c1"># Base multiplier for the number of channels.</span>
+      <span class="n">channel_mult</span>        <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span>    <span class="c1"># Per-resolution multipliers for the number of channels.</span>
+      <span class="n">channel_mult_emb</span>    <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>            <span class="c1"># Multiplier for the dimensionality of the embedding vector.</span>
+      <span class="n">num_blocks</span>          <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>            <span class="c1"># Number of residual blocks per resolution.</span>
+      <span class="n">attn_resolutions</span>    <span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span>    <span class="c1"># List of resolutions with self-attention.</span>
+      <span class="n">dropout</span>             <span class="o">=</span> <span class="mf">0.10</span><span class="p">,</span>         <span class="c1"># List of resolutions with self-attention.</span>
+      <span class="n">label_dropout</span>       <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>            <span class="c1"># Dropout probability of class labels for classifier-free guidance.</span>
+      <span class="n">diffusion_model</span> <span class="o">=</span> <span class="kc">True</span>              <span class="c1"># Whether to use the Unet for diffusion models.</span>
+      <span class="p">):</span>
+      <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="climate-specific-adaptations">
+<h2>Climate-Specific Adaptations<a class="headerlink" href="#climate-specific-adaptations" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Periodic Boundary Handling</strong>: Special convolutions for longitude wrapping</p></li>
+<li><p><strong>Spatial Context</strong>: Incorporation of latitude/longitude grids</p></li>
+<li><p><strong>Topography Integration</strong>: Terrain elevation as conditioning input</p></li>
+<li><p><strong>Land-Sea Masks</strong>: Binary masks for land/ocean differentiation</p></li>
+</ol>
+</section>
+<section id="configuration-examples">
+<h2>Configuration Examples<a class="headerlink" href="#configuration-examples" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">opts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;adm&quot;</span><span class="p">,</span>
+    <span class="n">precond</span><span class="o">=</span><span class="s2">&quot;edm&quot;</span><span class="p">,</span>
+    <span class="n">img_resolution</span><span class="o">=</span><span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span>
+
+    <span class="c1"># --------------------------------------------------</span>
+    <span class="c1"># Data channels</span>
+    <span class="c1"># --------------------------------------------------</span>
+    <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>        <span class="c1"># [&quot;t2m&quot;, &quot;u10&quot;, &quot;v10&quot;]</span>
+    <span class="n">cond_channels</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>      <span class="c1"># 3 variables + z + LSM + lat + lon</span>
+    <span class="n">out_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>       <span class="c1"># same as in_channels</span>
+
+    <span class="n">label_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>          <span class="c1"># conditional model</span>
+    <span class="n">use_fp16</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+
+    <span class="c1"># --------------------------------------------------</span>
+    <span class="c1"># Architecture overrides</span>
+    <span class="c1"># --------------------------------------------------</span>
+    <span class="n">model_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">model_channels</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+        <span class="n">channel_mult</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+        <span class="n">num_blocks</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Memory</strong>: Channel multipliers control memory usage</p></li>
+<li><p><strong>Speed</strong>: Attention layers can be computationally expensive</p></li>
+<li><p><strong>Accuracy</strong>: More channels/residual blocks generally improve quality</p></li>
+<li><p><strong>Overfitting</strong>: Dropout and regularization important for small datasets</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="diffusion_models.html" class="btn btn-neutral float-left" title="Diffusion Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="training_strategy.html" class="btn btn-neutral float-right" title="Training Strategy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

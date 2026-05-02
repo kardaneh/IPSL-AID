@@ -1,0 +1,262 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Training Strategy &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "processEscapes": true}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Inference Modes" href="inference_modes.html" />
+    <link rel="prev" title="Neural Architectures" href="neural_architectures.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Training Strategy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#random-block-sampling">Random Block Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coarse-down-up-procedure">Coarse-Down-Up Procedure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conditioning-inputs">Conditioning Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training-schedule">Training Schedule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#computational-requirements">Computational Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hyperparameter-tuning">Hyperparameter Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#monitoring-and-logging">Monitoring and Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#early-stopping">Early Stopping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-gpu-training">Multi-GPU Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reproducibility">Reproducibility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Training Strategy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/training_strategy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="neural_architectures.html" class="btn btn-neutral float-left" title="Neural Architectures" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference_modes.html" class="btn btn-neutral float-right" title="Inference Modes" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="training-strategy">
+<h1>Training Strategy<a class="headerlink" href="#training-strategy" title="Link to this heading"></a></h1>
+<p>Training is performed <strong>globally</strong>, using a <strong>random block strategy</strong>:</p>
+<ul class="simple">
+<li><p>Spatial blocks are randomly sampled across the globe</p></li>
+<li><p>Enables scalable training on very large climate datasets</p></li>
+<li><p>Reduces memory footprint while preserving global coverage</p></li>
+<li><p>Improves generalization across regions</p></li>
+</ul>
+<p>This design allows a single model to learn global dynamics while remaining usable
+for regional inference.</p>
+<section id="random-block-sampling">
+<h2>Random Block Sampling<a class="headerlink" href="#random-block-sampling" title="Link to this heading"></a></h2>
+<p>During each training epoch, <span class="math notranslate nohighlight">\(s\)</span> spatial blocks of size <span class="math notranslate nohighlight">\(144\times360\)</span>
+are generated, with block centers placed randomly. The longitude of each block
+is treated as periodic, while the latitude is constrained within valid global
+boundaries.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/random_block_sampling.png"><img alt="_images/random_block_sampling.png" src="_images/random_block_sampling.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Example of randomly sampled spatial blocks used during training</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Several values for the number of spatial blocks per epoch (<span class="math notranslate nohighlight">\(s=6\)</span>, 9, and 12)
+were evaluated, and using 12 blocks was identified as an effective balance
+between computational efficiency and spatial diversity.</p>
+</section>
+<section id="coarse-down-up-procedure">
+<h2>Coarse-Down-Up Procedure<a class="headerlink" href="#coarse-down-up-procedure" title="Link to this heading"></a></h2>
+<p>A coarse-down-up procedure based on bilinear interpolation is used to separate
+large-scale and fine-scale components:</p>
+<ol class="arabic simple">
+<li><p><strong>Coarsen</strong>: High-resolution field <span class="math notranslate nohighlight">\(\mathbf{y}^{\mathrm{HR}}\)</span> is reduced
+to <span class="math notranslate nohighlight">\(16\times32\)</span> resolution</p></li>
+<li><p><strong>Upscale</strong>: Coarse field is scaled back to original resolution, yielding
+<span class="math notranslate nohighlight">\(\mathbf{y}^{\mathrm{CU}}\)</span></p></li>
+<li><p><strong>Residual</strong>: Fine-scale information <span class="math notranslate nohighlight">\(\mathbf{R} = \mathbf{y}^{\mathrm{HR}} - \mathbf{y}^{\mathrm{CU}}\)</span>
+serves as training target</p></li>
+</ol>
+</section>
+<section id="conditioning-inputs">
+<h2>Conditioning Inputs<a class="headerlink" href="#conditioning-inputs" title="Link to this heading"></a></h2>
+<p>The model is conditioned on:</p>
+<ol class="arabic simple">
+<li><p><strong>Coarse-up fields</strong>: Low-resolution approximations</p></li>
+<li><p><strong>Geographical variables</strong>: Latitude, longitude, topography (<span class="math notranslate nohighlight">\(z\)</span>), land-sea mask (LSM)</p></li>
+<li><p><strong>Temporal information</strong>: Cosine-sine representations of day of year and hour of day</p></li>
+</ol>
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="_images/workflow.png"><img alt="_images/workflow.png" src="_images/workflow.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Workflow of IPSL-AID’s training process.</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="training-schedule">
+<h2>Training Schedule<a class="headerlink" href="#training-schedule" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Dataset</strong>: ERA5 2015-2019 (train), 2020 (validation), 2021 (test)</p></li>
+<li><p><strong>Batch size</strong>: 80 (optimized for 4× NVIDIA A100 64GB)</p></li>
+<li><p><strong>Epochs</strong>: 100</p></li>
+<li><p><strong>Optimizer</strong>: Adam with learning rate scheduling</p></li>
+<li><p><strong>Validation</strong>: Every epoch on held-out year</p></li>
+</ul>
+</section>
+<section id="computational-requirements">
+<h2>Computational Requirements<a class="headerlink" href="#computational-requirements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>GPUs</strong>: 4× NVIDIA A100 (64 GB each)</p></li>
+<li><p><strong>Time</strong>: ~6 days for full training</p></li>
+<li><p><strong>Memory</strong>: ~200GB GPU memory during training</p></li>
+<li><p><strong>Storage</strong>: Sufficient space for datasets and checkpoints</p></li>
+</ul>
+</section>
+<section id="hyperparameter-tuning">
+<h2>Hyperparameter Tuning<a class="headerlink" href="#hyperparameter-tuning" title="Link to this heading"></a></h2>
+<p>Key hyperparameters:</p>
+<ol class="arabic simple">
+<li><p><strong>Learning rate</strong>: Typically <span class="math notranslate nohighlight">\(10^{-4}\)</span> to <span class="math notranslate nohighlight">\(10^{-3}\)</span></p></li>
+<li><p><strong>Batch size</strong>: Limited by GPU memory, typically 32-128</p></li>
+<li><p><strong>Block size</strong>: <span class="math notranslate nohighlight">\(144\times360\)</span> provides good trade-off</p></li>
+<li><p><strong>Number of blocks</strong>: 12 per epoch for global coverage</p></li>
+<li><p><strong>Weight decay</strong>: <span class="math notranslate nohighlight">\(10^{-6}\)</span> for regularization</p></li>
+</ol>
+</section>
+<section id="monitoring-and-logging">
+<h2>Monitoring and Logging<a class="headerlink" href="#monitoring-and-logging" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Loss curves</strong>: Training and validation loss</p></li>
+<li><p><strong>Metrics</strong>: MAE, RMSE, R² on validation set</p></li>
+<li><p><strong>Visualizations</strong>: Sample predictions during training</p></li>
+<li><p><strong>Checkpoints</strong>: Save best model and regular intervals</p></li>
+</ul>
+</section>
+<section id="early-stopping">
+<h2>Early Stopping<a class="headerlink" href="#early-stopping" title="Link to this heading"></a></h2>
+<p>Training stops when validation loss doesn’t improve for specified number of epochs
+(typically 10-20).</p>
+</section>
+<section id="multi-gpu-training">
+<h2>Multi-GPU Training<a class="headerlink" href="#multi-gpu-training" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Data Parallel</strong>: Split batches across GPUs</p></li>
+<li><p><strong>Model Parallel</strong>: Split model across GPUs (for very large models)</p></li>
+<li><p><strong>Distributed Data Parallel</strong>: Synchronized gradients across nodes</p></li>
+</ul>
+</section>
+<section id="reproducibility">
+<h2>Reproducibility<a class="headerlink" href="#reproducibility" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Random seeds</strong>: Fixed for reproducibility</p></li>
+<li><p><strong>Configuration saving</strong>: Full config saved with each run</p></li>
+<li><p><strong>Version control</strong>: Code and environment specifications</p></li>
+<li><p><strong>Checkpointing</strong>: Model states saved at regular intervals</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="neural_architectures.html" class="btn btn-neutral float-left" title="Neural Architectures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference_modes.html" class="btn btn-neutral float-right" title="Inference Modes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

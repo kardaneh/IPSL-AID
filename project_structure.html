@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Structure &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Pre-Push Workflow" href="pre_push_workflow.html" />
+    <link rel="prev" title="Testing Philosophy (Read This First)" href="testing_philosophy.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Project Structure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-modules-explained">Key Modules Explained</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-flow">Data Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-management">Configuration Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-strategy">Testing Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hpc-integration">HPC Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-workflow">Development Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Project Structure</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/project_structure.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="testing_philosophy.html" class="btn btn-neutral float-left" title="Testing Philosophy (Read This First)" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pre_push_workflow.html" class="btn btn-neutral float-right" title="Pre-Push Workflow" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="project-structure">
+<h1>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading"></a></h1>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>IPSL-AID/                           # Project root
+├── pyproject.toml                  # Python project configuration
+├── setup_diffusion.sh              # Main setup script
+│
+├── IPSL_AID/                       # Main Python package
+│   ├── __init__.py                 # Package initialization
+│   ├── main.py                     # CLI entry point (training / inference)
+│   ├── dataset.py                  # Data loading and preprocessing
+│   ├── networks.py                 # Diffusion models and UNet-based architectures
+│   ├── model.py                    # Main model wrapper
+│   ├── model_utils.py              # Model utilities
+│   ├── loss.py                     # Loss functions
+│   ├── logger.py                   # Logging and monitoring
+│   ├── utils.py                    # Shared utilities
+│   ├── diagnostics.py              # Evaluation and visualization
+│   ├── evaluater.py                # Error metrics (Sampler, MAE, RMSE, CRPS, etc.)
+│
+├── tests/                          # Unit tests
+│   └── test_all.py                 # Comprehensive test suite
+│
+├── slurm_io/                        # I/O utilities for SLURM
+│   ├── diffusion_model.err          # Error logging utilities
+│   └── diffusion_model.out          # Output logging utilities
+│
+├── slurm/                          # HPC job scripts
+│   ├── run_&lt;experiment_name&gt;.sh    # Executable run scripts
+│   └── sbatch_diffusion_*.sh       # SLURM submission scripts
+│
+└── outputs/                        # Generated outputs (not in version control)
+    └── [experiment_timestamp]/     # Experiment-specific directory
+        ├── config.yaml             # Full run configuration
+        ├── checkpoints/            # Model checkpoints
+        ├── logs/                   # Training logs
+        └── results/                # Generated samples and metric evaluations
+</pre></div>
+</div>
+<section id="key-modules-explained">
+<h2>Key Modules Explained<a class="headerlink" href="#key-modules-explained" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>main.py</strong></dt><dd><p>Command-line interface for training and inference. Handles argument parsing,
+configuration loading, and dispatching to appropriate modes. Supports both
+single-run and batch processing.</p>
+</dd>
+<dt><strong>dataset.py</strong></dt><dd><p>Data loading, preprocessing, and augmentation. Implements the random block
+sampling strategy for global training. Handles ERA5 data loading, normalization,
+and batch generation with spatial and temporal conditioning.</p>
+</dd>
+<dt><strong>networks.py</strong></dt><dd><p>UNet-based architectures adapted for climate data, including ADM-style UNets
+and conditional variants. Supports multiple attention mechanisms and
+conditioning strategies for spatiotemporal context.</p>
+</dd>
+<dt><strong>model.py</strong></dt><dd><p>Main model wrapper that integrates diffusion processes with neural networks.
+Handles training loops, inference procedures, and checkpoint management.
+Supports multiple diffusion formulations through configuration.</p>
+</dd>
+<dt><strong>model_utils.py</strong></dt><dd><p>Utilities for model creation, inspection, and management. Includes functions
+for parameter counting, model summarization, and distributed training setup.</p>
+</dd>
+<dt><strong>loss.py</strong></dt><dd><p>Implementation of diffusion loss functions including EDM, VP, VE, and iDDPM
+formulations. Contains noise schedulers and weighting schemes for
+stable training.</p>
+</dd>
+<dt><strong>logger.py</strong></dt><dd><p>Logging and monitoring utilities. Supports console logging, file logging,
+and optional integration with TensorBoard and Weights &amp; Biases for
+experiment tracking.</p>
+</dd>
+<dt><strong>utils.py</strong></dt><dd><p>Shared utilities for configuration management, file operations, tensor
+manipulation, random seeding, timing, and parallel processing.</p>
+</dd>
+<dt><strong>diagnostics.py</strong></dt><dd><p>Visualization and analysis tools for evaluating model performance, including
+spatial error maps, PDF comparisons, spectral analysis, and Cartopy-based
+geospatial plotting.</p>
+</dd>
+<dt><strong>evaluater.py</strong></dt><dd><p>Computation of evaluation metrics: MAE, RMSE, R², CRPS, KL divergence,
+power spectra, and extreme value statistics. Supports both deterministic
+and probabilistic evaluation.</p>
+</dd>
+</dl>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/flowchart.png"><img alt="_images/flowchart.png" src="_images/flowchart.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Flowchart of IPSL-AID’s architecture and data flow.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="data-flow">
+<h2>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Input</strong>: Low-resolution climate fields + spatiotemporal context (lat/lon, time, topography)</p></li>
+<li><p><strong>Preprocessing</strong>: Normalization, random block sampling, augmentation</p></li>
+<li><p><strong>Diffusion</strong>: Noise addition and denoising process (implemented in model.py)</p></li>
+<li><p><strong>Network</strong>: UNet processing with multi-scale conditioning</p></li>
+<li><p><strong>Output</strong>: High-resolution residual fields</p></li>
+<li><p><strong>Postprocessing</strong>: Addition to coarse-up field, denormalization, quality checks</p></li>
+</ol>
+</section>
+<section id="configuration-management">
+<h2>Configuration Management<a class="headerlink" href="#configuration-management" title="Link to this heading"></a></h2>
+<p>IPSL-AID uses a hybrid configuration system:</p>
+<ol class="arabic simple">
+<li><p><strong>Command-line arguments</strong>: Basic runtime options</p></li>
+<li><p><strong>Setup script</strong>: Main experiment configuration (<code class="docutils literal notranslate"><span class="pre">setup</span></code>)</p></li>
+<li><p><strong>Runtime generation</strong>: SLURM scripts and run configurations</p></li>
+<li><p><strong>Output capture</strong>: Full configuration saved with each experiment</p></li>
+</ol>
+<p>Example configuration generation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># From setup script</span>
+./setup
+<span class="c1"># Generates:</span>
+<span class="c1"># - slurm/run_diffusion.sh (executable script)</span>
+<span class="c1"># - slurm/sbatch_diffusion_[used_setup].sh (SLURM submission)</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-strategy">
+<h2>Testing Strategy<a class="headerlink" href="#testing-strategy" title="Link to this heading"></a></h2>
+<p>The test suite in <code class="docutils literal notranslate"><span class="pre">tests/test_all.py</span></code> uses Python’s <code class="docutils literal notranslate"><span class="pre">unittest</span></code> framework:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+<span class="n">python</span> <span class="n">tests</span><span class="o">/</span><span class="n">test_all</span><span class="o">.</span><span class="n">py</span>
+
+<span class="c1"># Run specific test module</span>
+<span class="n">python</span> <span class="n">tests</span><span class="o">/</span><span class="n">test_all</span><span class="o">.</span><span class="n">py</span> <span class="n">loss</span>
+</pre></div>
+</div>
+<p>Tests cover:
+- <strong>Unit tests</strong>: Individual functions and classes
+- <strong>Integration tests</strong>: Data loading and model initialization
+- <strong>Validation tests</strong>: Numerical correctness and stability
+- <strong>Performance tests</strong>: Memory usage and speed benchmarks</p>
+</section>
+<section id="hpc-integration">
+<h2>HPC Integration<a class="headerlink" href="#hpc-integration" title="Link to this heading"></a></h2>
+<p>Designed for HPC systems:</p>
+<ol class="arabic simple">
+<li><p><strong>SLURM integration</strong>: Automatic job script generation</p></li>
+<li><p><strong>Multi-GPU support</strong>: Distributed training on 4× NVIDIA A100</p></li>
+<li><p><strong>Shared storage</strong>: Optimized for parallel filesystems</p></li>
+<li><p><strong>Resource management</strong>: Configurable memory and time limits</p></li>
+</ol>
+</section>
+<section id="development-workflow">
+<h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Environment setup</span>
+uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="o">=</span>python3.11
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>pyproject.toml
+
+<span class="c1"># 2. Configuration</span>
+./setup<span class="w">  </span><span class="c1"># Edit parameters as needed</span>
+
+<span class="c1"># 3. Testing</span>
+python<span class="w"> </span>tests/test_all.py
+
+<span class="c1"># 4. Local debugging (small scale)</span>
+python<span class="w"> </span>-m<span class="w"> </span>IPSL_AID.main<span class="w"> </span>--debug<span class="w"> </span>--epochs<span class="w"> </span><span class="m">2</span><span class="w"> </span>--batch_size<span class="w"> </span><span class="m">4</span>
+
+<span class="c1"># 5. HPC submission</span>
+sbatch<span class="w"> </span>slurm/sbatch_diffusion_*.sh
+
+<span class="c1"># 6. Analysis</span>
+All<span class="w"> </span>outputs<span class="w"> </span>saved<span class="w"> </span><span class="k">in</span><span class="w"> </span>results/<span class="w"> </span><span class="k">for</span><span class="w"> </span>study.
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="testing_philosophy.html" class="btn btn-neutral float-left" title="Testing Philosophy (Read This First)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pre_push_workflow.html" class="btn btn-neutral float-right" title="Pre-Push Workflow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

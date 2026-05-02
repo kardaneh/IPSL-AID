@@ -1,0 +1,748 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPSL_AID.loss &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">IPSL_AID.loss</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for IPSL_AID.loss</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 IPSL / CNRS / Sorbonne University</span>
+<span class="c1"># Authors: Kazem Ardaneh</span>
+<span class="c1">#</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># ORIGINAL WORK (NVIDIA)</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># This work is a derivative of &quot;Elucidating the Design Space of</span>
+<span class="c1"># Diffusion-Based Generative Models&quot; by NVIDIA CORPORATION &amp; AFFILIATES.</span>
+<span class="c1">#</span>
+<span class="c1"># Original work: Copyright (c) 2022, NVIDIA CORPORATION &amp; AFFILIATES.</span>
+<span class="c1"># Original license: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</span>
+<span class="c1"># Original source: https://github.com/NVlabs/edm</span>
+<span class="c1">#</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># MODIFICATIONS AND ADDITIONS (IPSL / CNRS / Sorbonne University)</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Modifications to loss functions include:</span>
+<span class="c1">#   1. Added conditional image support to all loss functions</span>
+<span class="c1">#      - Extended VPLoss, VELoss, EDMLoss with conditional_img parameter</span>
+<span class="c1">#      - Modified __call__ method to pass conditional images to the network</span>
+<span class="c1">#      - Updated documentation to reflect conditional image usage</span>
+<span class="c1">#</span>
+<span class="c1">#   2. Added UnetLoss class for non-diffusion UNet training</span>
+<span class="c1">#      - Created new loss class for direct image-to-image prediction tasks</span>
+<span class="c1">#      - Supports MSE, L1, and Smooth L1 loss types</span>
+<span class="c1">#      - Compatible with UNet architectures (DhariwalUNet, SongUNet)</span>
+<span class="c1">#      - Includes support for data augmentation and conditioning</span>
+<span class="c1">#</span>
+<span class="c1">#   3. Enhanced documentation</span>
+<span class="c1">#      - Added comprehensive docstrings for all classes and methods</span>
+<span class="c1">#      - Included mathematical formulas and training procedures</span>
+<span class="c1">#      - Added usage examples and parameter descriptions</span>
+<span class="c1">#</span>
+<span class="c1">#   4. Added comprehensive unit tests</span>
+<span class="c1">#      - Created TestLosses class with test methods for all loss functions</span>
+<span class="c1">#      - Added tests for loss gradients and numerical stability</span>
+<span class="c1">#      - Added tests with data augmentation</span>
+<span class="c1">#      - Added loss comparison tests</span>
+<span class="c1">#      - Added rectangular resolution support tests</span>
+<span class="c1">#</span>
+<span class="c1">#   5. Code quality improvements</span>
+<span class="c1">#      - Added type hints for better code clarity</span>
+<span class="c1">#      - Improved variable naming</span>
+<span class="c1">#      - Added input validation where appropriate</span>
+<span class="c1">#</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># LICENSE</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># This derivative work is licensed under the same terms as the original:</span>
+<span class="c1"># Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># ACKNOWLEDGMENTS</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># We thank the NVIDIA team for their excellent work on EDM and for making it</span>
+<span class="c1"># available under an open license that enables further research and development.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Diffusion model loss functions and testing utilities.</span>
+
+<span class="sd">This module implements various loss functions for diffusion models including:</span>
+<span class="sd">- VPLoss: Variance Preserving loss from Score-Based Generative Modeling</span>
+<span class="sd">- VELoss: Variance Exploding loss from Score-Based Generative Modeling</span>
+<span class="sd">- EDMLoss: Improved loss from Elucidating the Design Space of Diffusion-Based Generative Models</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="c1"># ----------------------------------------------------------------------------</span>
+<span class="c1"># Loss function corresponding to the variance preserving (VP) formulation</span>
+
+
+<div class="viewcode-block" id="VPLoss">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VPLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VPLoss</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loss function for Variance Preserving (VP) formulation diffusion models.</span>
+
+<span class="sd">    This class implements the loss function for the Variance Preserving SDE</span>
+<span class="sd">    formulation of diffusion models. It follows the continuous-time training</span>
+<span class="sd">    objective from score-based generative modeling through stochastic differential</span>
+<span class="sd">    equations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    beta_d : float, optional</span>
+<span class="sd">        Maximum β parameter controlling the extent of the noise schedule.</span>
+<span class="sd">        Larger values lead to faster noise increase. Default is 19.9.</span>
+<span class="sd">    beta_min : float, optional</span>
+<span class="sd">        Minimum β parameter controlling the initial slope of the noise schedule.</span>
+<span class="sd">        Default is 0.1.</span>
+<span class="sd">    epsilon_t : float, optional</span>
+<span class="sd">        Minimum time value threshold to avoid numerical issues near t=0.</span>
+<span class="sd">        Default is 1e-5.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    beta_d : float</span>
+<span class="sd">        Maximum β parameter for noise schedule.</span>
+<span class="sd">    beta_min : float</span>
+<span class="sd">        Minimum β parameter for noise schedule.</span>
+<span class="sd">    epsilon_t : float</span>
+<span class="sd">        Minimum time threshold.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __call__(net, images, conditional_img=None, labels=None, augment_pipe=None)</span>
+<span class="sd">        Compute the VP loss for a batch of images.</span>
+<span class="sd">    sigma(t)</span>
+<span class="sd">        Compute noise level sigma for given timestep t.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The loss is based on denoising score matching: E[λ(t) * ||D_θ(x_t, t) - x_0||²]</span>
+<span class="sd">    - The weighting function λ(t) = 1/σ(t)² gives equal importance to all noise levels.</span>
+<span class="sd">    - Time t is uniformly sampled between [epsilon_t, 1] during training.</span>
+<span class="sd">    - This loss corresponds to training the model to predict the clean image x_0</span>
+<span class="sd">      from noisy input x_t = x_0 + σ(t)·ε.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - Song et al., &quot;Score-Based Generative Modeling through Stochastic Differential Equations&quot;, 2020.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VPLoss.__init__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VPLoss.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beta_d</span><span class="o">=</span><span class="mf">19.9</span><span class="p">,</span> <span class="n">beta_min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">epsilon_t</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the VPLoss function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beta_d : float, optional</span>
+<span class="sd">            Maximum β parameter for noise schedule.</span>
+<span class="sd">            Default is 19.9.</span>
+<span class="sd">        beta_min : float, optional</span>
+<span class="sd">            Minimum β parameter for noise schedule.</span>
+<span class="sd">            Default is 0.1.</span>
+<span class="sd">        epsilon_t : float, optional</span>
+<span class="sd">            Minimum time threshold.</span>
+<span class="sd">            Default is 1e-5.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_d</span> <span class="o">=</span> <span class="n">beta_d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_min</span> <span class="o">=</span> <span class="n">beta_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon_t</span> <span class="o">=</span> <span class="n">epsilon_t</span></div>
+
+
+<div class="viewcode-block" id="VPLoss.__call__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VPLoss.__call__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">conditional_img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment_pipe</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the VP loss for a batch of images.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        net : torch.nn.Module</span>
+<span class="sd">            The diffusion model network (typically a preconditioned U-Net).</span>
+<span class="sd">            Should accept inputs (x, sigma, condition_img, labels, augment_labels).</span>
+<span class="sd">        images : torch.Tensor</span>
+<span class="sd">            Clean input images of shape (batch_size, channels, height, width).</span>
+<span class="sd">        conditional_img : torch.Tensor, optional</span>
+<span class="sd">            Conditional images for guided generation. Should have same spatial</span>
+<span class="sd">            dimensions as `images`. Default is None.</span>
+<span class="sd">        labels : torch.Tensor, optional</span>
+<span class="sd">            Class labels for conditional generation of shape (batch_size,) or</span>
+<span class="sd">            (batch_size, label_dim). Default is None.</span>
+<span class="sd">        augment_pipe : callable, optional</span>
+<span class="sd">            Data augmentation pipeline that takes images and returns augmented</span>
+<span class="sd">            images and augmentation labels. Default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            Loss values for each image and channel of shape</span>
+<span class="sd">            (batch_size, channels, height, width). Typically reduced via mean()</span>
+<span class="sd">            for training.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - The training procedure:</span>
+<span class="sd">          1. Sample time t ~ Uniform[epsilon_t, 1]</span>
+<span class="sd">          2. Compute noise level σ(t)</span>
+<span class="sd">          3. Generate noisy images: x_t = x_0 + σ(t)·ε where ε ~ N(0, I)</span>
+<span class="sd">          4. Compute model prediction D_θ(x_t, t)</span>
+<span class="sd">          5. Calculate weighted MSE loss: λ(t) * ||D_θ(x_t, t) - x_0||²</span>
+<span class="sd">        - The weight λ(t) = 1/σ(t)² ensures balanced learning across noise levels.</span>
+<span class="sd">        - Data augmentation is applied before adding noise if augment_pipe is provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rnd_uniform</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">([</span><span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">images</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">rnd_uniform</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon_t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">augment_labels</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">augment_pipe</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="k">if</span> <span class="n">augment_pipe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">D_yn</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">conditional_img</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">augment_labels</span><span class="o">=</span><span class="n">augment_labels</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">weight</span> <span class="o">*</span> <span class="p">((</span><span class="n">D_yn</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="VPLoss.sigma">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VPLoss.sigma">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute noise level sigma for given timestep t.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : torch.Tensor or float</span>
+<span class="sd">            Timestep value(s) in [epsilon_t, 1].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            Noise level sigma corresponding to t, with same shape as input.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The noise schedule follows:</span>
+<span class="sd">        σ(t) = sqrt(exp(0.5*β_d*t² + β_min*t) - 1)</span>
+
+<span class="sd">        This ensures smooth transition from low to high noise levels, with</span>
+<span class="sd">        σ(0) ≈ 0 and σ(1) determined by β_d and β_min.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">((</span><span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_d</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_min</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span></div>
+</div>
+
+
+
+<span class="c1"># ----------------------------------------------------------------------------</span>
+<span class="c1"># Loss function corresponding to the variance exploding (VE) formulation</span>
+
+
+<div class="viewcode-block" id="VELoss">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VELoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VELoss</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loss function for Variance Exploding (VE) formulation diffusion models.</span>
+
+<span class="sd">    This class implements the loss function for the Variance Exploding SDE</span>
+<span class="sd">    formulation of diffusion models. It follows the continuous-time training</span>
+<span class="sd">    objective from score-based generative modeling through stochastic differential</span>
+<span class="sd">    equations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sigma_min : float, optional</span>
+<span class="sd">        Minimum noise level. Controls the lower bound of the noise schedule.</span>
+<span class="sd">        Smaller values allow modeling finer details. Default is 0.02.</span>
+<span class="sd">    sigma_max : float, optional</span>
+<span class="sd">        Maximum noise level. Controls the upper bound of the noise schedule.</span>
+<span class="sd">        Larger values allow modeling broader structure. Default is 100.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sigma_min : float</span>
+<span class="sd">        Minimum noise level for the geometric schedule.</span>
+<span class="sd">    sigma_max : float</span>
+<span class="sd">        Maximum noise level for the geometric schedule.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __call__(net, images, conditional_img=None, labels=None, augment_pipe=None)</span>
+<span class="sd">        Compute the VE loss for a batch of images.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The VE formulation uses a geometric noise schedule: σ(t) = σ_min * (σ_max/σ_min)^t</span>
+<span class="sd">    - Time t is uniformly sampled between [0, 1] during training.</span>
+<span class="sd">    - The weighting function λ(t) = 1/σ(t)² gives more emphasis to lower noise levels.</span>
+<span class="sd">    - This corresponds to training the model to predict the clean image x_0 from</span>
+<span class="sd">      noisy input x_t = x_0 + σ(t)·ε.</span>
+<span class="sd">    - The geometric schedule provides a simple and effective way to span a wide</span>
+<span class="sd">      range of noise levels with a single parameter.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - Song et al., &quot;Score-Based Generative Modeling through Stochastic Differential Equations&quot;, 2020.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VELoss.__init__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VELoss.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_min</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">sigma_max</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the VELoss function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma_min : float, optional</span>
+<span class="sd">            Minimum noise level for the geometric schedule.</span>
+<span class="sd">            Default is 0.02.</span>
+<span class="sd">        sigma_max : float, optional</span>
+<span class="sd">            Maximum noise level for the geometric schedule.</span>
+<span class="sd">            Default is 100.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span> <span class="o">=</span> <span class="n">sigma_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span> <span class="o">=</span> <span class="n">sigma_max</span></div>
+
+
+<div class="viewcode-block" id="VELoss.__call__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.VELoss.__call__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">conditional_img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment_pipe</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the VE loss for a batch of images.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        net : torch.nn.Module</span>
+<span class="sd">            The diffusion model network (typically a preconditioned U-Net).</span>
+<span class="sd">            Should accept inputs (x, sigma, condition_img, labels, augment_labels).</span>
+<span class="sd">        images : torch.Tensor</span>
+<span class="sd">            Clean input images of shape (batch_size, channels, height, width).</span>
+<span class="sd">        conditional_img : torch.Tensor, optional</span>
+<span class="sd">            Conditional images for guided generation. Should have same spatial</span>
+<span class="sd">            dimensions as `images`. Default is None.</span>
+<span class="sd">        labels : torch.Tensor, optional</span>
+<span class="sd">            Class labels for conditional generation of shape (batch_size,) or</span>
+<span class="sd">            (batch_size, label_dim). Default is None.</span>
+<span class="sd">        augment_pipe : callable, optional</span>
+<span class="sd">            Data augmentation pipeline that takes images and returns augmented</span>
+<span class="sd">            images and augmentation labels. Default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            Loss values for each image and channel of shape</span>
+<span class="sd">            (batch_size, channels, height, width). Typically reduced via mean()</span>
+<span class="sd">            for training.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - The training procedure:</span>
+<span class="sd">          1. Sample time t ~ Uniform[0, 1]</span>
+<span class="sd">          2. Compute noise level σ = σ_min * (σ_max/σ_min)^t</span>
+<span class="sd">          3. Generate noisy images: x_t = x_0 + σ·ε where ε ~ N(0, I)</span>
+<span class="sd">          4. Compute model prediction D_θ(x_t, t)</span>
+<span class="sd">          5. Calculate weighted MSE loss: λ(t) * ||D_θ(x_t, t) - x_0||²</span>
+<span class="sd">        - The weight λ(t) = 1/σ² ensures higher weighting for lower noise levels.</span>
+<span class="sd">        - Data augmentation is applied before adding noise if augment_pipe is provided.</span>
+<span class="sd">        - The geometric noise schedule spans orders of magnitude from σ_min to σ_max.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rnd_uniform</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">([</span><span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">images</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span><span class="p">)</span> <span class="o">**</span> <span class="n">rnd_uniform</span><span class="p">)</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">augment_labels</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">augment_pipe</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="k">if</span> <span class="n">augment_pipe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">D_yn</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">conditional_img</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">augment_labels</span><span class="o">=</span><span class="n">augment_labels</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">weight</span> <span class="o">*</span> <span class="p">((</span><span class="n">D_yn</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+</div>
+
+
+
+<span class="c1"># ----------------------------------------------------------------------------</span>
+<span class="c1"># Improved loss function proposed in the paper &quot;Elucidating the Design Space</span>
+<span class="c1"># of Diffusion-Based Generative Models&quot; (EDM).</span>
+
+
+<div class="viewcode-block" id="EDMLoss">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.EDMLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EDMLoss</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    EDM (Elucidating Diffusion Models) loss function for diffusion models.</span>
+
+<span class="sd">    This class implements the improved loss function from the EDM paper, which</span>
+<span class="sd">    uses a log-normal distribution for noise level sampling and an optimized</span>
+<span class="sd">    weighting scheme for better training stability and sample quality.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    P_mean : float, optional</span>
+<span class="sd">        Mean parameter for the log-normal distribution of sigma.</span>
+<span class="sd">        Controls the center of the noise level distribution. Default is -1.2.</span>
+<span class="sd">    P_std : float, optional</span>
+<span class="sd">        Standard deviation parameter for the log-normal distribution of sigma.</span>
+<span class="sd">        Controls the spread of the noise level distribution. Default is 1.2.</span>
+<span class="sd">    sigma_data : float, optional</span>
+<span class="sd">        Standard deviation of the training data. Used in the weighting function</span>
+<span class="sd">        to balance the loss across noise levels. Default is 1.0.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    P_mean : float</span>
+<span class="sd">        Mean of log-normal distribution for sigma sampling.</span>
+<span class="sd">    P_std : float</span>
+<span class="sd">        Standard deviation of log-normal distribution for sigma sampling.</span>
+<span class="sd">    sigma_data : float</span>
+<span class="sd">        Training data standard deviation.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __call__(net, images, conditional_img=None, labels=None, augment_pipe=None)</span>
+<span class="sd">        Compute the EDM loss for a batch of images.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The EDM loss uses a log-normal distribution for sigma: σ ~ logNormal(P_mean, P_std)</span>
+<span class="sd">    - The weighting function: λ(σ) = (σ² + σ_data²) / (σ·σ_data)²</span>
+<span class="sd">    - This weighting minimizes the variance of the loss gradient, leading to</span>
+<span class="sd">      more stable training and faster convergence.</span>
+<span class="sd">    - The loss corresponds to training the model to predict the clean image x_0</span>
+<span class="sd">      from noisy input x_t = x_0 + σ·ε.</span>
+<span class="sd">    - The log-normal distribution provides a better prior for noise levels</span>
+<span class="sd">      compared to uniform sampling.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - Karras et al., &quot;Elucidating the Design Space of Diffusion-Based Generative Models&quot;, 2022.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EDMLoss.__init__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.EDMLoss.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P_mean</span><span class="o">=-</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">P_std</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">sigma_data</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the EDMLoss function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        P_mean : float, optional</span>
+<span class="sd">            Mean parameter for log-normal distribution.</span>
+<span class="sd">            Default is -1.2.</span>
+<span class="sd">        P_std : float, optional</span>
+<span class="sd">            Standard deviation parameter for log-normal distribution.</span>
+<span class="sd">            Default is 1.2.</span>
+<span class="sd">        sigma_data : float, optional</span>
+<span class="sd">            Standard deviation of training data.</span>
+<span class="sd">            Default is 1.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P_mean</span> <span class="o">=</span> <span class="n">P_mean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P_std</span> <span class="o">=</span> <span class="n">P_std</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_data</span> <span class="o">=</span> <span class="n">sigma_data</span></div>
+
+
+<div class="viewcode-block" id="EDMLoss.__call__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.EDMLoss.__call__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">conditional_img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment_pipe</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the EDM loss for a batch of images.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        net : torch.nn.Module</span>
+<span class="sd">            The diffusion model network (typically an EDM-preconditioned U-Net).</span>
+<span class="sd">            Should accept inputs (x, sigma, condition_img, labels, augment_labels).</span>
+<span class="sd">        images : torch.Tensor</span>
+<span class="sd">            Clean input images of shape (batch_size, channels, height, width).</span>
+<span class="sd">        conditional_img : torch.Tensor, optional</span>
+<span class="sd">            Conditional images for guided generation. Should have same spatial</span>
+<span class="sd">            dimensions as `images`. Default is None.</span>
+<span class="sd">        labels : torch.Tensor, optional</span>
+<span class="sd">            Class labels for conditional generation of shape (batch_size,) or</span>
+<span class="sd">            (batch_size, label_dim). Default is None.</span>
+<span class="sd">        augment_pipe : callable, optional</span>
+<span class="sd">            Data augmentation pipeline that takes images and returns augmented</span>
+<span class="sd">            images and augmentation labels. Default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            Loss values for each image and channel of shape</span>
+<span class="sd">            (batch_size, channels, height, width). Typically reduced via mean()</span>
+<span class="sd">            for training.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - The training procedure:</span>
+<span class="sd">          1. Sample log(sigma) ~ Normal(P_mean, P_std)</span>
+<span class="sd">          2. Compute noise level σ = exp(log(sigma))</span>
+<span class="sd">          3. Generate noisy images: x_t = x_0 + σ·ε where ε ~ N(0, I)</span>
+<span class="sd">          4. Compute model prediction D_θ(x_t, σ)</span>
+<span class="sd">          5. Calculate weighted MSE loss: λ(σ) * ||D_θ(x_t, σ) - x_0||²</span>
+<span class="sd">        - The weight λ(σ) = (σ² + σ_data²) / (σ·σ_data)² minimizes gradient variance.</span>
+<span class="sd">        - Data augmentation is applied before adding noise if augment_pipe is provided.</span>
+<span class="sd">        - The log-normal distribution provides a natural prior for noise levels,</span>
+<span class="sd">          avoiding the need for manual schedule design.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rnd_normal</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">([</span><span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">images</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="p">(</span><span class="n">rnd_normal</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">P_std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">P_mean</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_data</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_data</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">augment_labels</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">augment_pipe</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="k">if</span> <span class="n">augment_pipe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">D_yn</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">conditional_img</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">augment_labels</span><span class="o">=</span><span class="n">augment_labels</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">weight</span> <span class="o">*</span> <span class="p">((</span><span class="n">D_yn</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+</div>
+
+
+
+<span class="c1"># ----------------------------------------------------------------------------</span>
+<span class="c1"># Loss function for UNet architectures.</span>
+
+
+<div class="viewcode-block" id="UnetLoss">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.UnetLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnetLoss</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple UNet loss function for direct image-to-image prediction.</span>
+
+<span class="sd">    This loss function works with UNet models that predict images directly,</span>
+<span class="sd">    without any diffusion noise process. It&#39;s a standard supervised loss</span>
+<span class="sd">    for image generation/transformation tasks such as segmentation,</span>
+<span class="sd">    denoising, super-resolution, or autoencoding.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_type : str, optional</span>
+<span class="sd">        Type of loss function to use:</span>
+<span class="sd">        - ``mse``: Mean Squared Error (L2 loss)</span>
+<span class="sd">        - ``l1``: Mean Absolute Error (L1 loss)</span>
+<span class="sd">        - ``smooth_l1``: Smooth L1 loss (Huber loss)</span>
+<span class="sd">        Default is ``mse``.</span>
+<span class="sd">    reduction : str, optional</span>
+<span class="sd">        Reduction method for the loss:</span>
+<span class="sd">        - ``mean``: Average the loss over all elements</span>
+<span class="sd">        - ``sum``: Sum the loss over all elements</span>
+<span class="sd">        - ``none``: Return loss per element</span>
+<span class="sd">        Default is ``mean``.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_type : str</span>
+<span class="sd">        Type of loss function.</span>
+<span class="sd">    reduction : str</span>
+<span class="sd">        Reduction method.</span>
+<span class="sd">    loss_fn : torch.nn.Module</span>
+<span class="sd">        PyTorch loss function instance.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If an unknown ``loss_type`` is provided.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The loss computes the discrepancy between the model&#39;s output and the input image.</span>
+<span class="sd">    - This is suitable for autoencoder-style tasks where the model learns to</span>
+<span class="sd">      reconstruct the input.</span>
+<span class="sd">    - For conditional generation, labels can be provided to the model.</span>
+<span class="sd">    - Data augmentation can be applied via `augment_pipe`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnetLoss.__init__">
+<a class="viewcode-back" href="../../api/IPSL_AID.html#IPSL_AID.loss.UnetLoss.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="s2">&quot;mse&quot;</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the UnetLoss function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loss_type : str, optional</span>
+<span class="sd">            Type of loss function.</span>
+<span class="sd">            Default is ``mse``.</span>
+<span class="sd">        reduction : str, optional</span>
+<span class="sd">            Reduction method.</span>
+<span class="sd">            Default is ``mean``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_type</span> <span class="o">=</span> <span class="n">loss_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span> <span class="o">=</span> <span class="n">reduction</span>
+
+        <span class="c1"># Initialize loss function</span>
+        <span class="k">if</span> <span class="n">loss_type</span> <span class="o">==</span> <span class="s2">&quot;mse&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">loss_type</span> <span class="o">==</span> <span class="s2">&quot;l1&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">L1Loss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">loss_type</span> <span class="o">==</span> <span class="s2">&quot;smooth_l1&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SmoothL1Loss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown loss_type: </span><span class="si">{</span><span class="n">loss_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment_pipe</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute UNet loss.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        net : torch.nn.Module</span>
+<span class="sd">            Neural network model (DhariwalUNet or SongUNet) that outputs an image</span>
+<span class="sd">            of the same shape as input.</span>
+<span class="sd">        images : torch.Tensor</span>
+<span class="sd">            Input images tensor of shape (batch_size, channels, height, width).</span>
+<span class="sd">        labels : torch.Tensor, optional</span>
+<span class="sd">            Class labels for conditional generation of shape (batch_size,) or</span>
+<span class="sd">            (batch_size, label_dim). Default is None.</span>
+<span class="sd">        augment_pipe : callable, optional</span>
+<span class="sd">            Data augmentation pipeline that takes images and returns augmented</span>
+<span class="sd">            images and augmentation labels. Default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            Computed loss value (scalar if reduction is ``mean`` or ``sum``,</span>
+<span class="sd">            otherwise tensor of shape (batch_size, channels, height, width)).</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - The model is called with the input images and optional labels.</span>
+<span class="sd">        - The loss is computed between the model output and the (augmented) input images.</span>
+<span class="sd">        - This setup is typical for autoencoder or denoising tasks where the</span>
+<span class="sd">          model learns to reconstruct the input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Apply data augmentation if provided</span>
+        <span class="k">if</span> <span class="n">augment_pipe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">images</span><span class="p">,</span> <span class="n">augment_labels</span> <span class="o">=</span> <span class="n">augment_pipe</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">augment_labels</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Get model prediction</span>
+        <span class="n">model_out</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">class_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">augment_labels</span><span class="o">=</span><span class="n">augment_labels</span><span class="p">)</span>
+
+        <span class="c1"># Simple loss: compare model output with input image</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span><span class="p">(</span><span class="n">model_out</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

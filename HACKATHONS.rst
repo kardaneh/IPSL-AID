@@ -16,12 +16,14 @@ We used two main datasets:
 - **ERA5 (ECMWF global reanalysis dataset)**
 
   .. note::
+
      Resolution: 1.5°
      Fully observed (used for training & evaluation)
 
 - **AIMIP Phase 1 (AI Model Intercomparison Project dataset)**
 
   .. note::
+
      Resolution: 1.5°
      AI-generated data with **masked cloud cover**
 
@@ -105,6 +107,7 @@ Final score is the **average skill score relative to a baseline**:
 - Baseline: Sundqvist Scheme
 
   .. note::
+
      Baseline entity: :contentReference[oaicite:2]{index=2}
 
 - Higher = better

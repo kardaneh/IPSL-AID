@@ -9,28 +9,24 @@ The goal was to infer **total cloud cover (TCC)** from atmospheric variables and
 evaluate how well models generalize across regions and AI-generated datasets.
 
 Datasets
------------
+--------
 
 We used two main datasets:
 
 - **ERA5 (ECMWF global reanalysis dataset)**
 
   .. note::
-     Dataset entity: :contentReference[oaicite:0]{index=0}
-
-  - Resolution: 1.5°
-  - Fully observed (used for training & evaluation)
+     Resolution: 1.5°
+     Fully observed (used for training & evaluation)
 
 - **AIMIP Phase 1 (AI Model Intercomparison Project dataset)**
 
   .. note::
-     Dataset entity: :contentReference[oaicite:1]{index=1}
-
-  - Resolution: 1.5°
-  - AI-generated data with **masked cloud cover**
+     Resolution: 1.5°
+     AI-generated data with **masked cloud cover**
 
 Inputs
----------
+------
 
 Atmospheric variables at **7 pressure levels**:
 
@@ -41,18 +37,18 @@ Atmospheric variables at **7 pressure levels**:
 - + Auxiliary variables
 
 Target
----------
+------
 
 - **Total Cloud Cover (TCC)**
 
 Spatial Setup
-----------------
+-------------
 
 - **Region 1**: 64 × 64 grid
 - **Region 2**: 64 × 64 grid
 
-🧪 Data Split
--------------
+Data Split
+----------
 
 +--------------+--------+----------+----------------------+
 | Split        | Dataset| Region   | Time Period          |
@@ -69,7 +65,7 @@ Spatial Setup
 +--------------+--------+----------+----------------------+
 
 Task
--------
+----
 
 - Train models on **ERA5 (Region 1)**
 - Generalize to:
@@ -81,7 +77,7 @@ Task
 - Use a **selection of 3 models**
 
 Evaluation
--------------
+----------
 
 **Deterministic metric**
 
@@ -98,7 +94,7 @@ Evaluation
   - AIMIP Region 2
 
 Scoring
-----------
+-------
 
 Final score is the **average skill score relative to a baseline**:
 
@@ -114,7 +110,7 @@ Final score is the **average skill score relative to a baseline**:
 - Higher = better
 
 Our Approach
----------------
+------------
 
 We adapted **IPSL-AID**, a diffusion-based generative model, to infer cloud cover
 from atmospheric states:
@@ -143,16 +139,26 @@ from atmospheric states:
 - Designed for **cross-dataset generalization**
 
 Results – Leaderboard
-------------------------
+---------------------
 
-+-------------------+-------+----------------+----------------+--------------------+--------------------+
-| Team Name         | Score | MAE ERA5 R1    | MAE ERA5 R2    | CRPS AIMIP R1      | CRPS AIMIP R2      |
-+===================+=======+================+================+====================+====================+
-| **IPSL AID**      | 0.266 | 0.079          | 0.106          | 0.125              | 0.137              |
-+-------------------+-------+----------------+----------------+--------------------+--------------------+
+We ranked **5th place overall** out of all participating teams.
 
-💡 Key Challenges
------------------
++-----------------------+-------+----------------+----------------+--------------------+--------------------+
+| Team Name             | Score | MAE ERA5 R1    | MAE ERA5 R2    | CRPS AIMIP R1      | CRPS AIMIP R2      |
++=======================+=======+================+================+====================+====================+
+| HappyCloud            | 0.288 | 0.076          | 0.097          | 0.125              | 0.136              |
++-----------------------+-------+----------------+----------------+--------------------+--------------------+
+| hAIzy                 | 0.280 | 0.081          | 0.110          | 0.120              | 0.129              |
++-----------------------+-------+----------------+----------------+--------------------+--------------------+
+| C squad               | 0.278 | 0.082          | 0.115          | 0.118              | 0.126              |
++-----------------------+-------+----------------+----------------+--------------------+--------------------+
+| Total Claude Cover    | 0.276 | 0.073          | 0.103          | 0.126              | 0.140              |
++-----------------------+-------+----------------+----------------+--------------------+--------------------+
+| **IPSL AID**          | 0.266 | 0.079          | 0.106          | 0.125              | 0.137              |
++-----------------------+-------+----------------+----------------+--------------------+--------------------+
+
+Key Challenges
+--------------
 
 - Indirect learning of clouds (not explicitly modeled in inputs)
 - Domain shift: ERA5 → AIMIP
@@ -160,12 +166,12 @@ Results – Leaderboard
 - Deterministic + probabilistic evaluation
 
 Leaderboard
---------------
+-----------
 
 https://tobifinn-ci2026-hackathon-leaderboard.hf.space
 
 Takeaway
------------
+--------
 
 Cloud representation remains one of the biggest uncertainties in climate modeling.
 This challenge highlights how **machine learning + physics-informed approaches**

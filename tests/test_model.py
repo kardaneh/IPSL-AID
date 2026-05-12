@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -29,7 +29,7 @@ class TestModelLoader(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.batch_size = 2
+        self.batch_size = 4
         self.in_channels = 3
         self.cond_channels = 7
         self.out_channels = 3
@@ -74,10 +74,10 @@ class TestModelLoader(unittest.TestCase):
         cond_img = torch.randn(
             self.batch_size, self.cond_channels, *self.img_resolution
         ).to(self.device)
-        labels = torch.randint(0, self.label_dim, (self.batch_size, self.label_dim)).to(
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        sigma = torch.rand(self.batch_size).to(
             self.device
-        )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
+        )  # Random sigma values for each sample
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=labels)
@@ -120,10 +120,10 @@ class TestModelLoader(unittest.TestCase):
         cond_img = torch.randn(
             self.batch_size, self.cond_channels, *self.img_resolution
         ).to(self.device)
-        labels = torch.randint(0, self.label_dim, (self.batch_size, self.label_dim)).to(
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        sigma = torch.rand(self.batch_size).to(
             self.device
-        )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
+        )  # Random sigma values for each sample
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=labels)
@@ -166,10 +166,10 @@ class TestModelLoader(unittest.TestCase):
         cond_img = torch.randn(
             self.batch_size, self.cond_channels, *self.img_resolution
         ).to(self.device)
-        labels = torch.randint(0, self.label_dim, (self.batch_size, self.label_dim)).to(
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        sigma = torch.rand(self.batch_size).to(
             self.device
-        )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
+        )  # Random sigma values for each sample
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=labels)
@@ -186,11 +186,13 @@ class TestModelLoader(unittest.TestCase):
             )
 
     def test_adm_unet_combination(self):
-        """Using ADM architecture as direct U-Net without preconditioning."""
+        """Using ADM architecture as direct U-Net without noise."""
         if self.logger:
-            self.logger.info("Testing ADM + UNet combination")
+            self.logger.info("Testing ADM UNet combination without noise")
 
-        input_channels = 5  # Example input channels
+        input_channels = (
+            self.cond_channels if self.cond_channels > 0 else self.in_channels
+        )
         opts = EasyDict(
             {
                 "arch": "adm",
@@ -224,7 +226,95 @@ class TestModelLoader(unittest.TestCase):
 
         if self.logger:
             self.logger.info(
-                f"✅ ADM + UNet test passed - output shape: {output.shape}, loss shape: {loss.shape}"
+                f"✅ ADM UNet without noise test passed - output shape: {output.shape}, loss shape: {loss.shape}"
+            )
+
+    def test_ncsnpp_unet_combination(self):
+        """Using ncsnpp architecture as direct U-Net without noise."""
+        if self.logger:
+            self.logger.info("Testing NCSNPP UNet without noise")
+
+        input_channels = (
+            self.cond_channels if self.cond_channels > 0 else self.in_channels
+        )
+        opts = EasyDict(
+            {
+                "arch": "ncsnpp",
+                "precond": "unet",
+                "img_resolution": self.img_resolution,
+                "in_channels": input_channels,
+                "out_channels": self.out_channels,
+                "label_dim": self.label_dim,
+            }
+        )
+
+        model, loss_fn = load_model_and_loss(opts, self.logger, self.device)
+
+        # Test forward pass
+        x = torch.randn(self.batch_size, input_channels, *self.img_resolution).to(
+            self.device
+        )
+        y = torch.randn(self.batch_size, self.out_channels, *self.img_resolution).to(
+            self.device
+        )
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+
+        with torch.no_grad():
+            output = model(x, class_labels=labels)
+
+        self.assertEqual(output.shape, y.shape)
+
+        # Test loss computation
+        loss = loss_fn(model, y, x, labels=labels)
+        self.assertEqual(loss.shape, ())
+
+        if self.logger:
+            self.logger.info(
+                f"✅ ncsnpp UNet without noise test passed - output shape: {output.shape}, loss shape: {loss.shape}"
+            )
+
+    def test_ddpmpp_unet_combination(self):
+        """Using ddpmpp architecture as direct U-Net without noise."""
+        if self.logger:
+            self.logger.info("Testing DDPMPP UNet without noise")
+
+        input_channels = (
+            self.cond_channels if self.cond_channels > 0 else self.in_channels
+        )
+        opts = EasyDict(
+            {
+                "arch": "ddpmpp",
+                "precond": "unet",
+                "img_resolution": self.img_resolution,
+                "in_channels": input_channels,
+                "out_channels": self.out_channels,
+                "label_dim": self.label_dim,
+            }
+        )
+
+        model, loss_fn = load_model_and_loss(opts, self.logger, self.device)
+
+        # Test forward pass
+        x = torch.randn(self.batch_size, input_channels, *self.img_resolution).to(
+            self.device
+        )
+        y = torch.randn(self.batch_size, self.out_channels, *self.img_resolution).to(
+            self.device
+        )
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+
+        with torch.no_grad():
+            output = model(x, class_labels=labels)
+
+        self.assertEqual(output.shape, y.shape)
+
+        # Test loss computation
+        loss = loss_fn(model, y, x, labels=labels)
+        self.assertEqual(loss.shape, ())
+
+        if self.logger:
+            self.logger.info(
+                f"✅ DDPMPP UNet without noise test passed - output shape: {output.shape}, loss shape: {loss.shape}"
             )
 
     def test_rectangular_resolution(self):
@@ -255,10 +345,10 @@ class TestModelLoader(unittest.TestCase):
         cond_img = torch.randn(
             self.batch_size, self.cond_channels, *rectangular_res
         ).to(self.device)
-        labels = torch.randint(0, self.label_dim, (self.batch_size, self.label_dim)).to(
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        sigma = torch.rand(self.batch_size).to(
             self.device
-        )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
+        )  # Random sigma values for each sample
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=labels)
@@ -328,10 +418,10 @@ class TestModelLoader(unittest.TestCase):
         x = torch.randn(self.batch_size, self.in_channels, *self.img_resolution).to(
             self.device
         )
-        labels = torch.randint(0, self.label_dim, (self.batch_size, self.label_dim)).to(
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        sigma = torch.rand(self.batch_size).to(
             self.device
-        )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
+        )  # Random sigma values for each sample
 
         with torch.no_grad():
             output = model(x, sigma, class_labels=labels)  # No condition_img

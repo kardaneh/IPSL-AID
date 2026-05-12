@@ -1256,6 +1256,7 @@ class SongUNet(torch.nn.Module):
             1,
             1,
         ],  # Resampling filter: [1,1] for DDPM++, [1,3,3,1] for NCSN++.
+        diffusion_model=True,  # Whether to use the Unet for diffusion models.
     ):
         """
         Initialize the SongUNet.
@@ -1334,11 +1335,15 @@ class SongUNet(torch.nn.Module):
         )
 
         # Mapping.
-        self.map_noise = (
-            PositionalEmbedding(num_channels=noise_channels, endpoint=True)
-            if embedding_type == "positional"
-            else FourierEmbedding(num_channels=noise_channels)
-        )
+        if diffusion_model:
+            self.map_noise = (
+                PositionalEmbedding(num_channels=noise_channels, endpoint=True)
+                if embedding_type == "positional"
+                else FourierEmbedding(num_channels=noise_channels)
+            )
+        else:
+            self.map_noise = None  # No noise embedding for non-diffusion models
+
         self.map_label = (
             Linear(in_features=label_dim, out_features=noise_channels, **init)
             if label_dim
@@ -1453,7 +1458,7 @@ class SongUNet(torch.nn.Module):
                     in_channels=cout, out_channels=out_channels, kernel=3, **init_zero
                 )
 
-    def forward(self, x, noise_labels, class_labels, augment_labels=None):
+    def forward(self, x, noise_labels=None, class_labels=None, augment_labels=None):
         """
         Forward pass through the U-Net.
 
@@ -1485,10 +1490,25 @@ class SongUNet(torch.nn.Module):
         - The noise embedding uses sinusoidal (positional) or Fourier features.
         """
         # Mapping.
-        emb = self.map_noise(noise_labels)
-        emb = (
-            emb.reshape(emb.shape[0], 2, -1).flip(1).reshape(*emb.shape)
-        )  # swap sin/cos
+        emb = torch.zeros(
+            [x.shape[0], self.map_layer0.in_features],
+            device=x.device,
+            dtype=x.dtype,
+        )
+
+        if self.map_noise is not None:
+            noise_emb = self.map_noise(noise_labels)
+            noise_emb = (
+                noise_emb.reshape(noise_emb.shape[0], 2, -1)
+                .flip(1)
+                .reshape(*noise_emb.shape)
+            )  # swap sin/cos
+            emb = emb + noise_emb
+
+        # emb = self.map_noise(noise_labels)
+        # emb = (
+        #    emb.reshape(emb.shape[0], 2, -1).flip(1).reshape(*emb.shape)
+        # )  # swap sin/cos
         if self.map_label is not None:
             tmp = class_labels
             if self.training and self.label_dropout:

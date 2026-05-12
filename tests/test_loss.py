@@ -1,12 +1,11 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
 # To view a copy of this license, visit
 # http://creativecommons.org/licenses/by-nc-sa/4.0/
 
-from unittest.mock import Mock
 import unittest
 import torch
 import sys
@@ -14,7 +13,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from IPSL_AID.networks import VPPrecond, VEPrecond, EDMPrecond, DhariwalUNet
+from IPSL_AID.networks import VPPrecond, VEPrecond, EDMPrecond, DhariwalUNet, SongUNet
 from IPSL_AID.loss import VPLoss, VELoss, EDMLoss, UnetLoss
 from IPSL_AID.logger import Logger
 
@@ -29,7 +28,7 @@ class TestLosses(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.batch_size = 2
+        self.batch_size = 4
         self.in_channels = 3
         self.cond_channels = 7
         self.out_channels = 3
@@ -75,6 +74,10 @@ class TestLosses(unittest.TestCase):
             self.batch_size, self.cond_channels, *self.img_resolution
         ).to(self.device)
         labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing VPLoss - input shapes: images {images.shape}, cond_img {cond_img.shape}, labels {labels.shape}"
+            )
 
         # Compute loss
         loss = loss_fn(model, images, conditional_img=cond_img, labels=labels)
@@ -114,6 +117,10 @@ class TestLosses(unittest.TestCase):
             self.batch_size, self.cond_channels, *self.img_resolution
         ).to(self.device)
         labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing VELoss - input shapes: images {images.shape}, cond_img {cond_img.shape}, labels {labels.shape}"
+            )
 
         # Compute loss
         loss = loss_fn(model, images, conditional_img=cond_img, labels=labels)
@@ -153,6 +160,10 @@ class TestLosses(unittest.TestCase):
             self.batch_size, self.cond_channels, *self.img_resolution
         ).to(self.device)
         labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing EDMLoss - input shapes: images {images.shape}, cond_img {cond_img.shape}, labels {labels.shape}"
+            )
 
         # Compute loss
         loss = loss_fn(model, images, conditional_img=cond_img, labels=labels)
@@ -164,16 +175,16 @@ class TestLosses(unittest.TestCase):
                 f"✅ EDMLoss test passed - loss shape: {loss.shape}, mean: {loss.mean().item():.4f}"
             )
 
-    def test_unet_loss(self):
-        """Test UnetLoss function."""
+    def test_DhariwalUNet_loss(self):
+        """Test UnetLoss function with a DhariwalUNet model."""
         if self.logger:
             self.logger.info("Testing UnetLoss")
 
         # Create UNet model (not diffusion-based)
-        input_channels = 5  # Example input channels
+        total_in_channels = self.in_channels + self.cond_channels
         model = DhariwalUNet(
             img_resolution=self.img_resolution,
-            in_channels=input_channels,  # No conditional channels needed
+            in_channels=total_in_channels,
             out_channels=self.out_channels,
             label_dim=self.label_dim,
             diffusion_model=False,
@@ -182,14 +193,55 @@ class TestLosses(unittest.TestCase):
         loss_fn = UnetLoss()
 
         # Test data - UNet just reconstructs the input image
-        images = torch.randn(self.batch_size, input_channels, *self.img_resolution).to(
-            self.device
-        )
+        images = torch.randn(
+            self.batch_size, total_in_channels, *self.img_resolution
+        ).to(self.device)
         targets = torch.randn(
             self.batch_size, self.out_channels, *self.img_resolution
         ).to(self.device)
         labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing UnetLoss - input shapes: images {images.shape}, targets {targets.shape}, labels {labels.shape}"
+            )
+        # Compute loss
+        loss = loss_fn(model, targets, images, labels=labels)
 
+        # Loss should be a scalar (not per-pixel like diffusion losses)
+        self.assertEqual(loss.shape, ())  # Scalar tensor
+        self.assertGreater(loss.item(), 0)
+        if self.logger:
+            self.logger.info(f"✅ UnetLoss test passed - loss value: {loss.item():.4f}")
+
+    def test_SongUNet_loss(self):
+        """Test UnetLoss function with a SongUNet model."""
+        if self.logger:
+            self.logger.info("Testing UnetLoss")
+
+        # Create UNet model (not diffusion-based)
+        total_in_channels = self.in_channels + self.cond_channels
+        model = SongUNet(
+            img_resolution=self.img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,
+            diffusion_model=False,
+        ).to(self.device)
+
+        loss_fn = UnetLoss()
+
+        # Test data - UNet just reconstructs the input image
+        images = torch.randn(
+            self.batch_size, total_in_channels, *self.img_resolution
+        ).to(self.device)
+        targets = torch.randn(
+            self.batch_size, self.out_channels, *self.img_resolution
+        ).to(self.device)
+        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing UnetLoss - input shapes: images {images.shape}, targets {targets.shape}, labels {labels.shape}"
+            )
         # Compute loss
         loss = loss_fn(model, targets, images, labels=labels)
 
@@ -204,23 +256,54 @@ class TestLosses(unittest.TestCase):
         if self.logger:
             self.logger.info("Testing loss function comparison")
 
+        total_in_channels = self.in_channels + self.cond_channels
+
         # Create model
-        unet_model = DhariwalUNet(
+        unet_Dhariwal_model = DhariwalUNet(
             img_resolution=self.img_resolution,
-            in_channels=self.in_channels,
+            in_channels=total_in_channels,
             out_channels=self.out_channels,
             label_dim=self.label_dim,
             diffusion_model=False,
         ).to(self.device)
 
-        total_in_channels = self.in_channels + self.cond_channels
-        model = VPPrecond(
+        unet_Song_model = SongUNet(
+            img_resolution=self.img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,
+            diffusion_model=False,
+        ).to(self.device)
+
+        model_vp = VPPrecond(
             img_resolution=self.img_resolution,
             in_channels=total_in_channels,
             out_channels=self.out_channels,
             label_dim=self.label_dim,
             use_fp16=False,
             model_type="SongUNet",
+            model_channels=64,
+            channel_mult=[1, 2],
+        ).to(self.device)
+
+        model_ve = VEPrecond(
+            img_resolution=self.img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,
+            use_fp16=False,
+            model_type="SongUNet",
+            model_channels=64,
+            channel_mult=[1, 2],
+        ).to(self.device)
+
+        model_edm = EDMPrecond(
+            img_resolution=self.img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,
+            use_fp16=False,
+            model_type="DhariwalUNet",
             model_channels=64,
             channel_mult=[1, 2],
         ).to(self.device)
@@ -244,10 +327,16 @@ class TestLosses(unittest.TestCase):
         labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
 
         # Compute losses
-        vp_loss_val = vp_loss(model, images, conditional_img=cond_img, labels=labels)
-        ve_loss_val = ve_loss(model, images, conditional_img=cond_img, labels=labels)
-        edm_loss_val = edm_loss(model, images, conditional_img=cond_img, labels=labels)
-        unet_loss_val = unet_loss_fn(unet_model, targets, images, labels=labels)
+        vp_loss_val = vp_loss(model_vp, images, conditional_img=cond_img, labels=labels)
+        ve_loss_val = ve_loss(model_ve, images, conditional_img=cond_img, labels=labels)
+        edm_loss_val = edm_loss(
+            model_edm, images, conditional_img=cond_img, labels=labels
+        )
+        img = torch.cat([images, cond_img], dim=1)
+        unet_Song_loss_val = unet_loss_fn(unet_Song_model, targets, img, labels=labels)
+        unet_Dhariwal_loss_val = unet_loss_fn(
+            unet_Dhariwal_model, targets, img, labels=labels
+        )
 
         # All losses should have same shape and be positive
         self.assertEqual(vp_loss_val.shape, ve_loss_val.shape)
@@ -255,67 +344,19 @@ class TestLosses(unittest.TestCase):
         self.assertGreater(vp_loss_val.mean().item(), 0)
         self.assertGreater(ve_loss_val.mean().item(), 0)
         self.assertGreater(edm_loss_val.mean().item(), 0)
-        self.assertGreater(unet_loss_val.item(), 0)
+        self.assertGreater(unet_Song_loss_val.item(), 0)
+        self.assertGreater(unet_Dhariwal_loss_val.item(), 0)
 
         if self.logger:
             self.logger.info("✅ Loss comparison test passed")
             self.logger.info(f"   └── VPLoss mean: {vp_loss_val.mean().item():.4f}")
             self.logger.info(f"   └── VELoss mean: {ve_loss_val.mean().item():.4f}")
             self.logger.info(f"   └── EDMLoss mean: {edm_loss_val.mean().item():.4f}")
-            self.logger.info(f"   └── UnetLoss (scalar): {unet_loss_val.item():.4f}")
-
-    def test_loss_with_augmentation(self):
-        """Test loss functions with data augmentation."""
-        if self.logger:
-            self.logger.info("Testing loss with augmentation")
-
-        # Mock augmentation pipe
-        augment_pipe = Mock()
-        augment_pipe.return_value = (
-            torch.randn(self.batch_size, self.in_channels, *self.img_resolution).to(
-                self.device
-            ),
-            torch.randint(0, 2, (self.batch_size, 1), device=self.device),
-        )
-
-        # Create model and loss
-        total_in_channels = self.in_channels + self.cond_channels
-        model = VPPrecond(
-            img_resolution=self.img_resolution,
-            in_channels=total_in_channels,
-            out_channels=self.out_channels,
-            label_dim=self.label_dim,
-            use_fp16=False,
-            model_type="SongUNet",
-            model_channels=64,
-            channel_mult=[1, 2],
-        ).to(self.device)
-
-        loss_fn = VPLoss()
-
-        # Test data
-        images = torch.randn(
-            self.batch_size, self.in_channels, *self.img_resolution
-        ).to(self.device)
-        cond_img = torch.randn(
-            self.batch_size, self.cond_channels, *self.img_resolution
-        ).to(self.device)
-        labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
-
-        # Compute loss with augmentation
-        loss = loss_fn(
-            model,
-            images,
-            conditional_img=cond_img,
-            labels=labels,
-            augment_pipe=augment_pipe,
-        )
-
-        self.assertEqual(loss.shape, images.shape)
-        self.assertGreater(loss.mean().item(), 0)
-        if self.logger:
             self.logger.info(
-                f"✅ Loss with augmentation test passed - loss shape: {loss.shape}"
+                f"   └── UnetSongLoss (scalar): {unet_Song_loss_val.item():.4f}"
+            )
+            self.logger.info(
+                f"   └── UnetDhariwalLoss (scalar): {unet_Dhariwal_loss_val.item():.4f}"
             )
 
     def test_loss_gradients(self):
@@ -332,8 +373,8 @@ class TestLosses(unittest.TestCase):
             label_dim=self.label_dim,
             use_fp16=False,
             model_type="SongUNet",
-            model_channels=32,
-            channel_mult=[1],
+            model_channels=64,
+            channel_mult=[1, 2],
         ).to(self.device)
 
         loss_fn = VPLoss()

@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -33,9 +33,9 @@ class TestDiffusionNetworks(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.batch_size = 2
+        self.batch_size = 4
         self.in_channels = 3
-        self.cond_channels = 2
+        self.cond_channels = 7
         self.out_channels = 3
         self.label_dim = 2
 
@@ -50,10 +50,105 @@ class TestDiffusionNetworks(unittest.TestCase):
         if self.logger:
             self.logger.info(f"Test setup complete - using device: {self.device}")
 
-    def test_song_unet_square_resolution(self):
-        """Test SongUNet with square resolution."""
+    def test_song_unet_without_diffusion(self):
+        """Test SongUNet without diffusion model with diffusion_model=False."""
         if self.logger:
-            self.logger.info("Testing SongUNet with square resolution")
+            self.logger.info("Testing SongUNet with diffusion_model=False")
+
+        img_resolution = 64
+        total_in_channels = self.in_channels + self.cond_channels
+
+        model = SongUNet(
+            img_resolution=img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,
+            model_channels=32,
+            channel_mult=[1, 2],
+            attn_resolutions=[32],
+            diffusion_model=False,  # Key parameter
+        ).to(self.device)
+
+        # Test forward pass - concatenate input and conditional image
+        x = torch.randn(
+            self.batch_size, self.in_channels, img_resolution, img_resolution
+        ).to(self.device)
+        cond_img = torch.randn(
+            self.batch_size, self.cond_channels, img_resolution, img_resolution
+        ).to(self.device)
+        input_img = torch.cat([x, cond_img], dim=1)
+
+        # No noise_labels needed when diffusion_model=False
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing SongUNet with diffusion_model=False - input shape: {input_img.shape}, class_labels shape: {class_labels.shape}"
+            )
+
+        with torch.no_grad():
+            # Pass None for noise_labels or skip it
+            output = model(input_img, noise_labels=None, class_labels=class_labels)
+
+        self.assertEqual(
+            output.shape,
+            (self.batch_size, self.out_channels, img_resolution, img_resolution),
+        )
+        if self.logger:
+            self.logger.info(
+                f"✅ SongUNet with diffusion_model=False test passed - output shape: {output.shape}"
+            )
+
+    def test_song_unet_rectangular_without_diffusion(self):
+        """Test SongUNet with rectangular resolution and diffusion_model=False."""
+        if self.logger:
+            self.logger.info("Testing SongUNet rectangular with diffusion_model=False")
+
+        img_resolution = (64, 32)
+        total_in_channels = self.in_channels + self.cond_channels
+
+        model = SongUNet(
+            img_resolution=img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,
+            model_channels=32,
+            channel_mult=[1, 2],
+            attn_resolutions=[16],
+            diffusion_model=False,  # Key parameter
+        ).to(self.device)
+
+        # Test forward pass
+        x = torch.randn(self.batch_size, self.in_channels, *img_resolution).to(
+            self.device
+        )
+        cond_img = torch.randn(self.batch_size, self.cond_channels, *img_resolution).to(
+            self.device
+        )
+        input_img = torch.cat([x, cond_img], dim=1)
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+
+        if self.logger:
+            self.logger.info(
+                f"Testing SongUNet rectangular with diffusion_model=False - input shape: {input_img.shape}, class_labels shape: {class_labels.shape}"
+            )
+
+        with torch.no_grad():
+            output = model(input_img, noise_labels=None, class_labels=class_labels)
+
+        self.assertEqual(
+            output.shape, (self.batch_size, self.out_channels, *img_resolution)
+        )
+        if self.logger:
+            self.logger.info(
+                f"✅ SongUNet rectangular with diffusion_model=False test passed - output shape: {output.shape}"
+            )
+
+    def test_song_unet_square_resolution(self):
+        """Test SongUNet with square resolution and diffusion model."""
+        if self.logger:
+            self.logger.info(
+                "Testing SongUNet with diffusion_model=True - square resolution"
+            )
 
         img_resolution = 64
         total_in_channels = self.in_channels + self.cond_channels
@@ -81,9 +176,12 @@ class TestDiffusionNetworks(unittest.TestCase):
         )  # Concatenate along channel dimension
 
         noise_labels = torch.randn(self.batch_size).to(self.device)
-        class_labels = torch.randint(0, self.label_dim, (self.batch_size,)).to(
-            self.device
-        )
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+
+        if self.logger:
+            self.logger.info(
+                f"Testing SongUNet square with diffusion_model=True - input shape: {input_img.shape}, noise_labels shape: {noise_labels.shape}, class_labels shape: {class_labels.shape}"
+            )
 
         with torch.no_grad():
             output = model(input_img, noise_labels, class_labels)
@@ -98,9 +196,11 @@ class TestDiffusionNetworks(unittest.TestCase):
             )
 
     def test_song_unet_rectangular_resolution(self):
-        """Test SongUNet with rectangular resolution."""
+        """Test SongUNet with rectangular resolution and diffusion model."""
         if self.logger:
-            self.logger.info("Testing SongUNet with rectangular resolution")
+            self.logger.info(
+                "Testing SongUNet with diffusion_model=True - rectangular resolution"
+            )
 
         img_resolution = (64, 32)
         total_in_channels = self.in_channels + self.cond_channels
@@ -128,9 +228,11 @@ class TestDiffusionNetworks(unittest.TestCase):
         )  # Concatenate along channel dimension
 
         noise_labels = torch.randn(self.batch_size).to(self.device)
-        class_labels = torch.randint(0, self.label_dim, (self.batch_size,)).to(
-            self.device
-        )
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing SongUNet rectangular with diffusion_model=True - input shape: {input_img.shape}, noise_labels shape: {noise_labels.shape}, class_labels shape: {class_labels.shape}"
+            )
 
         with torch.no_grad():
             output = model(input_img, noise_labels, class_labels)
@@ -143,10 +245,58 @@ class TestDiffusionNetworks(unittest.TestCase):
                 f"✅ SongUNet rectangular test passed - output shape: {output.shape}"
             )
 
-    def test_dhariwal_unet(self):
-        """Test DhariwalUNet architecture."""
+    def test_dhariwal_unet_without_diffusion(self):
+        """Test DhariwalUNet without diffusion model with diffusion_model=False."""
         if self.logger:
-            self.logger.info("Testing DhariwalUNet")
+            self.logger.info("Testing DhariwalUNet with diffusion_model=False")
+
+        img_resolution = (128, 64)
+        total_in_channels = self.in_channels + self.cond_channels
+        model = DhariwalUNet(
+            img_resolution=img_resolution,
+            in_channels=total_in_channels,
+            out_channels=self.out_channels,
+            label_dim=self.label_dim,  # Keep label_dim > 0 to force proper emb shape
+            model_channels=32,
+            channel_mult=[1, 2],
+            attn_resolutions=[32, 16],
+            diffusion_model=False,  # Key parameter
+        ).to(self.device)
+
+        # Test forward pass - concatenate input and conditional image
+        x = torch.randn(self.batch_size, self.in_channels, *img_resolution).to(
+            self.device
+        )
+        cond_img = torch.randn(self.batch_size, self.cond_channels, *img_resolution).to(
+            self.device
+        )
+        input_img = torch.cat([x, cond_img], dim=1)
+
+        # No noise_labels needed when diffusion_model=False
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing DhariwalUNet with diffusion_model=False - input shape: {input_img.shape}, class_labels shape: {class_labels.shape}"
+            )
+
+        with torch.no_grad():
+            # Pass class_labels - this forces emb to have correct batch dimension
+            output = model(input_img, class_labels=class_labels)
+
+        self.assertEqual(
+            output.shape, (self.batch_size, self.out_channels, *img_resolution)
+        )
+        if self.logger:
+            self.logger.info(
+                f"✅ DhariwalUNet with diffusion_model=False test passed - output shape: {output.shape}"
+            )
+
+    def test_dhariwal_unet(self):
+        """Test DhariwalUNet architecture with conditional images and diffusion model."""
+        if self.logger:
+            self.logger.info(
+                "Testing DhariwalUNet with diffusion_model=True and conditional images"
+            )
 
         img_resolution = (128, 64)
         total_in_channels = self.in_channels + self.cond_channels
@@ -173,9 +323,11 @@ class TestDiffusionNetworks(unittest.TestCase):
         )  # Concatenate along channel dimension
 
         noise_labels = torch.randn(self.batch_size).to(self.device)
-        class_labels = (
-            torch.randint(0, self.label_dim, (self.batch_size,)).to(self.device).float()
-        )  # Convert to float
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing DhariwalUNet with diffusion_model=True and conditional images - input shape: {input_img.shape}, noise_labels shape: {noise_labels.shape}, class_labels shape: {class_labels.shape}"
+            )
 
         with torch.no_grad():
             output = model(input_img, noise_labels, class_labels)
@@ -214,10 +366,14 @@ class TestDiffusionNetworks(unittest.TestCase):
         cond_img = torch.randn(
             self.batch_size, self.cond_channels, img_resolution, img_resolution
         ).to(self.device)
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
-        class_labels = torch.randint(
-            0, self.label_dim, (self.batch_size, 2), device=self.device
-        )
+        sigma = torch.rand(self.batch_size).to(
+            self.device
+        )  # Random sigma values for each sample
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing VPPrecond - input shape: {x.shape}, sigma shape: {sigma.shape}, class_labels shape: {class_labels.shape}"
+            )
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=class_labels)
@@ -252,10 +408,14 @@ class TestDiffusionNetworks(unittest.TestCase):
         cond_img = torch.randn(self.batch_size, self.cond_channels, *img_resolution).to(
             self.device
         )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
-        class_labels = torch.randint(
-            0, self.label_dim, (self.batch_size, 2), device=self.device
-        )
+        sigma = torch.rand(self.batch_size).to(
+            self.device
+        )  # Random sigma values for each sample
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing VEPrecond - input shape: {x.shape}, sigma shape: {sigma.shape}, class_labels shape: {class_labels.shape}"
+            )
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=class_labels)
@@ -290,10 +450,14 @@ class TestDiffusionNetworks(unittest.TestCase):
         cond_img = torch.randn(self.batch_size, self.cond_channels, *img_resolution).to(
             self.device
         )
-        sigma = torch.tensor([0.1, 0.5], device=self.device)
-        class_labels = torch.randint(
-            0, self.label_dim, (self.batch_size, 2), device=self.device
-        )
+        sigma = torch.rand(self.batch_size).to(
+            self.device
+        )  # Random sigma values for each sample
+        class_labels = torch.randn(self.batch_size, self.label_dim, device=self.device)
+        if self.logger:
+            self.logger.info(
+                f"Testing EDMPrecond - input shape: {x.shape}, sigma shape: {sigma.shape}, class_labels shape: {class_labels.shape}"
+            )
 
         with torch.no_grad():
             output = model(x, sigma, condition_img=cond_img, class_labels=class_labels)
@@ -313,17 +477,22 @@ class TestDiffusionNetworks(unittest.TestCase):
             (
                 "SongUNet-Small",
                 SongUNet,
-                {"model_channels": 32, "channel_mult": [1, 2]},
+                {"model_channels": 32, "channel_mult": [1, 2, 2, 2]},
             ),
             (
                 "SongUNet-Medium",
                 SongUNet,
-                {"model_channels": 64, "channel_mult": [1, 2, 2]},
+                {"model_channels": 64, "channel_mult": [1, 2, 2, 2]},
             ),
             (
                 "DhariwalUNet-Small",
                 DhariwalUNet,
-                {"model_channels": 32, "channel_mult": [1, 2]},
+                {"model_channels": 32, "channel_mult": [1, 2, 3, 4]},
+            ),
+            (
+                "DhariwalUNet-Medium",
+                DhariwalUNet,
+                {"model_channels": 64, "channel_mult": [1, 2, 3, 4]},
             ),
         ]
 

@@ -36,6 +36,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
    overview
    installation
    quickstart
+   benchmark
    testing_philosophy
    project_structure
    pre_push_workflow
@@ -64,6 +65,7 @@ Getting Started
 * :doc:`overview` - Framework capabilities and key features
 * :doc:`installation` - Setup instructions using uv
 * :doc:`quickstart` - Basic workflow and example usage
+* :doc:`benchmark` - Performance comparison of different architectures
 * :doc:`testing_philosophy` - Essential reading before running experiments
 
 Core Components

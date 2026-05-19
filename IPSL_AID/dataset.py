@@ -1575,8 +1575,8 @@ class DataPreprocessor(Dataset):
 
         # Load data
         full_data_org = self.loaded_dfs.isel(time=tindex)
-        lat = full_data_org.latitude.values
-        lon = full_data_org.longitude.values
+        lat = full_data_org.latitude.values.copy()
+        lon = full_data_org.longitude.values.copy()
 
         # Normalize to range [-1, 1] for better neural network input stability
         lat_norm = 2 * ((lat - lat.min()) / (lat.max() - lat.min())) - 1

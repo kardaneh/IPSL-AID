@@ -136,7 +136,7 @@ Branch-Specific Workflows
 -------------------------
 
 Workflow A: Working on ``Dev`` (Team Collaboration)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **⚠️ CRITICAL:** ``Dev`` is a shared branch where ALL team members can push
 directly. Strict discipline is required.
@@ -456,8 +456,8 @@ For ``Dev`` Branch (Team)
 For IPSL-AID development, **rebase is preferred** for feature branches to maintain
 a readable project history, especially when tracking model iterations.
 
-Conflict Resolution Guide
--------------------------
+4. Conflict Resolution Guide
+----------------------------
 
 Conflicts occur when Git cannot automatically reconcile changes. This is common
 in collaborative development, especially when multiple researchers modify:
@@ -467,25 +467,8 @@ in collaborative development, especially when multiple researchers modify:
 - **Data preprocessing pipelines** (``dataset.py``)
 - **Dependency specifications** (``pyproject.toml``)
 
-On ``Dev`` Branch (Team Collaboration)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Conflicts on ``Dev`` are serious** - they block everyone. Resolve immediately:
-
-.. code-block:: bash
-
-    git pull --rebase origin Dev
-    # If conflict appears:
-
-**When a conflict occurs**, Git will pause and display:
-
-.. code-block:: text
-
-    CONFLICT (content): Merge conflict in networks.py
-    error: could not apply abc1234... feat: add attention mechanism to U-Net
-
 Step 1 — Identify Conflicted Files
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -500,7 +483,7 @@ Look for files under:
       both modified:   IPSL_AID/dataset.py
 
 Step 2 — Examine the Conflict
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Open each conflicted file. You'll see conflict markers:
 
@@ -528,7 +511,7 @@ Open each conflicted file. You'll see conflict markers:
 - ``>>>>>>> origin/Dev`` → Remote branch's version
 
 Step 3 — Resolve the Conflict
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Edit the file to create the correct version. For model code:
 
@@ -557,7 +540,7 @@ Example resolution combining both approaches:
     >>>>>>>
 
 Step 4 — Mark as Resolved
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After fixing each file, and passing the pre-commit hooks (see next section),
 stage the resolved files:
@@ -570,7 +553,7 @@ stage the resolved files:
 **Do not** use ``git add .`` blindly - ensure only resolved files are staged.
 
 Step 5 — Continue the Rebase
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -579,7 +562,7 @@ Step 5 — Continue the Rebase
 If more conflicts appear, repeat the process. Git will apply each commit one by one.
 
 Step 6 — Notify Team (For ``Dev`` Only)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After resolving conflicts on ``Dev``, immediately notify the team:
 
@@ -587,6 +570,23 @@ After resolving conflicts on ``Dev``, immediately notify the team:
 
     # In Slack #ipsl-aid:
     "Resolved merge conflicts in networks.py - please pull latest Dev"
+
+On ``Dev`` Branch (Team Collaboration)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Conflicts on ``Dev`` are serious** - they block everyone. Resolve immediately:
+
+.. code-block:: bash
+
+    git pull --rebase origin Dev
+    # If conflict appears:
+
+**When a conflict occurs**, Git will pause and display:
+
+.. code-block:: text
+
+    CONFLICT (content): Merge conflict in networks.py
+    error: could not apply abc1234... feat: add attention mechanism to U-Net
 
 On ``feature/*`` Branches (Individual)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -621,7 +621,7 @@ This returns your branch to its state before starting the rebase.
 - You need to discuss architectural changes with the team
 - You accidentally started rebase on wrong branch
 
-4. Standardize Code with Pre-commit Hooks
+5. Standardize Code with Pre-commit Hooks
 -----------------------------------------
 
 IPSL-AID uses pre-commit hooks to enforce code quality standards. After successful
@@ -703,7 +703,7 @@ Branch-Specific Requirements
      - ✅ Always
      - ✅ Always
 
-5. Run the Test Suite
+6. Run the Test Suite
 ---------------------
 
 Before pushing, verify your changes don't break existing functionality:
@@ -780,7 +780,7 @@ If you made additional fixes (conflict resolution, formatting, test fixes):
 
 **If no changes were needed** after rebase and hooks, you may not need a new commit.
 
-7. Push Your Changes
+8. Push Your Changes
 --------------------
 
 Pushing to ``Dev`` Branch (Team)

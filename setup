@@ -4,8 +4,8 @@
 # Check IPSL-AID installation
 # ======================
 if ! command -v ipsl-aid &> /dev/null; then
-    echo "ERROR: ipsl-aid command not found. Please install the package first, or activate the virtual environment if already installed."
-    echo "  uv pip install -e ."
+    echo "ERROR: ipsl-aid command not found. Please install the package first using: uv pip install -e ."
+    echo "       or activate the virtual environment if already installed using: source .venv/bin/activate"
     exit 1
 fi
 
@@ -228,14 +228,12 @@ cat >> $sbatch_script <<EOF
 #SBATCH --cpus-per-task=$SLURM_CPUS_PER_TASK
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-# #SBATCH --mail-user=kkingston@ipsl.fr
-# #SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge
 
 # Activate virtual environment
-source .venv/bin/activate
+source $PROJECT_ROOT/.venv/bin/activate
 
 export PYTHONUNBUFFERED=1
 

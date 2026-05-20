@@ -10,14 +10,12 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --error=/leonardo_work/EUHPC_D27_095/IPSL-AID/slurm_io/diffusion_prod_y2015_2019_norm_cos_sin_lat145_lon361_vars6_dtfp32_archddpmpp_preunet_in10_out6_nofilter_ep10_sb12_tb1800_eps0d02_mrg8_inf_direct_bs36_lr0d0001_20260513_120904_%j.err
 #SBATCH --output=/leonardo_work/EUHPC_D27_095/IPSL-AID/slurm_io/diffusion_prod_y2015_2019_norm_cos_sin_lat145_lon361_vars6_dtfp32_archddpmpp_preunet_in10_out6_nofilter_ep10_sb12_tb1800_eps0d02_mrg8_inf_direct_bs36_lr0d0001_20260513_120904_%j.out
-# #SBATCH --mail-user=kkingston@ipsl.fr
-# #SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge
 
 # Activate virtual environment
-source .venv/bin/activate
+source  /leonardo_work/EUHPC_D27_095/IPSL-AID/.venv/bin/activate
 
 export PYTHONUNBUFFERED=1
 

@@ -672,20 +672,22 @@ def plot_metric_histories(
     os.makedirs(save_dir, exist_ok=True)
 
     num_vars = len(variable_names)
+    num_metrics = len(metric_names)
+    # Rows = variables, metrics column, shared x-axis
+    fig, axes = plt.subplots(
+        nrows=num_vars,
+        ncols=num_metrics,
+        figsize=(6 * num_metrics, figsize_multiplier * num_vars),
+        squeeze=False,
+        sharex=True,
+    )
+    plt.subplots_adjust(
+        hspace=0.2, wspace=0.4, left=0.1, right=0.9, top=0.9, bottom=0.1
+    )
 
     for metric in metric_names:
-        # Rows = variables, 1 column, shared x-axis
-        fig, axes = plt.subplots(
-            nrows=num_vars,
-            ncols=1,
-            figsize=(6, figsize_multiplier * num_vars),
-            squeeze=False,
-            sharex=True,
-        )
-        plt.subplots_adjust(hspace=0.1, left=0.15, right=0.95, top=0.9, bottom=0.1)
-
         for i, var in enumerate(variable_names):
-            ax = axes[i, 0]
+            ax = axes[i, metric_names.index(metric)]
 
             key_pred = f"{var}_pred_vs_fine_{metric}"
             key_coarse = f"{var}_coarse_vs_fine_{metric}"
@@ -718,10 +720,10 @@ def plot_metric_histories(
             else:
                 ax.tick_params(labelbottom=False)
 
-        save_path = os.path.join(save_dir, f"{filename}_{metric}.png")
-        plt.savefig(save_path, bbox_inches="tight")
-        plt.close(fig)
-        return save_path
+    save_path = os.path.join(save_dir, f"{filename}.png")
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+    return save_path
 
 
 def plot_metrics_heatmap(

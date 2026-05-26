@@ -3,7 +3,10 @@ repos:
     rev: v4.6.0
     hooks:
       - id: check-added-large-files
-        exclude: un.lock
+        exclude: un.lock|.*\.ipynb$
+      - id: check-added-large-files
+        files: .*\.ipynb$
+        args: ['--maxkb=2000']
       - id: check-case-conflict
       - id: end-of-file-fixer
       - id: trailing-whitespace

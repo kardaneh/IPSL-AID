@@ -1,0 +1,691 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benchmark &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Testing Philosophy (Read This First)" href="testing_philosophy.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmark</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#model-performance-comparison">Model Performance Comparison</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#experiment-configuration">Experiment Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#model-architectures">Model Architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-metrics">Performance Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quantitative-comparison-overall-metrics">Quantitative Comparison - Overall Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#baseline-comparison">Baseline Comparison</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#per-variable-performance">Per-Variable Performance</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#var-2t-2-meter-temperature">VAR_2T (2-meter Temperature)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#var-10u-10-meter-u-wind">VAR_10U (10-meter U Wind)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#var-10v-10-meter-v-wind">VAR_10V (10-meter V Wind)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#var-tp-total-precipitation">VAR_TP (Total Precipitation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#var-d2m-2-meter-dewpoint-temperature">VAR_D2M (2-meter Dewpoint Temperature)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#var-st-skin-temperature">VAR_ST (Skin Temperature)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#model-complexity-comparison">Model Complexity Comparison</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-findings">Key Findings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recommendations">Recommendations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#note-on-adm-performance">Note on ADM Performance</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL_AID</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Benchmark</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/benchmark.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="testing_philosophy.html" class="btn btn-neutral float-right" title="Testing Philosophy (Read This First)" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="benchmark">
+<h1>Benchmark<a class="headerlink" href="#benchmark" title="Link to this heading"></a></h1>
+<p>This section documents the experimental results comparing three different U-Net architectures for downscaling within the IPSL-AID framework.</p>
+<section id="model-performance-comparison">
+<h2>Model Performance Comparison<a class="headerlink" href="#model-performance-comparison" title="Link to this heading"></a></h2>
+<p>This presents a comprehensive comparison of three U-Net architectures trained for statistical downscaling of atmosphericvariables. All models were trained with identical hyperparameters.</p>
+<section id="experiment-configuration">
+<h3>Experiment Configuration<a class="headerlink" href="#experiment-configuration" title="Link to this heading"></a></h3>
+<p>All models were trained with the following common configuration:</p>
+<ul class="simple">
+<li><p><strong>Dataset</strong>: ERA5 reanalysis data (2015-2019 training, 2020 validation)</p></li>
+<li><p><strong>Domain</strong>: Global</p></li>
+<li><p><strong>Input resolution</strong>: 721 × 1440 (0.25° grid)</p></li>
+<li><p><strong>Input channels</strong>: 10 (6 target variables + 4 constants)</p></li>
+<li><p><strong>Output channels</strong>: 6 (downscaled meteorological variables)</p></li>
+<li><p><strong>Target variables</strong>:</p>
+<ul>
+<li><p>VAR_2T: 2-meter temperature (K)</p></li>
+<li><p>VAR_10U: 10-meter U wind component (m/s)</p></li>
+<li><p>VAR_10V: 10-meter V wind component (m/s)</p></li>
+<li><p>VAR_TP: Total precipitation (m/h)</p></li>
+<li><p>VAR_D2M: 2-meter dewpoint temperature (K)</p></li>
+<li><p>VAR_ST: Skin temperature (K)</p></li>
+</ul>
+</li>
+<li><p><strong>Normalization</strong>: Standard scaling (log1p for precipitation)</p></li>
+<li><p><strong>Time encoding</strong>: Sine/cosine of day-of-year (4 channels)</p></li>
+<li><p><strong>Constant variables</strong>: Orography (z) and land-sea mask (lsm)</p></li>
+<li><p><strong>Loss function</strong>: UNet diffusion loss (MSE-based)</p></li>
+<li><p><strong>Learning rate</strong>: 0.0001</p></li>
+<li><p><strong>Batch size</strong>: 36 (12 spatial × 1460 temporal)</p></li>
+<li><p><strong>Epochs</strong>: 20</p></li>
+<li><p><strong>Spatial batching</strong>: 12 tiles</p></li>
+<li><p><strong>Temporal batching</strong>: 1460 time steps</p></li>
+</ul>
+</section>
+<section id="model-architectures">
+<h3>Model Architectures<a class="headerlink" href="#model-architectures" title="Link to this heading"></a></h3>
+<p>Three U-Net variants were evaluated:</p>
+<ol class="arabic simple">
+<li><p><strong>DDPM++ (SongUNet - Positional embedding)</strong></p>
+<ul class="simple">
+<li><p>Denoising Diffusion Probabilistic Model architecture</p></li>
+<li><p>Positional timestep embedding</p></li>
+<li><p>Standard encoder/decoder with skip connections</p></li>
+<li><p>Channel multiplier: [2, 2, 2]</p></li>
+<li><p>Base channels: 128</p></li>
+<li><p>Resampling filter: [1, 1]</p></li>
+<li><p><strong>Parameters</strong>: 54,429,958</p></li>
+</ul>
+</li>
+<li><p><strong>NCSN++ (SongUNet - Fourier embedding)</strong></p>
+<ul class="simple">
+<li><p>Noise-Conditioned Score Network architecture</p></li>
+<li><p>Fourier feature timestep embedding</p></li>
+<li><p>Residual encoder with skip connections</p></li>
+<li><p>Channel multiplier: [2, 2, 2]</p></li>
+<li><p>Base channels: 128</p></li>
+<li><p>Resampling filter: [1, 3, 3, 1]</p></li>
+<li><p><strong>Parameters</strong>: 55,109,510</p></li>
+</ul>
+</li>
+<li><p><strong>ADM (DhariwalUNet)</strong></p>
+<ul class="simple">
+<li><p>Ablated Diffusion Model architecture</p></li>
+<li><p>Multi-resolution attention (32, 16, 8)</p></li>
+<li><p>Channel multiplier: [1, 2, 3, 4]</p></li>
+<li><p>Base channels: 128</p></li>
+<li><p>Number of blocks: 2</p></li>
+<li><p><strong>Parameters</strong>: 92,140,550</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="performance-metrics">
+<h3>Performance Metrics<a class="headerlink" href="#performance-metrics" title="Link to this heading"></a></h3>
+<p>The following metrics were used for evaluation on the validation set (year 2020):</p>
+<ul class="simple">
+<li><p><strong>Loss</strong>: UNet diffusion loss value</p></li>
+<li><p><strong>MAE</strong>: Mean Absolute Error (normalized scale)</p></li>
+<li><p><strong>NMAE</strong>: Normalized Mean Absolute Error (normalized by variable range)</p></li>
+<li><p><strong>RMSE</strong>: Root Mean Square Error (normalized scale)</p></li>
+<li><p><strong>R²</strong>: Coefficient of determination</p></li>
+<li><p><strong>Pearson</strong>: Pearson correlation coefficient</p></li>
+<li><p><strong>KL</strong>: KL divergence (distribution similarity)</p></li>
+</ul>
+</section>
+<section id="quantitative-comparison-overall-metrics">
+<h3>Quantitative Comparison - Overall Metrics<a class="headerlink" href="#quantitative-comparison-overall-metrics" title="Link to this heading"></a></h3>
+<table class="docutils align-center" id="id1">
+<caption><span class="caption-text">Performance comparison for all variables (validation set)</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 21.7%" />
+<col style="width: 13.0%" />
+<col style="width: 13.0%" />
+<col style="width: 13.0%" />
+<col style="width: 13.0%" />
+<col style="width: 13.0%" />
+<col style="width: 13.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>Loss ↓</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>NMAE ↓</p></th>
+<th class="head"><p>RMSE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++ (SongUNet)</p></td>
+<td><p>0.0524</p></td>
+<td><p>0.3458 ± 0.0069</p></td>
+<td><p>0.1170 ± 0.0035</p></td>
+<td><p>0.5604 ± 0.0164</p></td>
+<td><p>0.9482 ± 0.0025</p></td>
+<td><p>0.9722 ± 0.0014</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++ (SongUNet)</p></td>
+<td><p>0.0517</p></td>
+<td><p>0.3432 ± 0.0068</p></td>
+<td><p>0.1176 ± 0.0037</p></td>
+<td><p>0.5552 ± 0.0159</p></td>
+<td><p>0.9489 ± 0.0027</p></td>
+<td><p>0.9725 ± 0.0016</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM (DhariwalUNet)</p></td>
+<td><p>0.0527</p></td>
+<td><p>0.3500 ± 0.0071</p></td>
+<td><p>0.1179 ± 0.0035</p></td>
+<td><p>0.5656 ± 0.0166</p></td>
+<td><p>0.9480 ± 0.0023</p></td>
+<td><p>0.9721 ± 0.0013</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: ↓ indicates lower is better, ↑ indicates higher is better. Values show mean ± std across spatial batches.</em></p>
+</section>
+<section id="baseline-comparison">
+<h3>Baseline Comparison<a class="headerlink" href="#baseline-comparison" title="Link to this heading"></a></h3>
+<p>For reference, coarse input (bilinear interpolation of low-resolution input) metrics are provided:</p>
+<table class="docutils align-center" id="id2">
+<caption><span class="caption-text">Baseline coarse input performance (all variables)</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 21.1%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Baseline</p></th>
+<th class="head"><p>MAE</p></th>
+<th class="head"><p>NMAE</p></th>
+<th class="head"><p>RMSE</p></th>
+<th class="head"><p>R²</p></th>
+<th class="head"><p>Pearson</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Coarse Input</p></td>
+<td><p>0.6993 ± 0.0214</p></td>
+<td><p>0.1981 ± 0.0045</p></td>
+<td><p>1.2208 ± 0.0368</p></td>
+<td><p>0.8873 ± 0.0039</p></td>
+<td><p>0.9377 ± 0.0028</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Improvement over baseline</strong>: All three U-Net architectures achieve significant improvements, reducing MAE by approximately 50% and increasing R² from 0.887 to 0.948+.</p>
+</section>
+<section id="per-variable-performance">
+<h3>Per-Variable Performance<a class="headerlink" href="#per-variable-performance" title="Link to this heading"></a></h3>
+<section id="var-2t-2-meter-temperature">
+<h4>VAR_2T (2-meter Temperature)<a class="headerlink" href="#var-2t-2-meter-temperature" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id3">
+<caption><span class="caption-text">VAR_2T performance comparison</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>RMSE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+<th class="head"><p>KL ↓</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++</p></td>
+<td><p>0.3697 ± 0.0095</p></td>
+<td><p>0.5873 ± 0.0171</p></td>
+<td><p>0.9992 ± 0.0001</p></td>
+<td><p>0.9996 ± 0.0001</p></td>
+<td><p>0.0010</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++</p></td>
+<td><p>0.3684 ± 0.0097</p></td>
+<td><p>0.5816 ± 0.0168</p></td>
+<td><p>0.9992 ± 0.0001</p></td>
+<td><p>0.9996 ± 0.0001</p></td>
+<td><p>0.0011</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM</p></td>
+<td><p>0.3775 ± 0.0103</p></td>
+<td><p>0.5968 ± 0.0176</p></td>
+<td><p>0.9992 ± 0.0001</p></td>
+<td><p>0.9996 ± 0.0001</p></td>
+<td><p>0.0007</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="var-10u-10-meter-u-wind">
+<h4>VAR_10U (10-meter U Wind)<a class="headerlink" href="#var-10u-10-meter-u-wind" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id4">
+<caption><span class="caption-text">VAR_10U performance comparison</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>RMSE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+<th class="head"><p>KL ↓</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++</p></td>
+<td><p>0.3938 ± 0.0071</p></td>
+<td><p>0.5921 ± 0.0237</p></td>
+<td><p>0.9886 ± 0.0014</p></td>
+<td><p>0.9943 ± 0.0007</p></td>
+<td><p>0.0006</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++</p></td>
+<td><p>0.3905 ± 0.0069</p></td>
+<td><p>0.5867 ± 0.0228</p></td>
+<td><p>0.9888 ± 0.0013</p></td>
+<td><p>0.9944 ± 0.0007</p></td>
+<td><p>0.0005</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM</p></td>
+<td><p>0.3966 ± 0.0071</p></td>
+<td><p>0.5960 ± 0.0227</p></td>
+<td><p>0.9885 ± 0.0014</p></td>
+<td><p>0.9942 ± 0.0007</p></td>
+<td><p>0.0005</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="var-10v-10-meter-v-wind">
+<h4>VAR_10V (10-meter V Wind)<a class="headerlink" href="#var-10v-10-meter-v-wind" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id5">
+<caption><span class="caption-text">VAR_10V performance comparison</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>RMSE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+<th class="head"><p>KL ↓</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++</p></td>
+<td><p>0.3813 ± 0.0068</p></td>
+<td><p>0.5701 ± 0.0240</p></td>
+<td><p>0.9859 ± 0.0016</p></td>
+<td><p>0.9929 ± 0.0008</p></td>
+<td><p>0.0006</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++</p></td>
+<td><p>0.3792 ± 0.0068</p></td>
+<td><p>0.5663 ± 0.0237</p></td>
+<td><p>0.9861 ± 0.0016</p></td>
+<td><p>0.9930 ± 0.0008</p></td>
+<td><p>0.0005</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM</p></td>
+<td><p>0.3844 ± 0.0066</p></td>
+<td><p>0.5739 ± 0.0238</p></td>
+<td><p>0.9857 ± 0.0016</p></td>
+<td><p>0.9928 ± 0.0008</p></td>
+<td><p>0.0005</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="var-tp-total-precipitation">
+<h4>VAR_TP (Total Precipitation)<a class="headerlink" href="#var-tp-total-precipitation" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id6">
+<caption><span class="caption-text">VAR_TP performance comparison (most challenging variable)</span><a class="headerlink" href="#id6" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>NMAE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+<th class="head"><p>KL ↓</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++</p></td>
+<td><p>0.0001</p></td>
+<td><p>0.5058 ± 0.0145</p></td>
+<td><p>0.7182 ± 0.0133</p></td>
+<td><p>0.8478 ± 0.0079</p></td>
+<td><p>0.1427</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++</p></td>
+<td><p>0.0001</p></td>
+<td><p>0.5105 ± 0.0155</p></td>
+<td><p>0.7220 ± 0.0148</p></td>
+<td><p>0.8497 ± 0.0088</p></td>
+<td><p>0.1326</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM</p></td>
+<td><p>0.0001</p></td>
+<td><p>0.5096 ± 0.0145</p></td>
+<td><p>0.7176 ± 0.0133</p></td>
+<td><p>0.8474 ± 0.0079</p></td>
+<td><p>0.2088</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: MAE values are in normalized scale; precipitation shows lowest absolute error due to large number of zero in the dataset.</em></p>
+</section>
+<section id="var-d2m-2-meter-dewpoint-temperature">
+<h4>VAR_D2M (2-meter Dewpoint Temperature)<a class="headerlink" href="#var-d2m-2-meter-dewpoint-temperature" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id7">
+<caption><span class="caption-text">VAR_D2M performance comparison</span><a class="headerlink" href="#id7" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>RMSE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+<th class="head"><p>KL ↓</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++</p></td>
+<td><p>0.4515 ± 0.0117</p></td>
+<td><p>0.7178 ± 0.0221</p></td>
+<td><p>0.9987 ± 0.0003</p></td>
+<td><p>0.9994 ± 0.0002</p></td>
+<td><p>0.0016</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++</p></td>
+<td><p>0.4450 ± 0.0115</p></td>
+<td><p>0.7104 ± 0.0222</p></td>
+<td><p>0.9988 ± 0.0003</p></td>
+<td><p>0.9994 ± 0.0002</p></td>
+<td><p>0.0015</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM</p></td>
+<td><p>0.4551 ± 0.0117</p></td>
+<td><p>0.7261 ± 0.0215</p></td>
+<td><p>0.9987 ± 0.0003</p></td>
+<td><p>0.9994 ± 0.0002</p></td>
+<td><p>0.0017</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="var-st-skin-temperature">
+<h4>VAR_ST (Skin Temperature)<a class="headerlink" href="#var-st-skin-temperature" title="Link to this heading"></a></h4>
+<table class="docutils align-center" id="id8">
+<caption><span class="caption-text">VAR_ST performance comparison</span><a class="headerlink" href="#id8" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>MAE ↓</p></th>
+<th class="head"><p>RMSE ↓</p></th>
+<th class="head"><p>R² ↑</p></th>
+<th class="head"><p>Pearson ↑</p></th>
+<th class="head"><p>KL ↓</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++</p></td>
+<td><p>0.4785 ± 0.0214</p></td>
+<td><p>0.8947 ± 0.0485</p></td>
+<td><p>0.9983 ± 0.0004</p></td>
+<td><p>0.9991 ± 0.0002</p></td>
+<td><p>0.0101</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++</p></td>
+<td><p>0.4759 ± 0.0216</p></td>
+<td><p>0.8862 ± 0.0485</p></td>
+<td><p>0.9983 ± 0.0004</p></td>
+<td><p>0.9991 ± 0.0002</p></td>
+<td><p>0.0184</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM</p></td>
+<td><p>0.4859 ± 0.0215</p></td>
+<td><p>0.9004 ± 0.0501</p></td>
+<td><p>0.9982 ± 0.0004</p></td>
+<td><p>0.9991 ± 0.0002</p></td>
+<td><p>0.0116</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="model-complexity-comparison">
+<h3>Model Complexity Comparison<a class="headerlink" href="#model-complexity-comparison" title="Link to this heading"></a></h3>
+<table class="docutils align-center" id="id9">
+<caption><span class="caption-text">Model complexity and efficiency</span><a class="headerlink" href="#id9" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 26.3%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+<col style="width: 31.6%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Architecture</p></th>
+<th class="head"><p>Parameters</p></th>
+<th class="head"><p>Relative Size</p></th>
+<th class="head"><p>Inference Characteristics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>DDPM++ (SongUNet)</p></td>
+<td><p>54.4M</p></td>
+<td><p>1.0×</p></td>
+<td><p>Lightweight, fast inference</p></td>
+</tr>
+<tr class="row-odd"><td><p>NCSN++ (SongUNet)</p></td>
+<td><p>55.1M</p></td>
+<td><p>1.01×</p></td>
+<td><p>Slightly larger, Fourier embeddings</p></td>
+</tr>
+<tr class="row-even"><td><p>ADM (DhariwalUNet)</p></td>
+<td><p>92.1M</p></td>
+<td><p>1.69×</p></td>
+<td><p>Larger model, multi-resolution attention</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="key-findings">
+<h3>Key Findings<a class="headerlink" href="#key-findings" title="Link to this heading"></a></h3>
+<p><strong>Best Overall Performance</strong>: The <strong>NCSN++</strong> architecture achieves the best overall metrics:</p>
+<ul class="simple">
+<li><p>Lowest loss (0.0517 vs 0.0524 for DDPM++ and 0.0527 for ADM)</p></li>
+<li><p>Lowest MAE (0.3432 vs 0.3458/0.3500)</p></li>
+<li><p>Highest R² (0.9489 vs 0.9482/0.9480)</p></li>
+<li><p>Highest Pearson correlation (0.9725 vs 0.9722/0.9721)</p></li>
+</ul>
+<p><strong>Best Performance for Precipitation</strong>: <strong>NCSN++</strong> achieves the highest R² for VAR_TP (0.7220) and lowest KL divergence (0.1326), indicating better distribution matching.</p>
+<p><strong>Best Performance for Wind Fields</strong>: <strong>NCSN++</strong> consistently outperforms for both U and V wind components across all metrics.</p>
+<p><strong>Most Challenging Variable</strong>: Precipitation (VAR_TP) shows the lowest R² scores (0.718-0.722) and highest NMAE (0.506-0.511), reflecting the difficulty of downscaling intermittent precipitation events.</p>
+<p><strong>Model Efficiency</strong>: The <strong>DDPM++</strong> architecture has the fewest parameters (54.4M) while maintaining competitive performance, making it suitable for resource-constrained applications.</p>
+<p><strong>Wind Field Anisotropy</strong>: Performance is slightly better for U-wind (R² ~0.9888) than V-wind (R² ~0.9861), which may reflect the zonal dominance of atmospheric circulation.</p>
+</section>
+<section id="recommendations">
+<h3>Recommendations<a class="headerlink" href="#recommendations" title="Link to this heading"></a></h3>
+<p>Based on the comprehensive comparison across 6 meteorological variables:</p>
+<ol class="arabic simple">
+<li><p><strong>For maximum accuracy</strong>: Use <strong>NCSN++</strong> (SongUNet with Fourier embeddings)</p>
+<ul class="simple">
+<li><p>Best overall performance across nearly all metrics</p></li>
+<li><p>Superior handling of precipitation distributions</p></li>
+<li><p>Marginal parameter increase over DDPM++</p></li>
+</ul>
+</li>
+<li><p><strong>For balanced performance</strong>: Use <strong>DDPM++</strong> (SongUNet with positional embeddings)</p>
+<ul class="simple">
+<li><p>Excellent performance with slightly fewer parameters</p></li>
+<li><p>Competitive across all variables</p></li>
+<li><p>Best for resource-constrained deployment</p></li>
+</ul>
+</li>
+<li><p><strong>For temperature-sensitive applications</strong>: All three models perform excellently (R² &gt; 0.999), with minimal differences</p></li>
+<li><p><strong>For precipitation downscaling</strong>: <strong>NCSN++</strong> is the recommended choice due to superior distribution matching and higher R²</p></li>
+<li><p><strong>For ensemble applications</strong>: Consider all three as they show complementary strengths across different variable types</p></li>
+</ol>
+</section>
+<section id="note-on-adm-performance">
+<h3>Note on ADM Performance<a class="headerlink" href="#note-on-adm-performance" title="Link to this heading"></a></h3>
+<p>While the ADM architecture achieves competitive performance, it underperforms both SongUNet variants despite having nearly 1.7× more parameters. This suggests that:</p>
+<ul class="simple">
+<li><p>The SongUNet architecture is better suited for downscaling tasks</p></li>
+<li><p>The simplified U-Net design with fewer attention layers may generalize better</p></li>
+<li><p>The additional complexity of ADM does not translate to improved performance for this application</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="testing_philosophy.html" class="btn btn-neutral float-right" title="Testing Philosophy (Read This First)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, IPSL / CNRS / Sorbonne University.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

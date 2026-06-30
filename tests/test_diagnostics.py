@@ -54,6 +54,8 @@ from IPSL_AID.diagnostics import (
     ranks,
     plot_ranks,
     spread_skill_ratio,
+    plot_validation_salpdfs,
+    compute_sal_objects,
 )
 
 # ---------------------------------------------
@@ -1538,6 +1540,106 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All QQ-quantiles tests passed")
+
+    def test_plot_validation_salpdfs(self):
+        """Comprehensive test for sal score plots."""
+        if self.logger:
+            self.logger.info("Testing sal score plots comprehensively")
+
+        predictions = self.predictions
+        targets = self.targets
+        coarse_inputs = self.coarse_inputs
+
+        # Precipitation can't be negative so set as 0 for test
+        predictions[predictions < 0.0] = 0.0
+        targets[targets < 0.0] = 0.0
+        coarse_inputs[coarse_inputs < 0.0] = 0.0
+
+        # Test 1: Standard numpy inputs
+        expected_path = plot_validation_salpdfs(
+            predictions=predictions[:, 2, :, :],
+            targets=targets[:, 2, :, :],
+            coarse_inputs=coarse_inputs[:, 2, :, :],
+            filename="validation_sal_pdfs.png",
+            save_dir=self.output_dir,
+            figsize_multiplier=None,
+            bins_list=[
+                np.arange(-2, 2, 0.05),
+                np.arange(-2, 2, 0.05),
+                np.arange(0, 2, 0.02),
+            ],
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: PyTorch tensors
+        expected_path = plot_validation_salpdfs(
+            predictions=torch.from_numpy(predictions[:, 2, :, :]),
+            targets=torch.from_numpy(targets[:, 2, :, :]),
+            coarse_inputs=torch.from_numpy(coarse_inputs[:, 2, :, :]),
+            filename="validation_sal_pdfs_torch.png",
+            save_dir=self.output_dir,
+            figsize_multiplier=None,
+            bins_list=[
+                np.arange(-2, 2, 0.05),
+                np.arange(-2, 2, 0.05),
+                np.arange(0, 2, 0.02),
+            ],
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+        if self.logger:
+            self.logger.info("\u2705 All sal score plot tests passed")
+
+    def test_compute_sal_objects(self):
+        """Comprehensive test for compute_sal_objects function."""
+        if self.logger:
+            self.logger.info("Testing compute_sal_objects comprehensively")
+        # test that toy example returns the right results :
+        A = np.zeros((32, 32))
+        A[10:20, 10:20] = 1
+        A[20:30, 20:30] = 1
+        sal_objects = compute_sal_objects(A)
+
+        # test waVOL is equal to theoretical value to 3 decimal places:
+        self.assertAlmostEqual(
+            sal_objects["sal_waVOL"],
+            np.float64(100.0),
+            places=3,
+            msg=f"waVOL does not correspond to theoretical value : got {sal_objects["sal_waVOL"]} but expected {100.0}",
+        )
+        # test amplitude is equal to theoretical value to 3 decimal places:
+        self.assertAlmostEqual(
+            sal_objects["sal_a"],
+            np.float64(0.1953),
+            places=3,
+            msg=f"amplitude does not correspond to theoretical value : got {sal_objects["sal_a"]} but expected {0.1953}",
+        )
+        # test r is equal to theoretical value to 3 decimal places:
+        self.assertAlmostEqual(
+            sal_objects["sal_r"],
+            np.float64(0.156),
+            places=3,
+            msg=f"r does not correspond to theoretical value : got {sal_objects["sal_r"]} but expected {0.156}",
+        )
+        # test number of targets is equal to theoretical value:
+        self.assertEqual(
+            sal_objects["sal_targ_num"],
+            2,
+            msg=f"number of targets does not correspond to theoretical value : got {sal_objects["sal_targ_num"]} but expected {2}",
+        )
+        # test size of targets is equal to theoretical values :
+        self.assertAlmostEqual(
+            np.max(np.abs(sal_objects["sal_targ_size"] - np.array([100.0, 100.0]))),
+            0,
+            places=3,
+            msg=f"size of targets does not correspond to theoretical value : got {sal_objects["sal_targ_size"]} but expected {np.array([100., 100.])}",
+        )
+
+        if self.logger:
+            self.logger.info("\u2705 All compute_sal_objects tests passed")
 
     def test_mv_correlation(self):
         """Test for correlation over the time dimension for pairs of variables.

@@ -3041,6 +3041,7 @@ def plot_validation_pdfs(
     variable_names=None,  # List of variable names
     filename="validation_pdfs.png",
     save_dir="./results",
+    log_scale=True,  # use log scale on y-axis if True, linear if False
     figsize_multiplier=4,  # Base size per subplot
     save_npz=False,
 ):
@@ -3062,6 +3063,8 @@ def plot_validation_pdfs(
         Output filename
     save_dir : str, optional
         Directory to save the plot
+    log_scale : bool, optional
+        if True, use log-scale for y-axis, else use linear scale
     figsize_multiplier : int, optional
         Base size multiplier for subplots
     save_npz : bool, optional
@@ -3171,19 +3174,30 @@ def plot_validation_pdfs(
         # Plot predictions
         hist_pred, bin_edges = np.histogram(pred_flat, bins=bins, density=True)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        log_hist_pred = np.log10(hist_pred + epsilon)
-        ax.plot(bin_centers, log_hist_pred, label="Pred", **next(linestyles))
+        if log_scale:
+            log_hist_pred = np.log10(hist_pred + epsilon)
+            ax.plot(bin_centers, log_hist_pred, label="Pred", **next(linestyles))
+        else:
+            ax.plot(bin_centers, hist_pred, label="Pred", **next(linestyles))
 
         # Plot ground truth
         hist_target, _ = np.histogram(target_flat, bins=bins, density=True)
-        log_hist_target = np.log10(hist_target + epsilon)
-        ax.plot(bin_centers, log_hist_target, label="Truth", **next(linestyles))
+        if log_scale:
+            log_hist_target = np.log10(hist_target + epsilon)
+            ax.plot(bin_centers, log_hist_target, label="Truth", **next(linestyles))
+        else:
+            ax.plot(bin_centers, hist_target, label="Truth", **next(linestyles))
 
         # Plot coarse inputs if available
         if coarse_inputs is not None:
             hist_coarse, _ = np.histogram(coarse_flat, bins=bins, density=True)
-            log_hist_coarse = np.log10(hist_coarse + epsilon)
-            ax.plot(bin_centers, log_hist_coarse, label="Coarse", **next(linestyles))
+            if log_scale:
+                log_hist_coarse = np.log10(hist_coarse + epsilon)
+                ax.plot(
+                    bin_centers, log_hist_coarse, label="Coarse", **next(linestyles)
+                )
+            else:
+                ax.plot(bin_centers, hist_coarse, label="Coarse", **next(linestyles))
 
         # Calculate and display statistics
         stats_text = []
@@ -3238,7 +3252,10 @@ def plot_validation_pdfs(
         # Only show y-label for leftmost subplot
         if i == 0:
             # ax.set_ylabel('log₁₀(PDF)')
-            ax.set_ylabel(r"$\log_{10}(\mathrm{PDF})$")
+            if log_scale:
+                ax.set_ylabel(r"$\log_{10}(\mathrm{PDF})$")
+            else:
+                ax.set_ylabel(r"$\mathrm{PDF}$")
 
         # Add grid
         ax.grid(True, alpha=0.3, linestyle="--")
@@ -3247,16 +3264,25 @@ def plot_validation_pdfs(
         ax.legend()
 
         # Set y-limits for log plot (handle cases where log values might be very negative)
-        y_min = min(log_hist_pred.min(), log_hist_target.min())
-        if coarse_inputs is not None:
-            y_min = min(y_min, log_hist_coarse.min())
-        y_max = max(log_hist_pred.max(), log_hist_target.max())
-        if coarse_inputs is not None:
-            y_max = max(y_max, log_hist_coarse.max())
+        if log_scale:
+            y_min = min(log_hist_pred.min(), log_hist_target.min())
+            if coarse_inputs is not None:
+                y_min = min(y_min, log_hist_coarse.min())
+            y_max = max(log_hist_pred.max(), log_hist_target.max())
+            if coarse_inputs is not None:
+                y_max = max(y_max, log_hist_coarse.max())
 
-        # Add small margin to y-limits
-        y_margin = 0.1 * (y_max - y_min) if y_max > y_min else 0.1
-        ax.set_ylim(y_min - y_margin, y_max + y_margin)
+            # Add small margin to y-limits
+            y_margin = 0.1 * (y_max - y_min) if y_max > y_min else 0.1
+            ax.set_ylim(y_min - y_margin, y_max + y_margin)
+        else:
+            y_min = 0
+            y_max = max(hist_pred.max(), hist_target.max())
+            if coarse_inputs is not None:
+                y_max = max(y_max, hist_coarse.max())
+            # Add small margin to y-limits
+            y_margin = 0.1 * (y_max - y_min) if y_max > y_min else 0.1
+            ax.set_ylim(y_min, y_max + y_margin)
 
         # Use scientific notation for large ranges
         if data_range > 1000:
@@ -3266,8 +3292,12 @@ def plot_validation_pdfs(
             key = f"{var_name}__pdf__"
 
             pdf_npz_data[key + "bin_centers"] = bin_centers
-            pdf_npz_data[key + "log_pred"] = log_hist_pred
-            pdf_npz_data[key + "log_truth"] = log_hist_target
+            if log_scale:
+                pdf_npz_data[key + "log_pred"] = log_hist_pred
+                pdf_npz_data[key + "log_truth"] = log_hist_target
+            else:
+                pdf_npz_data[key + "pred"] = hist_pred
+                pdf_npz_data[key + "truth"] = hist_target
 
             pdf_npz_data[key + "mean_pred"] = pred_mean
             pdf_npz_data[key + "std_pred"] = pred_std
@@ -3277,7 +3307,10 @@ def plot_validation_pdfs(
             pdf_npz_data[key + "corr"] = correlation
 
             if coarse_inputs is not None:
-                pdf_npz_data[key + "log_coarse"] = log_hist_coarse
+                if log_scale:
+                    pdf_npz_data[key + "log_coarse"] = log_hist_coarse
+                else:
+                    pdf_npz_data[key + "coarse"] = hist_coarse
                 pdf_npz_data[key + "mean_coarse"] = coarse_mean
                 pdf_npz_data[key + "std_coarse"] = coarse_std
 

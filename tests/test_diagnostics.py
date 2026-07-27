@@ -565,6 +565,20 @@ class TestPlottingFunctions(unittest.TestCase):
             os.path.exists(expected_path), f"File not found: {expected_path}"
         )
 
+        # Test 4: With linear scale on y-axis :
+        expected_path = plot_validation_pdfs(
+            predictions=self.predictions,
+            targets=self.targets,
+            coarse_inputs=self.coarse_inputs,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            log_scale=False,
+            filename="validation_pdfs_linear_scale.png",
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
         if self.logger:
             self.logger.info("✅ All validation PDF tests passed")
 

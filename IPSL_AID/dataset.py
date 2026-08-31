@@ -312,6 +312,45 @@ def gaussian_filter(
     return filtered
 
 
+def make_starts(size, block, stride):
+    """
+    Generate block start indices covering an entire one-dimensional domain.
+
+    The final block is adjusted, when necessary, so that it always reaches
+    the domain boundary.
+
+    Parameters
+    ----------
+    size : int
+        Total size of the domain.
+    block : int
+        Size of each block.
+    stride : int
+        Distance between consecutive block starts.
+
+    Returns
+    -------
+    list of int
+        Start indices of the blocks.
+    """
+
+    starts = list(range(0, size - block + 1, stride))
+
+    # Ensure the last block always touches the domain boundary,
+    # regardless of whether the stride divides the domain evenly.
+    last_start = size - block
+
+    # The regular stride may stop before last_start. In that case, append an
+    # additional block aligned with the end of the domain to avoid leaving an # uncovered region.
+
+    # This final block may overlap more strongly with the previous block than
+    # the blocks generated using the regular stride.
+    if starts[-1] != last_start:
+        starts.append(last_start)
+
+    return starts
+
+
 class DataPreprocessor(Dataset):
     """
     Dataset class for preprocessing weather and climate data for machine learning.
@@ -333,7 +372,7 @@ class DataPreprocessor(Dataset):
     units_list : list of str
         Units for each variable in varnames_list.
     in_shape : tuple of int, optional
-        Target shape (height, width) for coarse resolution. Default is (16, 32).
+        Target shape (height, width) for coarse resolution. Default is (80, 128).
     batch_size_lat : int, optional
         Height of spatial batch in grid points. Default is 144.
     batch_size_lon : int, optional
@@ -354,7 +393,7 @@ class DataPreprocessor(Dataset):
     mode : str, optional
         Operation mode: "train" or "validation". Default is "train".
     run_type : str, optional
-        Run type: "train", "validation", or "inference". Default is "train".
+        Run type: "train", "train_regional", "validation", "inference_regional", or "inference". Default is "train".
     dynamic_covariates : list of str, optional
         List of dynamic covariate variable names. Default is None.
     dynamic_covariates_dir : str, optional
@@ -379,6 +418,14 @@ class DataPreprocessor(Dataset):
     apply_filter : bool, optional
         Whether to apply Gaussian filtering for multi-scale processing.
         Default is False.
+    region_center : tuple of float or None, optional
+        Geographic center of the regional domain, expressed as
+        "(latitude, longitude)" in degrees. Default is None.
+    region_size : tuple of int or None, optional
+        Spatial size of the regional domain. Default is None.
+    overlap_ratio : float, optional
+        Fractional overlap between adjacent spatial blocks during global
+        inference. Default is 0.0.
     logger : logging.Logger, optional
         Logger instance for logging messages. Default is None.
 
@@ -410,6 +457,14 @@ class DataPreprocessor(Dataset):
         Array of time indices for current epoch.
     eval_slices : list of tuple or None
         List of spatial slices for evaluation mode.
+    train_slices : list of tuple
+        Spatial slices used during regional training, when applicable.
+    region_center : tuple of float or None
+        Geographic center used for regional training or inference.
+    region_size : tuple of int or None
+        Size of the regional domain in latitude and longitude grid points.
+    overlap_ratio : float
+        Fractional overlap between adjacent blocks during global inference.
     random_centers : list of tuple or None
         List of random spatial centers for training mode.
     center_tracker : list
@@ -427,12 +482,21 @@ class DataPreprocessor(Dataset):
         Randomly sample time indices for training.
     load_dynamic_covariates()
         Load dynamic covariate data (not fully implemented).
+    get_center_indices_from_latlon(lat_value, lon_value)
+        Map geographic coordinates to the nearest latitude and longitude
+        grid indices.
     generate_random_batch_centers(n_batches)
         Generate random spatial centers for batch sampling.
-    generate_evaluation_slices()
-        Generate deterministic spatial slices for evaluation.
+    generate_evaluation_slices(use_hann_blending=False, overlap_ratio=0.0)
+        Generate deterministic global evaluation or inference slices, with
+        optional overlap and full-boundary coverage during blended inference.
+    generate_region_slices(lat_center, lon_center, region_size_lat, region_size_lon)
+        Divide a regional domain into non-overlapping spatial blocks.
     extract_batch(data, ilat, ilon)
         Extract spatial batch centered at (ilat, ilon) with cyclic longitude.
+    build_fine_coarse_blocks(npfeatures_full, lat_center, lon_center)
+        Construct aligned fine-resolution, optionally filtered, and
+        coarse-resolution spatial blocks.
     filter_batch(fine_patch, fine_block)
         Apply Gaussian low-pass filtering for multi-scale processing.
     normalize(data, stats, norm_type, var_name=None, data_type=None)
@@ -449,6 +513,8 @@ class DataPreprocessor(Dataset):
     - Supports both random (training) and deterministic (validation) sampling.
     - Handles cyclic longitude wrapping for global datasets.
     - Provides multi-scale processing through downscaling/upscaling.
+    - Supports overlapping blocks during global inference for blended
+      reconstruction.
     - Includes time normalization with linear or trigonometric encoding.
     - Can incorporate constant variables (e.g., topography, land-sea mask).
     """
@@ -482,6 +548,7 @@ class DataPreprocessor(Dataset):
         apply_filter=False,
         region_center=None,  # (lat_value, lon_value)
         region_size=None,
+        overlap_ratio=0.0,  # 0.02
         logger=None,
     ):
         """
@@ -541,6 +608,10 @@ class DataPreprocessor(Dataset):
             Apply Gaussian filtering.
         region_center : tuple of float or None
             Fixed geographic center (lat, lon) for spatial sampling.
+        region_size : tuple of int or None, optional
+            Regional-domain size in latitude and longitude grid points.
+        overlap_ratio : float, optional
+            Fractional overlap between adjacent blocks during global inference.
         logger : logging.Logger, optional
             Logger instance.
         """
@@ -589,6 +660,8 @@ class DataPreprocessor(Dataset):
 
         self.region_center = region_center
         self.region_size = region_size
+
+        self.overlap_ratio = overlap_ratio
 
         self.tbatch = tbatch
         self.sbatch = sbatch
@@ -741,7 +814,18 @@ class DataPreprocessor(Dataset):
             raise ValueError("time_normalization must be 'linear' or 'cos_sin'")
 
         if self.mode == "validation":
-            self.eval_slices = self.generate_evaluation_slices()
+            # self.eval_slices = self.generate_evaluation_slices()
+            # Overlapping blending only during inference.
+            # overlap_ratio controls the trade-off between quality and compute cost:
+            #   0.0 = hard-cut (no overlap)
+            #   0.02 = 2% overlap, used here for lightweight blending
+            #   0.1 to 0.2 = lightweight blending, ~30-75% more blocks
+            #   0.5 = full Hann (perfect reconstruction property, ~3x more blocks)
+            use_hann = self.run_type == "inference"
+            self.eval_slices = self.generate_evaluation_slices(
+                use_hann_blending=use_hann,
+                overlap_ratio=self.overlap_ratio,
+            )
             # To Do: a key to add if all sbatch to taken or not
             self.sbatch = len(
                 self.eval_slices
@@ -1007,36 +1091,94 @@ class DataPreprocessor(Dataset):
             )
             raise
 
-    def generate_evaluation_slices(self):
+    def generate_evaluation_slices(
+        self,
+        use_hann_blending=False,
+        overlap_ratio=0.0,
+    ):
         """
         Generate deterministic spatial slices for evaluation mode.
+
+        Parameters
+        ----------
+        use_hann_blending : bool, optional
+            Whether to generate overlapping spatial blocks.
+            This is intended for global inference only.
+        overlap_ratio : float, optional
+            Fraction of each block overlapping with adjacent blocks.
 
         Returns
         -------
         slices : list of tuple
-            List of (lat_start, lat_end, lon_start, lon_end) tuples defining
-            non-overlapping spatial blocks covering the entire domain.
+            List of (lat_start, lat_end, lon_start, lon_end) tuples.
         """
-        n_blocks_lat = self.H // self.batch_size_lat
-        n_blocks_lon = self.W // self.batch_size_lon
 
-        # Create grid of block indices
-        lat_idx, lon_idx = np.mgrid[0:n_blocks_lat, 0:n_blocks_lon]
+        if not use_hann_blending:
+            # Original validation behavior: keep it unchanged.
+            n_blocks_lat = self.H // self.batch_size_lat
+            n_blocks_lon = self.W // self.batch_size_lon
 
-        # Calculate slice boundaries
-        lat_starts = (lat_idx * self.batch_size_lat).ravel()
-        lon_starts = (lon_idx * self.batch_size_lon).ravel()
+            # Create grid of block indices.
+            lat_idx, lon_idx = np.mgrid[0:n_blocks_lat, 0:n_blocks_lon]
 
-        lat_ends = lat_starts + self.batch_size_lat
-        lon_ends = lon_starts + self.batch_size_lon
+            # Calculate slice boundaries.
+            lat_starts = (lat_idx * self.batch_size_lat).ravel()
+            lon_starts = (lon_idx * self.batch_size_lon).ravel()
 
-        # Create slices list
-        slices = list(zip(lat_starts, lat_ends, lon_starts, lon_ends))
+            lat_ends = lat_starts + self.batch_size_lat
+            lon_ends = lon_starts + self.batch_size_lon
+
+            # Create slices list.
+            slices = list(zip(lat_starts, lat_ends, lon_starts, lon_ends))
+
+            self.logger.info(
+                f"Generated {len(slices)} evaluation blocks "
+                f"({n_blocks_lat} x {n_blocks_lon} grid)"
+            )
+
+            return slices
+
+        # Global inference behavior: overlapping blocks with full domain coverage.
+        stride_lat = max(
+            1,
+            int(round(self.batch_size_lat * (1.0 - overlap_ratio))),
+        )
+        stride_lon = max(
+            1,
+            int(round(self.batch_size_lon * (1.0 - overlap_ratio))),
+        )
+
+        lat_starts = make_starts(
+            self.H,
+            self.batch_size_lat,
+            stride_lat,
+        )
+        lon_starts = make_starts(
+            self.W,
+            self.batch_size_lon,
+            stride_lon,
+        )
+
+        slices = []
+
+        for lat_start in lat_starts:
+            for lon_start in lon_starts:
+                slices.append(
+                    (
+                        lat_start,
+                        lat_start + self.batch_size_lat,
+                        lon_start,
+                        lon_start + self.batch_size_lon,
+                    )
+                )
 
         self.logger.info(
-            f"Generated {len(slices)} evaluation blocks "
-            f"({n_blocks_lat} x {n_blocks_lon} grid)"
+            f"Generated {len(slices)} overlapping evaluation blocks "
+            f"({len(lat_starts)} x {len(lon_starts)} grid, "
+            f"stride={stride_lat}x{stride_lon}, "
+            f"overlap_ratio={overlap_ratio})"
         )
+
         return slices
 
     def generate_region_slices(

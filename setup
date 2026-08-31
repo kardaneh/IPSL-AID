@@ -27,6 +27,10 @@ run_type="train" # "train", ""train_regional"
 region="Europe" # Only for run_type="train_regional"
 region_size=("288" "720") # Only for run_type="train_regional"
 
+in_shape=("80" "128")  # Coarse resolution used for down/up sampling "80" "128"
+
+overlap_ratio=0.0 # 0.02 during inference
+
 save_model=true
 save_checkpoint_name="difusion_model"
 load_checkpoint_name="difusion_model"
@@ -37,8 +41,8 @@ year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
 
-batch_size=36 #20 #40 # use maximum 18 for 1 GPU
-num_epochs=8
+batch_size=70 #20 #40 # use maximum 18 for 1 GPU
+num_epochs=10
 learning_rate=0.0001
 num_workers=16
 
@@ -51,6 +55,8 @@ per_var_datadir=(
   "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
   "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
   )
+
+per_var_coarse_datadir=()
 
 time_normalization="cos_sin"
 
@@ -76,7 +82,7 @@ model_name=""
 
 dtype="fp32"
 arch="adm" # options are "ddpmpp", "ncsnpp", and "adm"
-precond="unet" # edm for edm (default model), unet for unet,
+precond="edm" # edm for edm (default model), unet for unet,
 # for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
 
 if [[ "$precond" == "unet" ]]; then
@@ -88,7 +94,7 @@ else  # for diffusion-based arch
 fi
 
 out_channels=6 # number of variables
-inference_type="direct" # "direct" for unet, "sampler" for diffusion
+inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 
 compute_crps=false
 
@@ -135,6 +141,7 @@ base_parts+=("norm_${time_normalization}")
 base_parts+=("lat${batch_size_lat}")
 base_parts+=("lon${batch_size_lon}")
 base_parts+=("vars${#varnames_list[@]}")
+# base_parts+=("coarse${in_shape[0]}x${in_shape[1]}")
 base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
@@ -228,6 +235,8 @@ cat >> $sbatch_script <<EOF
 #SBATCH --cpus-per-task=$SLURM_CPUS_PER_TASK
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge
@@ -240,6 +249,7 @@ export PYTHONUNBUFFERED=1
 echo "===== Job Infos ====="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "In shape / coarse resolution: ${in_shape[@]}"
 echo "Inference type: $inference_type"
 echo "Node list: \${SLURM_NODELIST}"
 echo "Job ID: \${SLURM_JOB_ID}"
@@ -265,6 +275,8 @@ ipsl-aid \\
     --in_channels "$in_channels" \\
     --out_channels "$out_channels" \\
     --apply_filter $apply_filter \\
+    --in_shape ${in_shape[@]} \\
+    --overlap_ratio "$overlap_ratio" \\
 EOF
 
 # Add cond_channels only for EDM
@@ -328,6 +340,7 @@ chmod +x $sbatch_script
 echo "=== Setup Complete ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "In shape / coarse resolution: ${in_shape[@]}"
 echo "Inference type: $inference_type"
 echo "Run type: $run_type"
 echo "Save model: $save_model"

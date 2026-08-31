@@ -1000,6 +1000,150 @@ def sampler(
     return x_next.detach()
 
 
+def overlap_aware_1d_window(
+    length,
+    left_overlap,
+    right_overlap,
+    device,
+    dtype=torch.float32,
+):
+    """
+    Build a one-dimensional overlap-aware blending window.
+
+    The window is equal to one in the non-overlapping central region.
+    Sine-squared ramps, equivalent to half-Hann windows, are applied only
+    within the actual overlap regions at the left and right boundaries.
+
+    Parameters
+    ----------
+    length : int
+        Total number of elements in the window.
+    left_overlap : int
+        Number of elements overlapping with the previous block. A value of
+        zero leaves the left boundary unchanged.
+    right_overlap : int
+        Number of elements overlapping with the next block. A value of zero
+        leaves the right boundary unchanged.
+    device : torch.device or str
+        Device on which to create the window.
+    dtype : torch.dtype, optional
+        Data type of the returned window. Default is torch.float32.
+
+    Returns
+    -------
+    torch.Tensor
+        One-dimensional tensor of shape (length,) containing the blending
+        weights.
+
+    Notes
+    -----
+    For overlap regions containing more than one element, the weights use
+    sine-squared and cosine-squared ramps equivalent to half-Hann windows:
+
+    - the left ramp increases smoothly from 0 to 1 following a
+      sine-squared profile;
+    - the right ramp decreases smoothly from 1 to 0 following a
+      cosine-squared profile.
+
+    When an overlap contains exactly one element, its boundary weight is set
+    to zero. Elements outside the overlap regions retain a weight of one.
+    """
+    w = torch.ones(length, device=device, dtype=dtype)
+
+    # sin²
+    if left_overlap > 1:
+        t = torch.arange(left_overlap, device=device, dtype=dtype)
+        w[:left_overlap] = 0.5 * (1.0 - torch.cos(np.pi * t / (left_overlap - 1)))
+    elif left_overlap == 1:
+        w[0] = 0.0
+
+    # cos²
+    if right_overlap > 1:
+        t = torch.arange(right_overlap, device=device, dtype=dtype)
+        w[-right_overlap:] = 0.5 * (1.0 + torch.cos(np.pi * t / (right_overlap - 1)))
+    elif right_overlap == 1:
+        w[-1] = 0.0
+
+    return w
+
+
+def overlap_aware_2d_window(
+    H,
+    W,
+    top_overlap,
+    bottom_overlap,
+    left_overlap,
+    right_overlap,
+    device,
+    dtype=torch.float32,
+):
+    """
+    Build a two-dimensional overlap-aware blending window.
+
+    The window is equal to one in the non-overlapping interior.
+    Sine-squared ramps, equivalent to half-Hann windows, are applied only
+    within the actual overlap regions along the four boundaries.
+
+    Parameters
+    ----------
+    H : int
+        Height of the window.
+    W : int
+        Width of the window.
+    top_overlap : int
+        Number of rows overlapping with the block above. A value of zero
+        leaves the top boundary unchanged.
+    bottom_overlap : int
+        Number of rows overlapping with the block below. A value of zero
+        leaves the bottom boundary unchanged.
+    left_overlap : int
+        Number of columns overlapping with the block on the left. A value of
+        zero leaves the left boundary unchanged.
+    right_overlap : int
+        Number of columns overlapping with the block on the right. A value of
+        zero leaves the right boundary unchanged.
+    device : torch.device or str
+        Device on which to create the window.
+    dtype : torch.dtype, optional
+        Data type of the returned window. Default is "torch.float32".
+
+    Returns
+    -------
+    torch.Tensor
+        Two-dimensional tensor of shape "(H, W)" containing the blending
+        weights.
+
+    Notes
+    -----
+    The two-dimensional window is constructed as the outer product of two
+    one-dimensional overlap-aware windows:
+
+    - a vertical window of length H for the top and bottom overlaps;
+    - a horizontal window of length W for the left and right overlaps.
+
+    Pixels outside the overlap regions retain a weight of one. In corner
+    overlap regions, the vertical and horizontal weights are multiplied
+    together.
+    """
+    w_h = overlap_aware_1d_window(
+        H,
+        left_overlap=top_overlap,
+        right_overlap=bottom_overlap,
+        device=device,
+        dtype=dtype,
+    )
+
+    w_w = overlap_aware_1d_window(
+        W,
+        left_overlap=left_overlap,
+        right_overlap=right_overlap,
+        device=device,
+        dtype=dtype,
+    )
+
+    return w_h.unsqueeze(1) * w_w.unsqueeze(0)
+
+
 def reconstruct_original_layout(
     epoch, args, paths, steps, all_data, dataset, device, logger
 ):
@@ -1207,7 +1351,13 @@ def reconstruct_original_layout(
             lat_filled = torch.zeros(covered_H, dtype=torch.bool, device=device)
             lon_filled = torch.zeros(covered_W, dtype=torch.bool, device=device)
 
-            # Initialize arrays for the COVERED area
+            # Initialize accumulation arrays for overlap-aware blending.
+            # Each prediction block contributes block_value * window to the weighted
+            # sum. After all blocks have been accumulated, the result is divided by
+            # the sum of the contributing weights at each pixel.
+            #
+            # This explicit normalization supports arbitrary overlap ratios and
+            # boundary-aligned final blocks, for which overlap sizes may vary.
             combined_data = {}
             for key in ["predictions", "coarse", "fine"]:
                 combined_data[key] = torch.zeros(
@@ -1216,23 +1366,36 @@ def reconstruct_original_layout(
                     covered_H,
                     covered_W,
                     device=device,
-                    dtype=reconstructions[key].dtype,
+                    dtype=torch.float32,  # accumulate in float32 for numerical safety
                 )
 
-            # Track grid coverage (must cover all!)
+            weight_accumulator = torch.zeros(
+                covered_H, covered_W, device=device, dtype=torch.float32
+            )
+
+            # Track grid coverage (must cover all pixels at least once)
             coverage_mask = torch.zeros(
                 covered_H, covered_W, dtype=torch.bool, device=device
             )
 
-            # Combine blocks and reconstruct coordinates
+            # Cache overlap-aware windows by block shape and true overlap sizes
+            hann_cache = {}
+
+            # Precompute local block start/end positions.
+            # This is used to estimate the true overlap with neighboring blocks.
+            lat_starts = sorted(set(s[0] - lat_min for s in eval_slices))
+            lat_ends = sorted(set(s[1] - lat_min for s in eval_slices))
+
+            lon_starts = sorted(set(s[2] - lon_min for s in eval_slices))
+            lon_ends = sorted(set(s[3] - lon_min for s in eval_slices))
+
+            # Combine blocks using overlap-aware Hann blending
             blocks_placed = 0
             for t in range(time_batchs):
                 for spatial_idx, (lat_start, lat_end, lon_start, lon_end) in enumerate(
                     eval_slices
                 ):
-                    # Shift slice indices into the local reconstruction coordinate system.
-                    # This is required for regional inference where slices do not start at 0.
-                    # For global inference lat_min=lon_min=0 so indices remain unchanged.
+                    # Shift to local coordinate system (relevant for inference_regional)
                     lat_start -= lat_min
                     lat_end -= lat_min
                     lon_start -= lon_min
@@ -1241,32 +1404,135 @@ def reconstruct_original_layout(
                     if spatial_idx >= sbatch:
                         error_msg = (
                             f"CRITICAL ERROR: Slice index {spatial_idx} exceeds sbatch {sbatch}. "
-                            f"eval_slices has {len(eval_slices)} slices but only {sbatch} spatial blocks reconstructed."
+                            f"eval_slices has {len(eval_slices)} slices but only "
+                            f"{sbatch} spatial blocks reconstructed."
                         )
                         logger.error(error_msg)
                         raise ValueError(error_msg)
 
-                    # Place block in combined array
-                    for key in ["predictions", "coarse", "fine"]:
-                        combined_data[key][
-                            t, :, lat_start:lat_end, lon_start:lon_end
-                        ] = reconstructions[key][t, spatial_idx]
+                    block_h = lat_end - lat_start
+                    block_w = lon_end - lon_start
 
-                    # Reconstruct LATITUDE coordinates from this block
-                    block_lat = reconstructions["lat"][t, spatial_idx]  # [H_block]
+                    # Find the position of the current block in the tiling grid
+                    lat_idx = lat_starts.index(lat_start)
+                    lon_idx = lon_starts.index(lon_start)
+
+                    # Compute the true overlap with neighboring blocks.
+                    # At domain borders, there is no missing neighbor, so overlap = 0.
+                    top_overlap = (
+                        0 if lat_idx == 0 else lat_ends[lat_idx - 1] - lat_start
+                    )
+
+                    bottom_overlap = (
+                        0
+                        if lat_idx == len(lat_starts) - 1
+                        else lat_end - lat_starts[lat_idx + 1]
+                    )
+
+                    left_overlap = (
+                        0 if lon_idx == 0 else lon_ends[lon_idx - 1] - lon_start
+                    )
+
+                    right_overlap = (
+                        0
+                        if lon_idx == len(lon_starts) - 1
+                        else lon_end - lon_starts[lon_idx + 1]
+                    )
+
+                    # Numerical safety: avoid negative overlaps if blocks only touch without overlap
+                    top_overlap = max(0, top_overlap)
+                    bottom_overlap = max(0, bottom_overlap)
+                    left_overlap = max(0, left_overlap)
+                    right_overlap = max(0, right_overlap)
+
+                    # Retrieve or compute the overlap-aware window
+                    cache_key = (
+                        block_h,
+                        block_w,
+                        top_overlap,
+                        bottom_overlap,
+                        left_overlap,
+                        right_overlap,
+                    )
+
+                    if cache_key not in hann_cache:
+                        hann_cache[cache_key] = overlap_aware_2d_window(
+                            block_h,
+                            block_w,
+                            top_overlap=top_overlap,
+                            bottom_overlap=bottom_overlap,
+                            left_overlap=left_overlap,
+                            right_overlap=right_overlap,
+                            device=device,
+                        )
+
+                    window = hann_cache[cache_key]  # [block_h, block_w]
+
+                    # Prediction: overlap-aware weighted blending
+                    block_val = reconstructions["predictions"][t, spatial_idx].to(
+                        torch.float32
+                    )
+                    combined_data["predictions"][
+                        t, :, lat_start:lat_end, lon_start:lon_end
+                    ] += block_val * window.unsqueeze(0)
+
+                    # Coarse: direct overwrite, no blending
+                    combined_data["coarse"][
+                        t, :, lat_start:lat_end, lon_start:lon_end
+                    ] = reconstructions["coarse"][t, spatial_idx].to(torch.float32)
+
+                    # Fine / truth: direct overwrite, no blending
+                    combined_data["fine"][
+                        t, :, lat_start:lat_end, lon_start:lon_end
+                    ] = reconstructions["fine"][t, spatial_idx].to(torch.float32)
+
+                    # Accumulate weights (only needs to be done once, not per time step)
+                    if t == 0:
+                        weight_accumulator[lat_start:lat_end, lon_start:lon_end] += (
+                            window
+                        )
+
+                    # Reconstruct coordinates (plain overwrite: coordinates are identical
+                    # for all blocks sharing the same spatial region)
+                    block_lat = reconstructions["lat"][t, spatial_idx]
                     lat_reconstructed[lat_start:lat_end] = block_lat
                     lat_filled[lat_start:lat_end] = True
 
-                    # Reconstruct LONGITUDE coordinates from this block
-                    block_lon = reconstructions["lon"][t, spatial_idx]  # [W_block]
+                    block_lon = reconstructions["lon"][t, spatial_idx]
                     lon_reconstructed[lon_start:lon_end] = block_lon
                     lon_filled[lon_start:lon_end] = True
 
-                    # Mark grid coverage
                     coverage_mask[lat_start:lat_end, lon_start:lon_end] = True
                     blocks_placed += 1
 
-            logger.info(f"Combined {blocks_placed} spatial blocks")
+            logger.info(
+                f"Combined {blocks_placed} spatial blocks with overlap-aware window blending"
+            )
+
+            # Normalize the weighted prediction sum by the accumulated weights.
+            # The accumulated weight is not assumed to be one because overlap sizes
+            # may vary, especially for blocks shifted to align with domain boundaries.
+            min_w = weight_accumulator.min().item()
+            max_w = weight_accumulator.max().item()
+            logger.info(
+                f"Overlap-aware weight accumulator range: [{min_w:.4f}, {max_w:.4f}]"
+            )
+
+            weight_safe = weight_accumulator.clamp(min=1e-8).unsqueeze(0).unsqueeze(0)
+
+            # Only predictions were weighted, so only predictions are normalized
+            combined_data["predictions"] = (
+                combined_data["predictions"] / weight_safe
+            ).to(reconstructions["predictions"].dtype)
+
+            # Coarse and fine were copied directly, so no weight normalization
+            combined_data["coarse"] = combined_data["coarse"].to(
+                reconstructions["coarse"].dtype
+            )
+
+            combined_data["fine"] = combined_data["fine"].to(
+                reconstructions["fine"].dtype
+            )
 
             # VERIFY COMPLETE COVERAGE - RAISE ERROR IF INCOMPLETE
 
@@ -1622,6 +1888,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_mae_map_epoch_{epoch}.png",
             save_dir=paths.results,
+            # save_npz=True,
         )
         logger.info(f"Saved full domain MAE map to: {save_path}")
 

@@ -339,6 +339,19 @@ def parse_args():
         default=False,
         help="Apply fine filtering for coarse data generation (default: True)",
     )
+
+    parser.add_argument(
+        "--in_shape",
+        type=int,
+        nargs=2,
+        default=[80, 128],
+        metavar=("H", "W"),
+        help=(
+            "Coarse resolution used inside DataPreprocessor for down/up sampling. "
+            "Example: --in_shape 80 128"
+        ),
+    )
+
     parser.add_argument(
         "--save_checkpoint_name",
         type=str,
@@ -375,6 +388,13 @@ def parse_args():
         default=None,
         help="Requested regional size in grid points (lat lon) "
         "for regional inference (used only when run_type=inference_regional)",
+    )
+
+    parser.add_argument(
+        "--overlap_ratio",
+        type=float,
+        default=0.02,
+        help="Spatial overlap ratio between inference blocks (0.02 = 2%).",
     )
 
     # EDM sampler configuration
@@ -679,6 +699,7 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── Epsilon: {args.epsilon}")
     logger.info(f" └── Beta: {args.beta}")
     logger.info(f" └── Margin: {args.margin}")
+    logger.info(f" └── In shape / coarse resolution: {tuple(args.in_shape)}")
 
     # Model architecture
     logger.info("\nModel Architecture:")
@@ -1149,7 +1170,7 @@ def create_data_loaders(
         constants_file_path=paths.constants,
         varnames_list=args.varnames_list,
         units_list=args.units_list,
-        in_shape=(80, 128),
+        in_shape=tuple(args.in_shape),
         batch_size_lat=h,
         batch_size_lon=w,
         steps=steps,
@@ -1171,6 +1192,7 @@ def create_data_loaders(
         apply_filter=args.apply_filter,
         region_center=args.region_center,
         region_size=args.region_size,
+        overlap_ratio=args.overlap_ratio,
         logger=logger,
     )
 

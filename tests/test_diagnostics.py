@@ -1608,34 +1608,34 @@ class TestPlottingFunctions(unittest.TestCase):
             sal_objects["sal_waVOL"],
             np.float64(100.0),
             places=3,
-            msg=f"waVOL does not correspond to theoretical value : got {sal_objects["sal_waVOL"]} but expected {100.0}",
+            msg=f"waVOL does not correspond to theoretical value : got {sal_objects['sal_waVOL']} but expected {100.0}",
         )
         # test amplitude is equal to theoretical value to 3 decimal places:
         self.assertAlmostEqual(
             sal_objects["sal_a"],
             np.float64(0.1953),
             places=3,
-            msg=f"amplitude does not correspond to theoretical value : got {sal_objects["sal_a"]} but expected {0.1953}",
+            msg=f"amplitude does not correspond to theoretical value : got {sal_objects['sal_a']} but expected {0.1953}",
         )
         # test r is equal to theoretical value to 3 decimal places:
         self.assertAlmostEqual(
             sal_objects["sal_r"],
             np.float64(0.156),
             places=3,
-            msg=f"r does not correspond to theoretical value : got {sal_objects["sal_r"]} but expected {0.156}",
+            msg=f"r does not correspond to theoretical value : got {sal_objects['sal_r']} but expected {0.156}",
         )
         # test number of targets is equal to theoretical value:
         self.assertEqual(
             sal_objects["sal_targ_num"],
             2,
-            msg=f"number of targets does not correspond to theoretical value : got {sal_objects["sal_targ_num"]} but expected {2}",
+            msg=f"number of targets does not correspond to theoretical value : got {sal_objects['sal_targ_num']} but expected {2}",
         )
         # test size of targets is equal to theoretical values :
         self.assertAlmostEqual(
             np.max(np.abs(sal_objects["sal_targ_size"] - np.array([100.0, 100.0]))),
             0,
             places=3,
-            msg=f"size of targets does not correspond to theoretical value : got {sal_objects["sal_targ_size"]} but expected {np.array([100., 100.])}",
+            msg=f"size of targets does not correspond to theoretical value : got {sal_objects['sal_targ_size']} but expected {np.array([100., 100.])}",
         )
 
         if self.logger:

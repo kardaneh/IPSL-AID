@@ -462,8 +462,23 @@ class TestDataPreprocessor(unittest.TestCase):
 
         # Verify evaluation slices
         self.assertIsNotNone(preprocessor.eval_slices)
-        expected_slices = (36 // 32) * (72 // 32)  # 1 * 2 = 2
+
+        # Expected starting indices for full spatial coverage without overlap.
+        expected_lat_starts = [0]
+        expected_lon_starts = [0, 32]
+
+        # Extract the unique starting positions from the generated slices
+        actual_lat_starts = sorted(set(s[0] for s in preprocessor.eval_slices))
+        actual_lon_starts = sorted(set(s[2] for s in preprocessor.eval_slices))
+
+        # Verify that the generated spatial coverage is correct
+        self.assertEqual(actual_lat_starts, expected_lat_starts)
+        self.assertEqual(actual_lon_starts, expected_lon_starts)
+
+        # Verify the total number of generated evaluation slices
+        expected_slices = len(expected_lat_starts) * len(expected_lon_starts)
         self.assertEqual(len(preprocessor.eval_slices), expected_slices)
+
         self.assertEqual(preprocessor.sbatch, expected_slices)
 
         if self.logger:
@@ -543,6 +558,55 @@ class TestDataPreprocessor(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ Batch size validation test passed")
+
+    def test_inference_generates_overlapping_slices(self):
+        """Test that global inference generates overlapping evaluation slices."""
+        if self.logger:
+            self.logger.info("Testing overlapping slices during inference")
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=4,
+            debug=True,
+            mode="validation",
+            run_type="inference",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            overlap_ratio=0.02,
+            logger=self.logger,
+        )
+
+        # With a 32-pixel block and 2% overlap:
+        # stride = round(32 * (1 - 0.02)) = 31
+        # The final block is shifted to ensure full domain coverage.
+        expected_lat_starts = [0, 4]
+        expected_lon_starts = [0, 31, 40]
+
+        actual_lat_starts = sorted(set(s[0] for s in preprocessor.eval_slices))
+        actual_lon_starts = sorted(set(s[2] for s in preprocessor.eval_slices))
+
+        # Verify that overlapping inference slices are generated
+        self.assertEqual(actual_lat_starts, expected_lat_starts)
+        self.assertEqual(actual_lon_starts, expected_lon_starts)
+
+        if self.logger:
+            self.logger.info("✅ Inference overlapping slices test passed")
 
     # ------------------------------------------------------------------------
     # DataPreprocessor Method Tests
@@ -836,11 +900,29 @@ class TestDataPreprocessor(unittest.TestCase):
             logger=self.logger,
         )
 
-        slices = preprocessor.generate_evaluation_slices()
+        # Generate deterministic evaluation slices with no overlap
+        slices = preprocessor.generate_evaluation_slices(
+            use_hann_blending=False,
+            overlap_ratio=0.0,
+        )
 
-        n_blocks_lat = 36 // 32
-        n_blocks_lon = 72 // 32
-        self.assertEqual(len(slices), n_blocks_lat * n_blocks_lon)
+        # Expected starting indices
+        expected_lat_starts = [0]
+        expected_lon_starts = [0, 32]
+
+        actual_lat_starts = sorted(set(s[0] for s in slices))
+        actual_lon_starts = sorted(set(s[2] for s in slices))
+
+        # Verify that the generated block positions match the expected coverage
+        self.assertEqual(actual_lat_starts, expected_lat_starts)
+        self.assertEqual(actual_lon_starts, expected_lon_starts)
+
+        # Verify that the total number of slices matches the Cartesian product
+        # of latitude and longitude block positions
+        self.assertEqual(
+            len(slices),
+            len(expected_lat_starts) * len(expected_lon_starts),
+        )
 
         if self.logger:
             self.logger.info(

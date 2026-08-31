@@ -235,8 +235,6 @@ cat >> $sbatch_script <<EOF
 #SBATCH --cpus-per-task=$SLURM_CPUS_PER_TASK
 #SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
-#SBATCH --mail-user=kkingston@ipsl.fr
-#SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge

@@ -24,6 +24,7 @@ from IPSL_AID.evaluater import (
     pearson_all,
     kl_divergence_all,
     crps_ensemble_all,
+    get_ocean_mask,
     denormalize,
     run_validation,
     generate_residuals_norm,
@@ -304,6 +305,42 @@ class TestErrorMetrics(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ Error metrics exact match test passed")
+
+    def test_metrics_with_spatial_mask(self):
+        """Large land errors must not affect ocean-only validation metrics."""
+        true = torch.tensor([[[[1.0, 2.0], [3.0, 4.0]]]])
+        pred = torch.tensor([[[[1.0, 2.0], [30.0, 40.0]]]])
+        ocean_mask = torch.tensor([[[[True, True], [False, False]]]])
+
+        for name, func in self.metrics.items():
+            with self.subTest(metric=name):
+                num_elements, value = func(pred, true, mask=ocean_mask)
+                self.assertEqual(num_elements, 2)
+                expected = 1.0 if name in {"R2", "PEARSON"} else 0.0
+                self.assertAlmostEqual(value.item(), expected, places=6)
+
+        num_elements, kl = kl_divergence_all(pred, true, mask=ocean_mask)
+        self.assertEqual(num_elements, 2)
+        self.assertAlmostEqual(kl.item(), 0.0, places=6)
+
+    def test_ocean_mask_is_independent_from_model_input(self):
+        """The LSM can be present while masking remains disabled."""
+        batch = {"lsm": torch.tensor([[[[0.0, 0.49], [0.5, 1.0]]]])}
+        reference = torch.zeros(1, 2, 2, 2)
+
+        disabled_args = type("Args", (), {"ocean_only_calculations": False})()
+        self.assertIsNone(
+            get_ocean_mask(batch, disabled_args, reference, torch.device("cpu"))
+        )
+
+        enabled_args = type(
+            "Args",
+            (),
+            {"ocean_only_calculations": True, "lsm_threshold": 0.5},
+        )()
+        mask = get_ocean_mask(batch, enabled_args, reference, torch.device("cpu"))
+        self.assertEqual(mask.shape, reference.shape)
+        self.assertEqual(mask.sum().item(), 4)
 
     def test_multi_dimensional(self):
         """Test error metrics with multi-dimensional tensors."""

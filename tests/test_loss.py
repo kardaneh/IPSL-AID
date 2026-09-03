@@ -251,6 +251,25 @@ class TestLosses(unittest.TestCase):
         if self.logger:
             self.logger.info(f"✅ UnetLoss test passed - loss value: {loss.item():.4f}")
 
+    def test_unet_loss_with_spatial_mask(self):
+        """Only pixels selected by the mask must contribute to the loss."""
+
+        class IdentityModel(torch.nn.Module):
+            def forward(self, images, **_kwargs):
+                return images
+
+        model = IdentityModel()
+        images = torch.tensor([[[[1.0, 2.0], [10.0, 20.0]]]])
+        targets = torch.zeros_like(images)
+        ocean_mask = torch.tensor([[[[True, True], [False, False]]]])
+
+        loss_fn = UnetLoss(loss_type="mse")
+        unmasked_loss = loss_fn(model, targets, images)
+        masked_loss = loss_fn(model, targets, images, mask=ocean_mask)
+
+        self.assertAlmostEqual(unmasked_loss.item(), 126.25)
+        self.assertAlmostEqual(masked_loss.item(), 2.5)
+
     def test_loss_comparison(self):
         """Compare different loss functions on the same model."""
         if self.logger:

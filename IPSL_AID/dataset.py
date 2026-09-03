@@ -333,7 +333,8 @@ class DataPreprocessor(Dataset):
     units_list : list of str
         Units for each variable in varnames_list.
     in_shape : tuple of int, optional
-        Target shape (height, width) for coarse resolution. Default is (16, 32).
+        Full-domain coarse-grid shape ``(latitude, longitude)``. Default is
+        ``(80, 128)``.
     batch_size_lat : int, optional
         Height of spatial batch in grid points. Default is 144.
     batch_size_lon : int, optional
@@ -476,6 +477,7 @@ class DataPreprocessor(Dataset):
         index_mapping=None,
         normalization_type=None,
         constant_variables=None,
+        include_lsm_as_input=True,
         epsilon=0.02,
         margin=8,
         dtype=(torch.float32, np.float32),
@@ -500,7 +502,7 @@ class DataPreprocessor(Dataset):
         units_list : list of str
             Units for each variable.
         in_shape : tuple of int, optional
-            Target shape for coarse resolution.
+            Full-domain coarse-grid shape ``(latitude, longitude)``.
         batch_size_lat : int, optional
             Height of spatial batch.
         batch_size_lon : int, optional
@@ -531,6 +533,9 @@ class DataPreprocessor(Dataset):
             Normalization type per variable.
         constant_variables : list of str, optional
             Constant variable names.
+        include_lsm_as_input : bool, optional
+            Include the land-sea mask in the model input channels. The mask is
+            still returned separately when this option is disabled.
         epsilon : float, optional
             Numerical stability value.
         margin : int, optional
@@ -546,10 +551,11 @@ class DataPreprocessor(Dataset):
         """
         self.constants_file_path = constants_file_path
         self.constant_variables = constant_variables
+        self.include_lsm_as_input = include_lsm_as_input
         self.years = years
         self.varnames_list = varnames_list
         self.units_list = units_list
-        self.in_shape = in_shape
+        self.in_shape = tuple(int(value) for value in in_shape)
         self.batch_size_lat = batch_size_lat
         self.batch_size_lon = batch_size_lon
 
@@ -586,6 +592,19 @@ class DataPreprocessor(Dataset):
         self.dH = steps.d_latitude
         self.W = steps.longitude
         self.dW = steps.d_longitude
+
+        if len(self.in_shape) != 2:
+            raise ValueError(
+                f"in_shape must contain exactly two values, got {self.in_shape}"
+            )
+        coarse_h, coarse_w = self.in_shape
+        if coarse_h <= 0 or coarse_w <= 0:
+            raise ValueError(f"Coarse dimensions must be positive, got {self.in_shape}")
+        if coarse_h > self.H or coarse_w > self.W:
+            raise ValueError(
+                f"Coarse shape {self.in_shape} exceeds full data shape "
+                f"({self.H}, {self.W})"
+            )
 
         self.region_center = region_center
         self.region_size = region_size
@@ -625,6 +644,7 @@ class DataPreprocessor(Dataset):
         assert self.logger is not None, "Make sure the logger is set"
         self.logger.info(f"Spatial dimensions: {self.H} x {self.W}")
         self.logger.info(f"batch size: {self.batch_size_lat} x {self.batch_size_lon}")
+        self.logger.info(f"Coarse input shape: {self.in_shape}")
 
         if self.constant_variables is not None and self.constants_file_path is not None:
             self.logger.info(f"Opening constant variables file: {constants_file_path}")
@@ -846,6 +866,30 @@ class DataPreprocessor(Dataset):
         self.center_tracker = []  # Will store spatial indices
         self.tindex_tracker = []  # Will store temporal indices
 
+    def get_lat_name(self, ds=None):
+        ds = self.loaded_dfs if ds is None else ds
+        if "latitude" in ds.coords:
+            return "latitude"
+        if "lat" in ds.coords:
+            return "lat"
+        raise KeyError(f"No latitude coordinate found. Available: {list(ds.coords)}")
+
+    def get_lon_name(self, ds=None):
+        ds = self.loaded_dfs if ds is None else ds
+        if "longitude" in ds.coords:
+            return "longitude"
+        if "lon" in ds.coords:
+            return "lon"
+        raise KeyError(f"No longitude coordinate found. Available: {list(ds.coords)}")
+
+    def get_lat_values(self, ds=None):
+        ds = self.loaded_dfs if ds is None else ds
+        return ds[self.get_lat_name(ds)].values
+
+    def get_lon_values(self, ds=None):
+        ds = self.loaded_dfs if ds is None else ds
+        return ds[self.get_lon_name(ds)].values
+
     def new_epoch(self):
         """
         Prepare for a new training epoch by generating new time batches.
@@ -956,8 +1000,8 @@ class DataPreprocessor(Dataset):
         """
 
         # Retrieve latitude and longitude arrays from the dataset
-        lat_array = self.loaded_dfs.latitude.values
-        lon_array = self.loaded_dfs.longitude.values
+        lat_array = self.get_lat_values()
+        lon_array = self.get_lon_values()
 
         # Find the index of the grid point closest to the requested lat/lon
         lat_idx = np.abs(lat_array - lat_value).argmin()
@@ -1575,8 +1619,8 @@ class DataPreprocessor(Dataset):
 
         # Load data
         full_data_org = self.loaded_dfs.isel(time=tindex)
-        lat = full_data_org.latitude.values.copy()
-        lon = full_data_org.longitude.values.copy()
+        lat = self.get_lat_values(full_data_org).copy()
+        lon = self.get_lon_values(full_data_org).copy()
 
         # Normalize to range [-1, 1] for better neural network input stability
         lat_norm = 2 * ((lat - lat.min()) / (lat.max() - lat.min())) - 1
@@ -1901,6 +1945,7 @@ class DataPreprocessor(Dataset):
         if self.debug:
             self.logger.info(f"  Feature composition before constants: {feature.shape}")
 
+        lsm_batch = None
         if self.constant_variables is not None:
             assert self.const_vars is not None, (
                 f"Constant variables {self.constant_variables} were specified "
@@ -1946,10 +1991,30 @@ class DataPreprocessor(Dataset):
             )
             const_batch = const_batch.to(self.torch_dtype)
 
+            if "lsm" in self.constant_variables:
+                lsm_index = self.constant_variables.index("lsm")
+                lsm_batch = const_batch[lsm_index : lsm_index + 1]
+
             if self.debug:
                 self.logger.info(f"  Constant batch shape: {const_batch.shape}")
 
-            feature = torch.cat([feature, const_batch], dim=0)
+            model_const_batch = const_batch
+            if not self.include_lsm_as_input and "lsm" in self.constant_variables:
+                model_const_batch = (
+                    torch.cat(
+                        [
+                            const_batch[index : index + 1]
+                            for index, name in enumerate(self.constant_variables)
+                            if name != "lsm"
+                        ],
+                        dim=0,
+                    )
+                    if len(self.constant_variables) > 1
+                    else const_batch[:0]
+                )
+
+            if model_const_batch.shape[0] > 0:
+                feature = torch.cat([feature, model_const_batch], dim=0)
 
             if self.debug:
                 self.logger.info(
@@ -1991,6 +2056,11 @@ class DataPreprocessor(Dataset):
                 },
             }
         )
+
+        # Expose the LSM independently from the model inputs. This adds no file
+        # access and lets losses/diagnostics use it even when it is not an input.
+        if lsm_batch is not None:
+            sample["lsm"] = lsm_batch
 
         if self.debug:
             self.logger.info("------------------------------------------------------")

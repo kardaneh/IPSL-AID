@@ -26,6 +26,7 @@ from IPSL_AID.diagnostics import (
     plot_validation_mvcorr_space,
     plot_temporal_series_comparison,
 )
+from IPSL_AID.loss import reduce_loss
 
 
 class MetricTracker:
@@ -146,7 +147,57 @@ class MetricTracker:
         return np.sqrt(self.getmean())
 
 
-def mae_all(pred, true):
+def get_ocean_mask(batch, args, reference, device):
+    """Return the existing LSM as an ocean mask broadcast to ``reference``."""
+    if getattr(args, "ocean_only_calculations", False) is not True:
+        return None
+
+    if "lsm" not in batch:
+        raise RuntimeError(
+            "Ocean-only calculations require 'lsm' in each dataset sample. "
+            "Add lsm to --constant_varnames_list."
+        )
+
+    lsm = batch["lsm"].to(device=device)
+    threshold = getattr(args, "lsm_threshold", 0.5)
+    ocean_mask = torch.isfinite(lsm) & (lsm < threshold)
+    try:
+        ocean_mask = torch.broadcast_to(ocean_mask, reference.shape)
+    except RuntimeError as exc:
+        raise RuntimeError(
+            f"LSM shape {tuple(lsm.shape)} cannot be broadcast to data shape "
+            f"{tuple(reference.shape)}"
+        ) from exc
+
+    if not torch.any(ocean_mask):
+        raise ValueError("The LSM does not select any ocean pixel")
+    return ocean_mask
+
+
+def _flatten_valid(pred, true, mask=None):
+    """Flatten matching tensors and optionally retain masked, finite values."""
+    if pred.shape != true.shape:
+        raise RuntimeError(f"Shape mismatch: pred {pred.shape} vs true {true.shape}")
+
+    if mask is None:
+        return pred.reshape(-1), true.reshape(-1)
+
+    try:
+        valid = torch.broadcast_to(
+            mask.to(device=pred.device, dtype=torch.bool), pred.shape
+        )
+    except RuntimeError as exc:
+        raise RuntimeError(
+            f"Mask shape {tuple(mask.shape)} cannot be broadcast to data shape "
+            f"{tuple(pred.shape)}"
+        ) from exc
+    valid = valid & torch.isfinite(pred) & torch.isfinite(true)
+    if not torch.any(valid):
+        raise ValueError("The mask does not select any finite value")
+    return pred.masked_select(valid), true.masked_select(valid)
+
+
+def mae_all(pred, true, mask=None):
     """
     Calculate Mean Absolute Error (MAE) between predicted and true values.
 
@@ -180,12 +231,13 @@ def mae_all(pred, true):
     The MAE is calculated as: mean(abs(pred - true))
     This function is useful for tracking metrics with MetricTracker
     """
+    pred, true = _flatten_valid(pred, true, mask)
     num_elements = pred.numel()
     mae_value = torch.mean(torch.abs(pred - true))
     return num_elements, mae_value
 
 
-def nmae_all(pred, true, eps=1e-8):
+def nmae_all(pred, true, eps=1e-8, mask=None):
     """
     Normalized Mean Absolute Error (NMAE).
     NMAE = MAE(pred, true) / mean(abs(true))
@@ -222,6 +274,7 @@ def nmae_all(pred, true, eps=1e-8):
     The NMAE is calculated as: MAE(pred, true) / mean(abs(true))
     This function is useful for tracking metrics with MetricTracker
     """
+    pred, true = _flatten_valid(pred, true, mask)
     num_elements = pred.numel()
     mae = torch.mean(torch.abs(pred - true))
     norm = torch.mean(torch.abs(true)) + eps
@@ -285,7 +338,7 @@ def crps_ensemble_all(pred_ens, true):
     return num_elements, crps_mean
 
 
-def rmse_all(pred, true):
+def rmse_all(pred, true, mask=None):
     """
     Calculate Root Mean Square Error (RMSE) between predicted and true values.
 
@@ -319,13 +372,14 @@ def rmse_all(pred, true):
     The RMSE is calculated as: sqrt(mean((pred - true)^2))
     This function is useful for tracking metrics with MetricTracker
     """
+    pred, true = _flatten_valid(pred, true, mask)
     num_elements = pred.numel()
     mse = torch.mean((pred - true) ** 2)
     rmse_value = torch.sqrt(mse)
     return num_elements, rmse_value
 
 
-def r2_all(pred, true):
+def r2_all(pred, true, mask=None):
     """
     Calculate R2 (coefficient of determination) between predicted and true values.
 
@@ -355,15 +409,9 @@ def r2_all(pred, true):
     This implementation is fully torch-based and works on CPU and GPU.
     """
 
-    if pred.shape != true.shape:
-        raise RuntimeError(f"Shape mismatch: pred {pred.shape} vs true {true.shape}")
-
     eps = 1e-12  # Small value to avoid division by zero when variance is zero
-    num_elements = pred.numel()
-
-    # Flatten
-    pred_flat = pred.reshape(-1)
-    true_flat = true.reshape(-1)
+    pred_flat, true_flat = _flatten_valid(pred, true, mask)
+    num_elements = pred_flat.numel()
 
     # Residual sum of squares
     ss_res = torch.sum((true_flat - pred_flat) ** 2)
@@ -378,7 +426,7 @@ def r2_all(pred, true):
     return num_elements, r2_value
 
 
-def pearson_all(pred, true):
+def pearson_all(pred, true, mask=None):
     """
     Compute the Pearson correlation coefficient between predicted and
     ground truth values using torch.corrcoef.
@@ -404,14 +452,8 @@ def pearson_all(pred, true):
         rho = Cov(pred, true) / (std(pred) * std(true))
     """
 
-    if pred.shape != true.shape:
-        raise RuntimeError(f"Shape mismatch: {pred.shape} vs {true.shape}")
-
-    num_elements = pred.numel()
-
-    # Flatten tensors to 1D vectors
-    pred_flat = pred.reshape(-1)
-    true_flat = true.reshape(-1)
+    pred_flat, true_flat = _flatten_valid(pred, true, mask)
+    num_elements = pred_flat.numel()
 
     # Stack into a 2 x N matrix required by torch.corrcoef
     stacked = torch.stack([pred_flat, true_flat], dim=0)
@@ -426,7 +468,7 @@ def pearson_all(pred, true):
     return num_elements, pearson_value
 
 
-def kl_divergence_all(pred, true):
+def kl_divergence_all(pred, true, mask=None):
     """
     Compute the Kullback–Leibler (KL) divergence between predicted and
     ground truth distributions using histogram-based estimation.
@@ -456,17 +498,11 @@ def kl_divergence_all(pred, true):
         - Q represents the predicted distribution
     """
 
-    if pred.shape != true.shape:
-        raise RuntimeError(f"Shape mismatch: {pred.shape} vs {true.shape}")
-
-    num_elements = pred.numel()
+    pred_flat, true_flat = _flatten_valid(pred, true, mask)
+    num_elements = pred_flat.numel()
 
     n_bins = 100
     eps = 1e-12
-
-    # Flatten tensors to 1D vectors
-    pred_flat = pred.reshape(-1)
-    true_flat = true.reshape(-1)
 
     # Combine for percentile computation
     all_values = torch.cat([pred_flat, true_flat])
@@ -1062,11 +1098,27 @@ def reconstruct_original_layout(
 
     logger.info(f"Sample shape: C={C}, H={H}, W={W}")
 
+    # Reconstruct the LSM only when it is needed by diagnostics.
+    data_keys = ["predictions", "coarse", "fine"]
+    if "lsm" in all_data:
+        data_keys.append("lsm")
+
     # Initialize reconstruction arrays
     reconstructions = {}
-    for key in ["predictions", "coarse", "fine"]:
+    for key in data_keys:
+        key_c, key_h, key_w = all_data[key][0].shape[1:]
+        if (key_h, key_w) != (H, W):
+            raise RuntimeError(
+                f"{key} spatial shape {(key_h, key_w)} does not match {(H, W)}"
+            )
         reconstructions[key] = torch.zeros(
-            time_batchs, sbatch, C, H, W, device=device, dtype=all_data[key][0].dtype
+            time_batchs,
+            sbatch,
+            key_c,
+            H,
+            W,
+            device=device,
+            dtype=all_data[key][0].dtype,
         )
         logger.info(f"Initialized {key} with shape: {reconstructions[key].shape}")
 
@@ -1116,7 +1168,7 @@ def reconstruct_original_layout(
             tindex, sindex = index_to_position[dataset_idx]
 
             # Store all data
-            for key in ["predictions", "coarse", "fine"]:
+            for key in data_keys:
                 reconstructions[key][tindex, sindex] = all_data[key][batch_idx][
                     i_in_batch
                 ]
@@ -1133,7 +1185,7 @@ def reconstruct_original_layout(
             dataset_idx += 1
 
         # Free memory for this batch
-        for key in ("predictions", "coarse", "fine", "lat", "lon"):
+        for key in (*data_keys, "lat", "lon"):
             all_data[key][batch_idx] = None
 
         # Break if we've reached dataset limit
@@ -1209,10 +1261,11 @@ def reconstruct_original_layout(
 
             # Initialize arrays for the COVERED area
             combined_data = {}
-            for key in ["predictions", "coarse", "fine"]:
+            for key in data_keys:
+                key_c = reconstructions[key].shape[2]
                 combined_data[key] = torch.zeros(
                     time_batchs,
-                    C,
+                    key_c,
                     covered_H,
                     covered_W,
                     device=device,
@@ -1247,7 +1300,7 @@ def reconstruct_original_layout(
                         raise ValueError(error_msg)
 
                     # Place block in combined array
-                    for key in ["predictions", "coarse", "fine"]:
+                    for key in data_keys:
                         combined_data[key][
                             t, :, lat_start:lat_end, lon_start:lon_end
                         ] = reconstructions[key][t, spatial_idx]
@@ -1373,72 +1426,92 @@ def reconstruct_original_layout(
         predictions_block = reconstructions["predictions"][:, spatial_idx]
         fine_block = reconstructions["fine"][:, spatial_idx]
         coarse_block = reconstructions["coarse"][:, spatial_idx]
+        distribution_mask = None
+        if "lsm" in reconstructions:
+            lsm_block = reconstructions["lsm"][:, spatial_idx]
+            distribution_mask = torch.isfinite(lsm_block) & (
+                lsm_block < args.lsm_threshold
+            )
         # lat_block = reconstructions['lat'][:, spatial_idx]
         # lon_block = reconstructions['lon'][:, spatial_idx]
 
-        # 0. QQ Plot
-        save_path = plot_qq_quantiles(
-            predictions_block,  # [time_batchs, C, H, W]
-            fine_block,  # [time_batchs, C, H, W]
-            coarse_block,  # [time_batchs, C, H, W]
-            variable_names=args.varnames_list,
-            units=None,  # You might want to add units to args
-            quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
-            filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:03d}.png",
-            save_dir=paths.results,
+        has_distribution_data = distribution_mask is None or bool(
+            torch.any(distribution_mask).item()
         )
+        if not has_distribution_data:
+            logger.warning(
+                f"Skipping ocean-only distribution diagnostics for all-land "
+                f"spatial block {spatial_idx:03d}"
+            )
+        else:
+            # 0. QQ Plot
+            save_path = plot_qq_quantiles(
+                predictions_block,  # [time_batchs, C, H, W]
+                fine_block,  # [time_batchs, C, H, W]
+                coarse_block,  # [time_batchs, C, H, W]
+                variable_names=args.varnames_list,
+                units=None,  # You might want to add units to args
+                quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
+                filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:03d}.png",
+                save_dir=paths.results,
+                mask=distribution_mask,
+            )
 
-        logger.info(f"Saved QQ plot to {save_path}")
+            logger.info(f"Saved QQ plot to {save_path}")
 
-        # 1. Validation Hexbin Plot
-        save_path = plot_validation_hexbin(
-            predictions=predictions_block,
-            targets=fine_block,
-            variable_names=args.varnames_list,
-            filename=f"{args.run_type}_validation_hexbin_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
-            save_dir=paths.results,
-        )
-        logger.info(f"Saved validation hexbin plot to: {save_path}")
+            # 1. Validation Hexbin Plot
+            save_path = plot_validation_hexbin(
+                predictions=predictions_block,
+                targets=fine_block,
+                variable_names=args.varnames_list,
+                filename=f"{args.run_type}_validation_hexbin_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+                save_dir=paths.results,
+                mask=distribution_mask,
+            )
+            logger.info(f"Saved validation hexbin plot to: {save_path}")
 
-        # 2. Comparison Hexbin Plot
-        save_path = plot_comparison_hexbin(
-            predictions=predictions_block,
-            targets=fine_block,
-            coarse_inputs=coarse_block,
-            variable_names=args.varnames_list,
-            filename=f"{args.run_type}_comparison_hexbin_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
-            save_dir=paths.results,
-        )
-        logger.info(f"Saved comparison hexbin plot to: {save_path}")
+            # 2. Comparison Hexbin Plot
+            save_path = plot_comparison_hexbin(
+                predictions=predictions_block,
+                targets=fine_block,
+                coarse_inputs=coarse_block,
+                variable_names=args.varnames_list,
+                filename=f"{args.run_type}_comparison_hexbin_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+                save_dir=paths.results,
+                mask=distribution_mask,
+            )
+            logger.info(f"Saved comparison hexbin plot to: {save_path}")
 
-        # 3. Validation PDFs Plot
-        save_path = plot_validation_pdfs(
-            predictions=predictions_block,
-            targets=fine_block,
-            coarse_inputs=coarse_block,
-            variable_names=args.varnames_list,
-            filename=f"{args.run_type}_validation_pdfs_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
-            save_dir=paths.results,
-        )
-        logger.info(f"Saved validation PDFs plot to: {save_path}")
+            # 3. Validation PDFs Plot
+            save_path = plot_validation_pdfs(
+                predictions=predictions_block,
+                targets=fine_block,
+                coarse_inputs=coarse_block,
+                variable_names=args.varnames_list,
+                filename=f"{args.run_type}_validation_pdfs_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+                save_dir=paths.results,
+                mask=distribution_mask,
+            )
+            logger.info(f"Saved validation PDFs plot to: {save_path}")
 
-        # 4. Power Spectra Plot
-        dlon = getattr(steps, "d_longitude", None)
-        dlat = getattr(steps, "d_latitude", None)
-        assert dlon is not None, "d_longitude not found in steps"
-        assert dlat is not None, "d_latitude not found in steps"
+            # 4. Power Spectra Plot
+            dlon = getattr(steps, "d_longitude", None)
+            dlat = getattr(steps, "d_latitude", None)
+            assert dlon is not None, "d_longitude not found in steps"
+            assert dlat is not None, "d_latitude not found in steps"
 
-        save_path = plot_power_spectra(
-            predictions=predictions_block,
-            targets=fine_block,
-            coarse_inputs=coarse_block,
-            dlat=dlat,
-            dlon=dlon,
-            variable_names=args.varnames_list,
-            filename=f"{args.run_type}_power_spectra_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
-            save_dir=paths.results,
-        )
-        logger.info(f"Saved power spectra plot to: {save_path}")
+            save_path = plot_power_spectra(
+                predictions=predictions_block,
+                targets=fine_block,
+                coarse_inputs=coarse_block,
+                dlat=dlat,
+                dlon=dlon,
+                variable_names=args.varnames_list,
+                filename=f"{args.run_type}_power_spectra_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
+                save_dir=paths.results,
+                mask=distribution_mask,
+            )
+            logger.info(f"Saved power spectra plot to: {save_path}")
 
         # 5. MAE map plot (time-averaged)
 
@@ -1545,6 +1618,12 @@ def reconstruct_original_layout(
         ]  # [time_batchs, C, covered_H, covered_W]
         lat_full = reconstructions["lat_reconstructed"]  # [covered_H]
         lon_full = reconstructions["lon_reconstructed"]  # [covered_W]
+        distribution_mask_full = None
+        if "lsm" in reconstructions["combined"]:
+            lsm_full = reconstructions["combined"]["lsm"]
+            distribution_mask_full = torch.isfinite(lsm_full) & (
+                lsm_full < args.lsm_threshold
+            )
 
         # Generate full domain versions of all plots
         # 0. QQ Plot for full domain (averaged over space)
@@ -1558,6 +1637,7 @@ def reconstruct_original_layout(
             filename=f"{args.run_type}_full_domain_qq_epoch_{epoch}.png",
             save_dir=paths.results,
             save_npz=True,
+            mask=distribution_mask_full,
         )
         logger.info(f"Saved full domain QQ plot to {save_path}")
 
@@ -1568,6 +1648,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_validation_hexbin_epoch_{epoch}.png",
             save_dir=paths.results,
+            mask=distribution_mask_full,
         )
         logger.info(f"Saved full domain validation hexbin plot to: {save_path}")
 
@@ -1579,6 +1660,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_comparison_hexbin_epoch_{epoch}.png",
             save_dir=paths.results,
+            mask=distribution_mask_full,
         )
         logger.info(f"Saved full domain comparison hexbin plot to: {save_path}")
 
@@ -1591,6 +1673,7 @@ def reconstruct_original_layout(
             filename=f"{args.run_type}_full_domain_validation_pdfs_epoch_{epoch}.png",
             save_dir=paths.results,
             save_npz=True,
+            mask=distribution_mask_full,
         )
         logger.info(f"Saved full domain validation PDFs plot to: {save_path}")
 
@@ -1610,6 +1693,7 @@ def reconstruct_original_layout(
             filename=f"{args.run_type}_full_domain_power_spectra_epoch_{epoch}.png",
             save_dir=paths.results,
             save_npz=True,
+            mask=distribution_mask_full,
         )
         logger.info(f"Saved full domain power spectra plot to: {save_path}")
 
@@ -1936,6 +2020,8 @@ def run_validation(
         val_metrics["average_pred_vs_fine_CRPS"] = MetricTracker()
 
     all_data = {"predictions": [], "coarse": [], "fine": [], "lat": [], "lon": []}
+    if getattr(args, "ocean_only_calculations", False) is True:
+        all_data["lsm"] = []
 
     crps_batches = []
 
@@ -1953,6 +2039,7 @@ def run_validation(
             # Move data to device
             features = batch["inputs"].to(device)
             targets = batch["targets"].to(device)
+            ocean_mask = get_ocean_mask(batch, args, targets, device)
             coarse = batch["coarse"].to(device)
             # coarse_norm = batch["coarse_norm"].to(device)
             # Number of variables (channels)
@@ -1989,10 +2076,16 @@ def run_validation(
 
             # Calculate validation loss
             with torch.amp.autocast(device_type=device.type, dtype=features.dtype):
-                loss = loss_fn(model, targets, features, labels)
-                # unet loss is a scalar, so no need for mean
-                if args.precond != "unet":
-                    loss = loss.mean()
+                if args.precond == "unet":
+                    if ocean_mask is None:
+                        loss = loss_fn(model, targets, features, labels)
+                    else:
+                        loss = loss_fn(
+                            model, targets, features, labels, mask=ocean_mask
+                        )
+                else:
+                    elementwise_loss = loss_fn(model, targets, features, labels)
+                    loss = reduce_loss(elementwise_loss, ocean_mask)
 
             val_loss.update(loss.item(), targets.shape[0])
 
@@ -2065,12 +2158,15 @@ def run_validation(
                 batch_predictions.append(final_prediction)
 
                 # Calculate all metrics for this variable
+                variable_mask = (
+                    ocean_mask[:, iv : iv + 1] if ocean_mask is not None else None
+                )
                 for metric_name in deterministic_metrics:
                     metric_func = metric_funcs[metric_name]
 
                     # Model prediction vs fine
                     num_elements_pred, metric_value_pred = metric_func(
-                        final_prediction, fine_var
+                        final_prediction, fine_var, mask=variable_mask
                     )
                     val_metrics[f"{var_name}_pred_vs_fine_{metric_name}"].update(
                         metric_value_pred.item(), num_elements_pred
@@ -2078,7 +2174,7 @@ def run_validation(
 
                     # Coarse vs fine (baseline metric)
                     num_elements_coarse, metric_value_coarse = metric_func(
-                        coarse_var, fine_var
+                        coarse_var, fine_var, mask=variable_mask
                     )
                     val_metrics[f"{var_name}_coarse_vs_fine_{metric_name}"].update(
                         metric_value_coarse.item(), num_elements_coarse
@@ -2102,6 +2198,8 @@ def run_validation(
             all_data["fine"].append(fine.detach().cpu())
             all_data["lat"].append(lat_batch.detach().cpu())  # [B, H]
             all_data["lon"].append(lon_batch.detach().cpu())  # [B, W]
+            if getattr(args, "ocean_only_calculations", False) is True:
+                all_data["lsm"].append(batch["lsm"].detach().cpu())
 
             # Update overall average metrics for this batch for each metric type
             for metric_name in deterministic_metrics:
@@ -2214,8 +2312,16 @@ def run_validation(
                 pred_ens_var = pred_ens[:, :, iv : iv + 1, :, :]  # [N_ens, B, 1, H, W]
                 fine_var = batch["fine"][:, iv : iv + 1].to(device)
 
-                pred_ens_flat = pred_ens_var.reshape(crps_ensemble_size, -1)
-                true_flat = fine_var.reshape(-1)
+                variable_mask = get_ocean_mask(batch, args, fine_var, device)
+                if variable_mask is None:
+                    pred_ens_flat = pred_ens_var.reshape(crps_ensemble_size, -1)
+                    true_flat = fine_var.reshape(-1)
+                else:
+                    flat_mask = variable_mask.reshape(-1)
+                    pred_ens_flat = pred_ens_var.reshape(crps_ensemble_size, -1)[
+                        :, flat_mask
+                    ]
+                    true_flat = fine_var.reshape(-1)[flat_mask]
 
                 # Compute CRPS per variable using ensemble predictions.
                 num_elem, crps_mean = crps_ensemble_all(pred_ens_flat, true_flat)

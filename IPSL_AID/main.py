@@ -19,6 +19,7 @@ from IPSL_AID.dataset import stats, DataPreprocessor
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from IPSL_AID.model import load_model_and_loss
+from IPSL_AID.loss import reduce_loss
 from IPSL_AID.model_utils import ModelUtils
 import torch.optim as optim
 import xarray as xr
@@ -32,6 +33,7 @@ from IPSL_AID.diagnostics import (
 
 from IPSL_AID.evaluater import (
     MetricTracker,
+    get_ocean_mask,
     run_validation,
 )
 
@@ -129,6 +131,12 @@ def parse_args():
         type=str,
         default="ERA5_const_sfc_variables.nc",
         help="Path to NetCDF file containing constant variables",
+    )
+    parser.add_argument(
+        "--include_lsm_as_input",
+        type=lambda x: x.lower() == "true",
+        default=True,
+        help="Include lsm in model inputs while keeping it available for masking",
     )
     parser.add_argument(
         "--normalization_types",
@@ -249,6 +257,17 @@ def parse_args():
         help="Width of spatial batch in grid points (longitude direction), must be odd",
     )
     parser.add_argument(
+        "--coarse_input_shape",
+        type=int,
+        nargs=2,
+        metavar=("HEIGHT", "WIDTH"),
+        default=(80, 128),
+        help=(
+            "Target coarse-grid shape (latitude longitude) used by "
+            "coarse_down_up before upsampling. Default: 80 128"
+        ),
+    )
+    parser.add_argument(
         "--num_workers", type=int, default=16, help="Number of DataLoader workers"
     )
     parser.add_argument(
@@ -325,6 +344,32 @@ def parse_args():
     parser.add_argument(
         "--out_channels", type=int, default=3, help="Number of output channels"
     )
+    parser.add_argument(
+        "--model_channels",
+        type=int,
+        default=None,
+        help="Base number of model channels (architecture default when omitted)",
+    )
+    parser.add_argument(
+        "--channel_mult",
+        type=int,
+        nargs="+",
+        default=None,
+        help="Channel multipliers at each resolution",
+    )
+    parser.add_argument(
+        "--num_blocks",
+        type=int,
+        default=None,
+        help="Number of residual blocks per resolution",
+    )
+    parser.add_argument(
+        "--attn_resolutions",
+        type=int,
+        nargs="*",
+        default=None,
+        help="Spatial resolutions using self-attention; pass no values to disable attention",
+    )
 
     # Checkpoint configuration
     parser.add_argument(
@@ -338,6 +383,18 @@ def parse_args():
         type=lambda x: x.lower() == "true",
         default=False,
         help="Apply fine filtering for coarse data generation (default: True)",
+    )
+    parser.add_argument(
+        "--ocean_only_calculations",
+        type=lambda x: x.lower() == "true",
+        default=False,
+        help="Apply the existing LSM to loss, validation metrics, and distribution diagnostics",
+    )
+    parser.add_argument(
+        "--lsm_threshold",
+        type=float,
+        default=0.5,
+        help="Grid cells with lsm below this value are treated as ocean",
     )
     parser.add_argument(
         "--save_checkpoint_name",
@@ -448,7 +505,11 @@ def parse_args():
     parser.add_argument("--crps_ensemble_size", type=int, default=10)
     parser.add_argument("--crps_batch_size", type=int, default=2)
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    if any(size <= 0 for size in args.coarse_input_shape):
+        parser.error("--coarse_input_shape values must be strictly positive")
+    args.coarse_input_shape = tuple(args.coarse_input_shape)
+    return args
 
 
 def make_divisible_hw(h, w, n):
@@ -561,7 +622,7 @@ def setup_directories_and_logging(args):
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
     current_dir = os.path.abspath(__file__)
     parent_dir = os.path.dirname(current_dir)
-    project_root = os.path.dirname(parent_dir)
+    project_root = os.environ.get("IPSL_AID_OUTPUT_ROOT", os.path.dirname(parent_dir))
 
     paths = EasyDict()
     paths.logs = os.path.join(project_root, "logs", args.main_folder, args.sub_folder)
@@ -628,6 +689,8 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── Inference type: '{args.inference_type}'")
     logger.info(f" └── Region: '{args.region}'")
     logger.info(f" └── Apply filter: {args.apply_filter}")
+    logger.info(f" └── Ocean-only calculations: {args.ocean_only_calculations}")
+    logger.info(f" └── LSM ocean threshold: {args.lsm_threshold}")
 
     # Checkpoint configuration
     logger.info("\nCheckpoint Configuration:")
@@ -645,6 +708,7 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── Variable names: {args.varnames_list}")
     logger.info(f" └── Constant variables: {args.constant_varnames_list}")
     logger.info(f" └── Constant variables file: '{args.constant_varnames_file}'")
+    logger.info(f" └── Include LSM as model input: {args.include_lsm_as_input}")
     logger.info(
         f" └── Dynamic covariates: {args.dynamic_covariates if args.dynamic_covariates else 'None'}"
     )
@@ -673,6 +737,7 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── Temporal time steps: {args.tbatch}")
     logger.info(f" └── Batch size (lat): {args.batch_size_lat} grid points")
     logger.info(f" └── Batch size (lon): {args.batch_size_lon} grid points")
+    logger.info(f" └── Coarse input shape (lat, lon): {args.coarse_input_shape}")
 
     # Data processing parameters
     logger.info("\nData Processing Parameters:")
@@ -1149,7 +1214,7 @@ def create_data_loaders(
         constants_file_path=paths.constants,
         varnames_list=args.varnames_list,
         units_list=args.units_list,
-        in_shape=(80, 128),
+        in_shape=args.coarse_input_shape,
         batch_size_lat=h,
         batch_size_lon=w,
         steps=steps,
@@ -1165,6 +1230,7 @@ def create_data_loaders(
         index_mapping=index_mapping,
         normalization_type=normalization_type,
         constant_variables=args.constant_varnames_list,
+        include_lsm_as_input=args.include_lsm_as_input,
         epsilon=args.epsilon,
         margin=args.margin,
         dtype=(torch_dtype, np_dtype),  # Same dtype for consistency
@@ -1249,6 +1315,22 @@ def setup_model(args, img_res, use_fp16, device, logger):
             "use_fp16": use_fp16,
         }
     )
+
+    # Forward only explicit overrides, preserving historical defaults for
+    # setups that do not provide architecture hyperparameters.
+    model_kwargs = {
+        name: getattr(args, name)
+        for name in (
+            "model_channels",
+            "channel_mult",
+            "num_blocks",
+            "attn_resolutions",
+        )
+        if getattr(args, name) is not None
+    }
+    if model_kwargs:
+        opts.model_kwargs = model_kwargs
+        logger.info(f"Architecture overrides: {model_kwargs}")
 
     model, loss_fn = load_model_and_loss(opts, logger=logger, device=device)
 
@@ -1392,6 +1474,13 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
+    if args.ocean_only_calculations and "lsm" not in args.constant_varnames_list:
+        raise ValueError(
+            "--ocean_only_calculations true requires lsm in --constant_varnames_list"
+        )
+    if not 0.0 < args.lsm_threshold <= 1.0:
+        raise ValueError("--lsm_threshold must be greater than 0 and at most 1")
+
     args.region_center = resolve_region_center(args)
 
     # Setup directories and logging
@@ -1416,10 +1505,8 @@ def main():
     # Setup TensorBoard for visualization
     # if args.run_type != "inference":
     if args.run_type not in ["inference", "inference_regional"]:
-        writer = SummaryWriter(f"runs/{args.main_folder}/{args.sub_folder}/")
-        logger.info(
-            f"TensorBoard enabled at: runs/{args.main_folder}/{args.sub_folder}/"
-        )
+        writer = SummaryWriter(paths.runs)
+        logger.info(f"TensorBoard enabled at: {paths.runs}")
     else:
         writer = None
         logger.info("TensorBoard disabled for inference mode")
@@ -1702,6 +1789,7 @@ def main():
             # Move data to device
             features = batch["inputs"].to(device)
             targets = batch["targets"].to(device)
+            ocean_mask = get_ocean_mask(batch, args, targets, device)
             # lat_batch = batch["corrdinates"]["lat"].to(device)
             # lon_batch = batch["corrdinates"]["lon"].to(device)
             if epoch == 0 and batch_idx == 0:
@@ -1730,13 +1818,26 @@ def main():
 
             # Mixed precision training
             with torch.amp.autocast(device_type=device.type, dtype=torch_dtype):
-                loss = loss_fn(model, targets, features, labels)
-                loss = loss.mean()
+                if args.precond == "unet":
+                    if ocean_mask is None:
+                        loss = loss_fn(model, targets, features, labels)
+                    else:
+                        loss = loss_fn(
+                            model, targets, features, labels, mask=ocean_mask
+                        )
+                else:
+                    elementwise_loss = loss_fn(model, targets, features, labels)
+                    loss = reduce_loss(elementwise_loss, ocean_mask)
 
-            # Backward pass with gradient scaling
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            # Backward pass. GradScaler is only available when AMP is enabled
+            # on GPU; on CPU we use the standard backward path.
+            if scaler is not None:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
 
             # Update loss trackers
             train_loss.update(loss.item(), targets.shape[0])

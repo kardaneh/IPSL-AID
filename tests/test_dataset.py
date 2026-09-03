@@ -360,6 +360,7 @@ class TestDataPreprocessor(unittest.TestCase):
         # Verify dimensions
         self.assertEqual(preprocessor.H, 36)
         self.assertEqual(preprocessor.W, 72)
+        self.assertEqual(preprocessor.in_shape, self.in_shape)
         self.assertEqual(len(preprocessor.time_batchs), 9)  # Full time range
         self.assertEqual(preprocessor.sbatch, 4)
         self.assertEqual(preprocessor.tbatch, 2)
@@ -377,6 +378,39 @@ class TestDataPreprocessor(unittest.TestCase):
             self.logger.info(
                 f"✅ Train mode initialization test passed - H={preprocessor.H}, W={preprocessor.W}"
             )
+
+    def test_preprocessor_rejects_invalid_coarse_input_shape(self):
+        """Reject non-positive or larger-than-domain coarse grids."""
+        common_kwargs = dict(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=4,
+            debug=True,
+            mode="train",
+            run_type="train",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            logger=self.logger,
+        )
+
+        for invalid_shape in ((0, 16), (8, 0), (37, 16), (8, 73)):
+            with self.subTest(invalid_shape=invalid_shape):
+                with self.assertRaises(ValueError):
+                    DataPreprocessor(in_shape=invalid_shape, **common_kwargs)
 
     def test_preprocessor_initialization_train_regional_mode(self):
         """Test DataPreprocessor initialization in train regional mode."""
@@ -1150,6 +1184,7 @@ class TestDataPreprocessor(unittest.TestCase):
         self.assertIn("fine", sample)
         self.assertIn("coarse", sample)
         self.assertIn("corrdinates", sample)
+        self.assertIn("lsm", sample)
 
         # Verify shapes
         n_vars = len(self.varnames_list)
@@ -1160,11 +1195,53 @@ class TestDataPreprocessor(unittest.TestCase):
         self.assertEqual(sample["targets"].shape, (n_vars, 32, 32))
         self.assertEqual(sample["fine"].shape, (n_vars, 32, 32))
         self.assertEqual(sample["coarse"].shape, (n_vars, 32, 32))
+        self.assertEqual(sample["lsm"].shape, (1, 32, 32))
+        torch.testing.assert_close(sample["lsm"], sample["inputs"][-1:])
 
         if self.logger:
             self.logger.info(
                 f"✅ __getitem__ train mode test passed - inputs shape: {sample['inputs'].shape}"
             )
+
+    def test_getitem_lsm_available_when_excluded_from_inputs(self):
+        """Test that LSM remains available when it is not a model input."""
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=2,
+            debug=True,
+            mode="train",
+            run_type="train",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            include_lsm_as_input=False,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            logger=self.logger,
+        )
+
+        sample = preprocessor[0]
+
+        expected_input_channels = (
+            len(self.varnames_list) + 2 + len(self.constant_variables) - 1
+        )
+        self.assertEqual(sample["inputs"].shape, (expected_input_channels, 32, 32))
+        self.assertIn("lsm", sample)
+        self.assertEqual(sample["lsm"].shape, (1, 32, 32))
+        self.assertFalse(torch.equal(sample["lsm"], sample["inputs"][-1:]))
 
     def test_getitem_regional_train_mode(self):
         """Test __getitem__ method in regional train mode."""

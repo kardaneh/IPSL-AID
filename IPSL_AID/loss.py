@@ -67,6 +67,38 @@ This module implements various loss functions for diffusion models including:
 
 import torch
 
+
+def reduce_loss(loss, mask=None, reduction="mean"):
+    """Reduce an element-wise loss, optionally over valid pixels only."""
+    if reduction not in {"mean", "sum", "none"}:
+        raise ValueError(f"Unknown reduction: {reduction}")
+
+    if mask is None:
+        selected = loss
+    else:
+        try:
+            mask = torch.broadcast_to(
+                mask.to(device=loss.device, dtype=torch.bool), loss.shape
+            )
+        except RuntimeError as exc:
+            raise RuntimeError(
+                f"Mask shape {tuple(mask.shape)} cannot be broadcast to loss shape "
+                f"{tuple(loss.shape)}"
+            ) from exc
+
+        if not torch.any(mask):
+            raise ValueError("The mask does not select any valid pixel")
+        selected = loss.masked_select(mask)
+
+    if reduction == "mean":
+        return selected.mean()
+    if reduction == "sum":
+        return selected.sum()
+    if mask is None:
+        return loss
+    return torch.where(mask, loss, torch.zeros_like(loss))
+
+
 # ----------------------------------------------------------------------------
 # Loss function corresponding to the variance preserving (VP) formulation
 
@@ -545,7 +577,7 @@ class UnetLoss:
         else:
             raise ValueError(f"Unknown loss_type: {loss_type}")
 
-    def __call__(self, net, targets, images, labels=None, augment_pipe=None):
+    def __call__(self, net, targets, images, labels=None, augment_pipe=None, mask=None):
         """
         Compute UNet loss.
 
@@ -562,6 +594,9 @@ class UnetLoss:
         augment_pipe : callable, optional
             Data augmentation pipeline that takes images and returns augmented
             images and augmentation labels. Default is None.
+        mask : torch.Tensor, optional
+            Boolean mask broadcastable to the target shape. If provided, only
+            selected pixels contribute to the loss.
 
         Returns
         -------
@@ -585,7 +620,19 @@ class UnetLoss:
         # Get model prediction
         model_out = net(images, class_labels=labels, augment_labels=augment_labels)
 
-        # Simple loss: compare model output with input image
-        loss = self.loss_fn(model_out, targets)
+        if mask is None:
+            # Keep the original path unchanged when masking is disabled.
+            loss = self.loss_fn(model_out, targets)
+        else:
+            # Compute the loss per pixel before applying the spatial mask.
+            if self.loss_type == "mse":
+                elementwise_loss = (model_out - targets) ** 2
+            elif self.loss_type == "l1":
+                elementwise_loss = torch.abs(model_out - targets)
+            else:
+                elementwise_loss = torch.nn.functional.smooth_l1_loss(
+                    model_out, targets, reduction="none"
+                )
+            loss = reduce_loss(elementwise_loss, mask, self.reduction)
 
         return loss

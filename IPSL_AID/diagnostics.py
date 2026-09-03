@@ -21,7 +21,6 @@ import matplotlib.patches as patches
 from matplotlib.patches import ConnectionPatch
 import matplotlib as mpl
 from scipy import stats
-from scipy import ndimage
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import mpltex
@@ -73,6 +72,43 @@ params = {
 
 
 mpl.rcParams.update(params)
+
+
+def _broadcast_diagnostic_mask(mask, shape):
+    """Convert an optional mask to NumPy and broadcast it to a data shape."""
+    if mask is None:
+        return None
+    if hasattr(mask, "detach"):
+        mask = mask.detach().cpu().numpy()
+    try:
+        mask = np.broadcast_to(np.asarray(mask, dtype=bool), shape)
+    except ValueError as exc:
+        raise ValueError(
+            f"Mask shape {np.shape(mask)} cannot be broadcast to data shape {shape}"
+        ) from exc
+    if not np.any(mask):
+        raise ValueError("The mask does not select any value")
+    return mask
+
+
+def _select_diagnostic_values(mask, *arrays):
+    """Return flattened, finite values selected consistently across arrays."""
+    valid = np.ones(arrays[0].shape, dtype=bool) if mask is None else mask.copy()
+    for array in arrays:
+        valid &= np.isfinite(array)
+    if not np.any(valid):
+        raise ValueError("The mask does not select any finite value")
+    return tuple(array[valid] for array in arrays)
+
+
+def _mask_field_for_psd(field, mask):
+    """Center a field over valid ocean pixels and set land pixels to zero."""
+    valid = mask & np.isfinite(field)
+    if not np.any(valid):
+        raise ValueError("The mask does not select any finite value for the PSD")
+    ocean_mean = np.mean(field[valid])
+    return np.where(valid, field - ocean_mean, 0.0)
+
 
 # ============================================================================
 # PLOTTING CONFIGURATION
@@ -281,6 +317,7 @@ def plot_validation_hexbin(
     filename="validation_hexbin.png",
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
+    mask=None,
 ):
     """
     Create hexbin plots comparing model predictions vs ground truth for all variables.
@@ -312,6 +349,7 @@ def plot_validation_hexbin(
         coarse_inputs = coarse_inputs.detach().cpu().numpy()
 
     batch_size, num_vars, h, w = predictions.shape
+    mask = _broadcast_diagnostic_mask(mask, predictions.shape)
 
     # Default variable names if not provided
     if variable_names is None:
@@ -350,8 +388,8 @@ def plot_validation_hexbin(
         pred_i = PlotConfig.convert_units(var_name, predictions[:, i])
         tgt_i = PlotConfig.convert_units(var_name, targets[:, i])
 
-        pred_flat = pred_i.reshape(-1)
-        target_flat = tgt_i.reshape(-1)
+        variable_mask = mask[:, i] if mask is not None else None
+        pred_flat, target_flat = _select_diagnostic_values(variable_mask, pred_i, tgt_i)
 
         # Create hexbin plot
         hb = ax.hexbin(
@@ -430,6 +468,7 @@ def plot_comparison_hexbin(
     filename="comparison_hexbin.png",
     save_dir="./results",
     figsize_multiplier=4,
+    mask=None,
 ):
     """
     Create hexbin comparison plots between model predictions, ground truth, and coarse inputs.
@@ -472,6 +511,7 @@ def plot_comparison_hexbin(
         coarse_inputs = coarse_inputs.detach().cpu().numpy()
 
     batch_size, num_vars, h, w = predictions.shape
+    mask = _broadcast_diagnostic_mask(mask, predictions.shape)
 
     if variable_names is None:
         variable_names = [f"VAR_{i}" for i in range(num_vars)]
@@ -490,9 +530,10 @@ def plot_comparison_hexbin(
         tgt_i = PlotConfig.convert_units(var_name, targets[:, i])
         coarse_i = PlotConfig.convert_units(var_name, coarse_inputs[:, i])
 
-        pred_flat = pred_i.reshape(-1)
-        target_flat = tgt_i.reshape(-1)
-        coarse_flat = coarse_i.reshape(-1)
+        variable_mask = mask[:, i] if mask is not None else None
+        pred_flat, target_flat, coarse_flat = _select_diagnostic_values(
+            variable_mask, pred_i, tgt_i, coarse_i
+        )
 
         # Use a temporary invisible axes to get density arrays
         fig_tmp, ax_tmp = plt.subplots()
@@ -537,9 +578,10 @@ def plot_comparison_hexbin(
         tgt_i = PlotConfig.convert_units(var_name, targets[:, i])
         coarse_i = PlotConfig.convert_units(var_name, coarse_inputs[:, i])
 
-        pred_flat = pred_i.reshape(-1)
-        target_flat = tgt_i.reshape(-1)
-        coarse_flat = coarse_i.reshape(-1)
+        variable_mask = mask[:, i] if mask is not None else None
+        pred_flat, target_flat, coarse_flat = _select_diagnostic_values(
+            variable_mask, pred_i, tgt_i, coarse_i
+        )
 
         # Calculate per-variable min/max for this variable
         var_min = min(target_flat.min(), pred_flat.min(), coarse_flat.min())
@@ -1153,14 +1195,28 @@ def plot_surface(
     if hasattr(lon_1d, "detach"):
         lon_1d = lon_1d.detach().cpu().numpy()
 
-    # Create 2D meshgrid from 1D coordinates
-    lat_min, lat_max = lat_1d.min(), lat_1d.max()
-    lon_min, lon_max = lon_1d.min(), lon_1d.max()
+    # Use the coordinates in their actual dataset order. Reconstructing them
+    # from min/max can silently reverse the data relative to Cartopy coastlines.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
 
     # Shape
     h, w = coarse_inputs[0, 0].shape
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
+    lat_min, lat_max = lat_block.min(), lat_block.max()
+    lon_min, lon_max = lon_block.min(), lon_block.max()
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     # Projection center
@@ -2243,13 +2299,26 @@ def plot_MAE_map(
     if hasattr(lon_1d, "detach"):
         lon_1d = lon_1d.detach().cpu().numpy()
 
-    lat_min, lat_max = lat_1d.min(), lat_1d.max()
-    lon_min, lon_max = lon_1d.min(), lon_1d.max()
-
     T, n_vars, h, w = predictions.shape
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
+    lat_min, lat_max = lat_block.min(), lat_block.max()
+    lon_min, lon_max = lon_block.min(), lon_block.max()
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -2435,13 +2504,26 @@ def plot_error_map(
     if hasattr(lon_1d, "detach"):
         lon_1d = lon_1d.detach().cpu().numpy()
 
-    lat_min, lat_max = lat_1d.min(), lat_1d.max()
-    lon_min, lon_max = lon_1d.min(), lon_1d.max()
-
     T, n_vars, h, w = predictions.shape
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
+    lat_min, lat_max = lat_block.min(), lat_block.max()
+    lon_min, lon_max = lon_block.min(), lon_block.max()
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -3044,6 +3126,7 @@ def plot_validation_pdfs(
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
     save_npz=False,
+    mask=None,
 ):
     """
     Create PDF (Probability Density Function) plots comparing distributions of
@@ -3067,7 +3150,6 @@ def plot_validation_pdfs(
         Base size multiplier for subplots
     save_npz : bool, optional
         If True, saves the PDF diagnostics to a compressed .npz file.
-
     Returns
     -------
     None
@@ -3096,6 +3178,7 @@ def plot_validation_pdfs(
         coarse_inputs = coarse_inputs.detach().cpu().numpy()
 
     batch_size, num_vars, h, w = predictions.shape
+    mask = _broadcast_diagnostic_mask(mask, predictions.shape)
 
     # Default variable names if not provided
     if variable_names is None:
@@ -3139,17 +3222,20 @@ def plot_validation_pdfs(
         tgt_i = PlotConfig.convert_units(var_name, targets[:, i])
         plot_name = plot_variable_names[i]
 
-        pred_flat = pred_i.reshape(-1)
-        target_flat = tgt_i.reshape(-1)
+        variable_mask = mask[:, i] if mask is not None else None
 
         # Collect all data for combined range
-        all_data = [pred_flat, target_flat]
         if coarse_inputs is not None:
-            # coarse_flat = coarse_inputs[:, i, :, :].flatten() #.mean(axis=0).reshape(-1)
             coarse_i = PlotConfig.convert_units(var_name, coarse_inputs[:, i])
-            coarse_flat = coarse_i.reshape(-1)
-
-            all_data.append(coarse_flat)
+            pred_flat, target_flat, coarse_flat = _select_diagnostic_values(
+                variable_mask, pred_i, tgt_i, coarse_i
+            )
+            all_data = [pred_flat, target_flat, coarse_flat]
+        else:
+            pred_flat, target_flat = _select_diagnostic_values(
+                variable_mask, pred_i, tgt_i
+            )
+            all_data = [pred_flat, target_flat]
 
         # Calculate global range for consistent x-axis
         all_values = np.concatenate(all_data)
@@ -3306,6 +3392,7 @@ def plot_power_spectra(
     save_dir="./results",
     figsize_multiplier=4,
     save_npz=False,
+    mask=None,
 ):
     """
     Calculate and plot power spectra with proper physical wavenumbers.
@@ -3331,11 +3418,19 @@ def plot_power_spectra(
     figsize_multiplier : int, optional
         Base size multiplier for subplots
     save_npz : bool, optional
-        If True, saves the PDF diagnostics to a compressed .npz file.
+        If True, saves the PSD diagnostics to a compressed .npz file.
+    mask : torch.Tensor or np.array, optional
+        Ocean mask broadcastable to the data shape. Masked fields are centered
+        over ocean pixels and set to zero on land before the FFT.
 
     Returns
     -------
     None
+
+    Notes
+    -----
+    The sharp land-ocean boundary can add spectral energy. Masked PSDs should
+    therefore be treated as an experimental comparison diagnostic.
     """
     # Convert to numpy if they're tensors
     if hasattr(predictions, "detach"):
@@ -3346,6 +3441,7 @@ def plot_power_spectra(
         coarse_inputs = coarse_inputs.detach().cpu().numpy()
 
     batch_size, num_vars, nh, nw = predictions.shape
+    mask = _broadcast_diagnostic_mask(mask, predictions.shape)
 
     # Default variable names if not provided
     if variable_names is None:
@@ -3411,15 +3507,21 @@ def plot_power_spectra(
 
         # Process each sample in the batch
         for b in range(batch_size):
+            variable_mask = mask[b, i] if mask is not None else None
+
             # Predictions
             # field_pred = predictions[b, i]
             field_pred = PlotConfig.convert_units(var_name, predictions[b, i])
+            if variable_mask is not None:
+                field_pred = _mask_field_for_psd(field_pred, variable_mask)
             psd2d_pred = calculate_psd2d_simple(field_pred)
             psd2d_pred_sum += psd2d_pred
 
             # Targets
             # field_target = targets[b, i]
             field_target = PlotConfig.convert_units(var_name, targets[b, i])
+            if variable_mask is not None:
+                field_target = _mask_field_for_psd(field_target, variable_mask)
             psd2d_target = calculate_psd2d_simple(field_target)
             psd2d_target_sum += psd2d_target
 
@@ -3427,6 +3529,8 @@ def plot_power_spectra(
             if coarse_inputs is not None:
                 # field_coarse = coarse_inputs[b, i]
                 field_coarse = PlotConfig.convert_units(var_name, coarse_inputs[b, i])
+                if variable_mask is not None:
+                    field_coarse = _mask_field_for_psd(field_coarse, variable_mask)
                 psd2d_coarse = calculate_psd2d_simple(field_coarse)
                 psd2d_coarse_sum += psd2d_coarse
 
@@ -3587,6 +3691,7 @@ def plot_qq_quantiles(
     save_dir="./results",
     figsize_multiplier=4,
     save_npz=False,
+    mask=None,
 ):
     """
     Create QQ-plats at different quantiles comparing model predictions and
@@ -3635,6 +3740,7 @@ def plot_qq_quantiles(
         coarse_inputs = coarse_inputs.detach().cpu().numpy()
 
     batch_size, num_vars, h, w = predictions.shape
+    mask = _broadcast_diagnostic_mask(mask, predictions.shape)
 
     # Default variable names if not provided
     if variable_names is None:
@@ -3677,6 +3783,11 @@ def plot_qq_quantiles(
         pred_vals = PlotConfig.convert_units(var_name, predictions[:, i])
         target_vals = PlotConfig.convert_units(var_name, targets[:, i])
         coarse_vals = PlotConfig.convert_units(var_name, coarse_inputs[:, i])
+
+        variable_mask = mask[:, i] if mask is not None else None
+        pred_vals, target_vals, coarse_vals = _select_diagnostic_values(
+            variable_mask, pred_vals, target_vals, coarse_vals
+        )
 
         # Compute quantiles
         qs_target = np.quantile(target_vals, quantiles)
@@ -3988,891 +4099,6 @@ def plot_dry_frequency_map(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
-    return save_path
-
-
-def compute_sal(
-    prediction,
-    target,
-    eThreshFix=None,
-    eThreshPrFix=None,
-    thr_quantile=None,
-    thr_factor=None,
-    minFac=None,
-    minsize=0,
-    structure=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=int),
-):
-    """
-    Compute SAL score for single 2d numpy field wrt given threhold(s)
-    Based on Wernli et al., 2008 and 2009
-    https://journals.ametsoc.org/view/journals/mwre/136/11/2008mwr2415.1.xml
-    https://journals.ametsoc.org/view/journals/wefo/24/6/2009waf2222271_1.xml
-
-    *Assumes input fields are non-negative like precipitation. May behave
-    unexpectedly if negative values exist.
-
-    Extended to allow the use of:
-    - fixed thresholds independent of input data
-    - different minimum object size thresholds
-    - different structure for neighbour definitions
-    Copyright (c) 2026 Klima consulting
-    Author: Rosie Eade
-
-    CHANGES from original version:
-    https://github.com/RosieEade/verification_code
-    June 2026
-    - updated so no use of xarray or math python libraries
-    - simplified output so only straight S,A,L scores (and L1, L2)
-      (no object info or spatial plots)
-
-
-    Parameters:
-    -----------
-    prediction : numpy.ndarray
-        Prediction field data as 2d [lat, lon] array
-    target : numpy.ndarray
-        Target field data, same shape as prediction
-    eThreshFix : float | None
-        Fixed threshold to be used to define event (same units as target)
-        If eThreshFix value given, this overrides quantile based options
-    eThreshPrFix : float | None
-        Fixed threshold to be used to define event (same units as target)
-        If None, uses eThreshFix.
-    thr_quantile : float | None
-        Quantile value in [0.0, 1.0] used to compute threshold to define
-        event, as Wernli et al. 2009 (they use thr_quantile=0.95)
-    thr_factor : float | None
-        Factor to reduce the quantile by, as Wernli et al. 2008 & 2009
-        (they use thr_factor=1/15)
-    minFac : float | str | None
-        Option to mask data less than threshold=minFac before computing
-        quantile, as Wernli et al. 2009 (they use 0.1 mm for precip)
-        Special case: minFac='min' implies use min value of field,
-        chosen to align with option in pysteps.
-    minsize : int = 0
-        Option to ignore options with size (no. grid points) < minsize
-    structure : numpy.ndarray, dtype=int, shape [3, 3]
-        This array defines what are classed as neighbouring grid points.
-        2 Options:
-        np.array([[0, 1, 0],[1, 1, 1],[0, 1, 0]], dtype=int) # Orthogonal-
-         only (default)
-        np.ones((3, 3), dtype=int) # Orthogonal and diagonal
-
-    Returns:
-    --------
-    numpy.ndarray
-        SAL scores for single input target and prediction field pair
-        (np.nan if no objects found)
-        [structure, amplitude, location, location_1, location_2]
-
-    See Also
-    --------
-
-    scipy.ndimage.label :
-    Identify objects using sp.ndimage.label
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
-
-    """
-
-    if target.shape != prediction.shape:
-        raise ValueError(
-            f"Shape mismatch: target ({target.shape}, prediction {prediction.shape})"
-        )
-
-    # Code assumes that minsize is an integer so check (and convert)
-    if minsize is None:
-        minsize = 0
-    if isinstance(minsize, float):
-        minsize = int(minsize)
-
-    # If fixed target threshold defined, default to using this
-    if eThreshFix is not None:
-        # Use fixed thresholds
-        eThresh = eThreshFix
-        if eThreshPrFix is None:
-            eThreshPr = eThresh
-        if eThreshPrFix is not None:
-            eThreshPr = eThreshPrFix
-
-    # If no fixed target threshold defined, use quantile based thresholds
-    # Set default values if not supplied
-    if eThreshFix is None:
-        if thr_quantile is None:
-            thr_quantile = 0.95
-        if thr_factor is None:
-            thr_factor = 1 / 15.0
-
-        # Compute quantile-based thresholds from input data,
-        # with option to first mask out very small values
-        if isinstance(minFac, (int, float)):
-            eThresh = thr_factor * np.nanquantile(target[target > minFac], thr_quantile)
-            eThreshPr = thr_factor * np.nanquantile(
-                prediction[prediction > minFac], thr_quantile
-            )
-        if isinstance(minFac, str):
-            if minFac == "min":
-                eThresh = thr_factor * np.nanquantile(
-                    target[target > np.nanmin(target)], thr_quantile
-                )
-                eThreshPr = thr_factor * np.nanquantile(
-                    prediction[prediction > np.nanmin(prediction)], thr_quantile
-                )
-            else:
-                minFac = None
-        if minFac is None:
-            eThresh = thr_factor * np.nanquantile(target, thr_quantile)
-            eThreshPr = thr_factor * np.nanquantile(prediction, thr_quantile)
-
-    # Check for negative values
-    targ_min = target.min()
-    pred_min = prediction.min()
-    if targ_min < 0 or pred_min < 0:
-        print("WARNING: input fields contain negative values. SAL score function ")
-        print("assumes non-negative values, so may behave unexpectedly.")
-
-    # If all data below event thresholds, then no objects can be found
-    targ_max = target.max()
-    pred_max = prediction.max()
-    if targ_max <= eThresh or pred_max <= eThreshPr:
-        print("No Objects Found: Event thresholds too large")
-        return np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
-
-    targ_masked: np.ndarray = (target > eThresh) & np.isfinite(target)
-    targ_labeled_array, targ_num_features = ndimage.label(
-        targ_masked, structure=structure
-    )
-
-    pred_masked: np.ndarray = (prediction > eThreshPr) & np.isfinite(prediction)
-    pred_labeled_array, pred_num_features = ndimage.label(
-        pred_masked, structure=structure
-    )
-
-    # Compute size of objects
-    targSize = np.zeros(targ_num_features)
-    for icount in range(targ_num_features):
-        targSize[icount] = targ_labeled_array[targ_labeled_array == icount + 1].size
-    predSize = np.zeros(pred_num_features)
-    for icount in range(pred_num_features):
-        predSize[icount] = pred_labeled_array[pred_labeled_array == icount + 1].size
-
-    # Option to discard objects if too small and then renumber
-    # - assumes minsize is an integer
-    ReCompSize = False
-    targSizemin = targSize.min()
-    targSizemax = targSize.max()
-    predSizemin = predSize.min()
-    predSizemax = predSize.max()
-    # If all objects below size thresholds, then no objects can be found
-    if targSizemax < minsize or predSizemax < minsize:
-        print("No Objects Found: Objects too small")
-        return np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
-
-    if minsize > 1 and targSizemin < minsize:
-        targ_labeled_tmp = targ_labeled_array.copy()
-        for ocount in range(targ_num_features):
-            if targSize[ocount] < minsize:
-                targ_labeled_tmp[targ_labeled_tmp == (ocount + 1)] = 0
-        unq_lab_tmp = np.unique(targ_labeled_tmp)
-        targ_num_features_tmp = len(unq_lab_tmp) - 1
-        for ocount in range(targ_num_features_tmp):
-            targ_labeled_tmp[targ_labeled_tmp == unq_lab_tmp[ocount + 1]] = ocount + 1
-        targ_labeled_array = targ_labeled_tmp.copy()
-        targ_num_features = targ_num_features_tmp
-        ReCompSize = True
-
-    if minsize > 1 and predSizemin < minsize:
-        pred_labeled_tmp = pred_labeled_array.copy()
-        for ocount in range(pred_num_features):
-            if predSize[ocount] < minsize:
-                pred_labeled_tmp[pred_labeled_tmp == (ocount + 1)] = 0
-        unq_lab_tmp = np.unique(pred_labeled_tmp)
-        pred_num_features_tmp = len(unq_lab_tmp) - 1
-        for ocount in range(pred_num_features_tmp):
-            pred_labeled_tmp[pred_labeled_tmp == unq_lab_tmp[ocount + 1]] = ocount + 1
-        pred_labeled_array = pred_labeled_tmp.copy()
-        pred_num_features = pred_num_features_tmp
-        ReCompSize = True
-
-    # Re-Compute size of objects
-    if ReCompSize:
-        targSize = np.zeros(targ_num_features)
-        for icount in range(targ_num_features):
-            targSize[icount] = targ_labeled_array[targ_labeled_array == icount + 1].size
-        predSize = np.zeros(pred_num_features)
-        for icount in range(pred_num_features):
-            predSize[icount] = pred_labeled_array[pred_labeled_array == icount + 1].size
-
-    # Compute SAL score (as Wernli et al, 2008)
-
-    # ----------------------------
-    # - Amplitude
-    #   Measure of total over whole domain
-    sal_amplitude = 2.0 * (prediction.mean() - target.mean())
-    sal_amplitude = sal_amplitude / (prediction.mean() + target.mean())
-
-    # ----------------------------
-    # - Location
-    #   Measure of location of objects wrt whole domain
-    # - based on centre of mass of fields and objects
-    # scipy.ndimage.center_of_mass
-    # docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.center_of_mass.html
-
-    # --- location 1 based on centre of mass of total fields
-    # taken from pysteps
-    # Normalised difference of target and prediction centres of mass
-    # - distances computed in number of grid points
-    # - assumes small region so actual distances roughly equal?
-    # centre_of_mass() assumes data non-negative and non-missing
-    max_d = np.sqrt(target.shape[0] ** 2 + target.shape[1] ** 2)
-    targ_shifted = target - np.nanmin(target)
-    targCoM = ndimage.center_of_mass(np.nan_to_num(targ_shifted, nan=0))
-    pred_shifted = prediction - np.nanmin(prediction)
-    predCoM = ndimage.center_of_mass(np.nan_to_num(pred_shifted, nan=0))
-    diffCoM = np.sqrt((predCoM[1] - targCoM[1]) ** 2 + (predCoM[0] - targCoM[0]) ** 2)
-    Loc1 = np.abs(diffCoM) / max_d
-
-    # --- location 2 based on centre of mass of individual objects
-    # - Compute total sum of values per object (sum of all grid points) [Rn]
-    targTotal = np.zeros(targ_num_features)
-    for icount in range(targ_num_features):
-        targTotal[icount] = target[targ_labeled_array == icount + 1].sum()
-    predTotal = np.zeros(pred_num_features)
-    for icount in range(pred_num_features):
-        predTotal[icount] = prediction[pred_labeled_array == icount + 1].sum()
-
-    # Compute centre of mass of each object and distance from centre of its total field
-    targ_distCoM = np.zeros(targ_num_features)
-    targ_obj_CoM = []
-    for icount in range(targ_num_features):
-        tmp_shifted = target.copy() - np.nanmin(target)
-        tmp_shifted[targ_labeled_array != icount + 1] = np.nan
-        CoMtmp = ndimage.center_of_mass(np.nan_to_num(tmp_shifted, nan=0))
-        dist_tmp = np.sqrt(
-            (CoMtmp[1] - targCoM[1]) ** 2 + (CoMtmp[0] - targCoM[0]) ** 2
-        )
-        targ_distCoM[icount] = dist_tmp
-        targ_obj_CoM.append(CoMtmp)
-
-    pred_distCoM = np.zeros(pred_num_features)
-    pred_obj_CoM = []
-    for icount in range(pred_num_features):
-        tmp_shifted = prediction.copy() - np.nanmin(prediction)
-        tmp_shifted[pred_labeled_array != icount + 1] = np.nan
-        CoMtmp = ndimage.center_of_mass(np.nan_to_num(tmp_shifted, nan=0))
-        dist_tmp = np.sqrt(
-            (CoMtmp[1] - predCoM[1]) ** 2 + (CoMtmp[0] - predCoM[0]) ** 2
-        )
-        pred_distCoM[icount] = dist_tmp
-        pred_obj_CoM.append(CoMtmp)
-
-    # Compute weighted average distance of each object from centre of its total field [r]
-    targ_wadistCoM = (targTotal * np.abs(targ_distCoM)).sum() / targTotal.sum()
-    pred_wadistCoM = (predTotal * np.abs(pred_distCoM)).sum() / predTotal.sum()
-
-    Loc2 = 2 * np.abs(pred_wadistCoM - targ_wadistCoM) / max_d
-
-    sal_location = Loc1 + Loc2
-
-    # ----------------------------
-    # - Structure
-    #   Measure of relative 'volume' in objects
-
-    # - Compute max value in each object
-    targMax = np.zeros(targ_num_features)
-    for icount in range(targ_num_features):
-        targMax[icount] = target[targ_labeled_array == icount + 1].max()
-    predMax = np.zeros(pred_num_features)
-    for icount in range(pred_num_features):
-        predMax[icount] = prediction[pred_labeled_array == icount + 1].max()
-
-    targVOL = targTotal / targMax
-    predVOL = predTotal / predMax
-
-    targ_waVOL = (targTotal * targVOL).sum() / targTotal.sum()
-    pred_waVOL = (predTotal * predVOL).sum() / predTotal.sum()
-
-    sal_structure = 2 * (pred_waVOL - targ_waVOL) / (pred_waVOL + targ_waVOL)
-
-    # ----------------------------
-
-    sal_nparray = np.array([sal_structure, sal_amplitude, sal_location, Loc1, Loc2])
-
-    return sal_nparray
-
-
-def compute_sal_objects(
-    array,
-    eThreshFix=None,
-    thr_quantile=None,
-    thr_factor=None,
-    minFac=None,
-    minsize=0,
-    structure=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=int),
-):
-    """
-    Compute SAL objects for a single 2d numpy field wrt given threhold
-    Based on Wernli et al., 2008 and 2009
-    https://journals.ametsoc.org/view/journals/mwre/136/11/2008mwr2415.1.xml
-    https://journals.ametsoc.org/view/journals/wefo/24/6/2009waf2222271_1.xml
-
-    *Assumes input field are non-negative like precipitation. May behave
-    unexpectedly if negative values exist.
-
-    Extended to allow the use of:
-    - fixed thresholds independent of input data
-    - different minimum object size thresholds
-    - different structure for neighbour definitions
-    Copyright (c) 2026 Klima consulting
-    Author: Rosie Eade, Pierre Chapel
-
-    Parameters:
-    -----------
-    array : numpy.ndarray
-        field data as 2d [lat, lon] array
-    eThreshFix : float | None
-        Fixed threshold to be used to define event (same units as target)
-        If eThreshFix value given, this overrides quantile based options
-    thr_quantile : float | None
-        Quantile value in [0.0, 1.0] used to compute threshold to define
-        event, as Wernli et al. 2009 (they use thr_quantile=0.95)
-    thr_factor : float | None
-        Factor to reduce the quantile by, as Wernli et al. 2008 & 2009
-        (they use thr_factor=1/15)
-    minFac : float | str | None
-        Option to mask data less than threshold=minFac before computing
-        quantile, as Wernli et al. 2009 (they use 0.1 mm for precip)
-        Special case: minFac='min' implies use min value of field,
-        chosen to align with option in pysteps.
-    minsize : int = 0
-        Option to ignore options with size (no. grid points) < minsize
-    structure : numpy.ndarray, dtype=int, shape [3, 3]
-        This array defines what are classed as neighbouring grid points.
-        2 Options:
-        np.array([[0, 1, 0],[1, 1, 1],[0, 1, 0]], dtype=int) # Orthogonal-
-         only (default)
-        np.ones((3, 3), dtype=int) # Orthogonal and diagonal
-
-    Returns:
-    --------
-    dict
-        SAL objects for single input 2D field with keys :
-            - "sal_waVOL" : contains the weighted area volume (object representing structure)
-            - "sal_a" : mean of precipitation of field (represents amplitude)
-            - "sal_r" : weighted average distance of each object from centre of its total field (represents L2 term)
-            - "sal_targ_num" : number of events detected in the field
-            - "sal_targ_size" : array of sizes of the events detected
-        }
-        if no objects are found, this function returns this dict :
-        {
-            "sal_waVOL": np.nan,
-            "sal_a": np.nan,
-            "sal_r": np.nan,
-            "sal_targ_num": 0,
-            "sal_targ_size" : np.zeros(1,)
-        }
-
-    See Also
-    --------
-
-    scipy.ndimage.label :
-    Identify objects using sp.ndimage.label
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
-    """
-    # Code assumes that minsize is an integer so check (and convert)
-    if minsize is None:
-        minsize = 0
-    if isinstance(minsize, float):
-        minsize = int(minsize)
-
-    # If fixed target threshold defined, default to using this
-    if eThreshFix is not None:
-        # Use fixed thresholds
-        eThresh = eThreshFix
-
-    # If no fixed target threshold defined, use quantile based thresholds
-    # Set default values if not supplied
-    if eThreshFix is None:
-        if thr_quantile is None:
-            thr_quantile = 0.95
-        if thr_factor is None:
-            thr_factor = 1 / 15.0
-
-        # Compute quantile-based thresholds from input data,
-        # with option to first mask out very small values
-        if isinstance(minFac, (int, float)):
-            eThresh = thr_factor * np.nanquantile(array[array > minFac], thr_quantile)
-        if isinstance(minFac, str):
-            if minFac == "min":
-                eThresh = thr_factor * np.nanquantile(
-                    array[array > np.nanmin(array)], thr_quantile
-                )
-            else:
-                minFac = None
-        if minFac is None:
-            eThresh = thr_factor * np.nanquantile(array, thr_quantile)
-
-    # Check for negative values
-    array_min = array.min()
-    if array_min < 0:
-        print("WARNING: input field contain negative values. SAL score function ")
-        print("assumes non-negative values, so may behave unexpectedly.")
-
-    # Setup empty xarray dataset for the case where no objects are found
-    no_object_dict = {
-        "sal_waVOL": np.nan,
-        "sal_a": np.nan,
-        "sal_r": np.nan,
-        "sal_targ_num": 0,
-        "sal_targ_size": np.zeros(
-            1,
-        ),
-    }
-
-    if np.isnan(eThresh):
-        return no_object_dict
-
-    # If all data below event thresholds, then no objects can be found
-    arr_max = array.max()
-    if arr_max <= eThresh:
-        print("No Objects Found: Event thresholds too large")
-        return no_object_dict
-
-    arr_masked: np.ndarray = (array > eThresh) & np.isfinite(array)
-    arr_labeled_array, arr_num_features = ndimage.label(arr_masked, structure=structure)
-
-    # Compute size of objects
-    Size = np.zeros(arr_num_features)
-    for icount in range(arr_num_features):
-        Size[icount] = arr_labeled_array[arr_labeled_array == icount + 1].size
-
-    # Option to discard objects if too small and then renumber
-    # - assumes minsize is an integer
-    ReCompSize = False
-    Sizemin = Size.min()
-    Sizemax = Size.max()
-    # If all objects below size thresholds, then no objects can be found
-    if Sizemax < minsize:
-        print("No Objects Found: Objects too small")
-        return no_object_dict
-
-    if minsize > 1 and Sizemin < minsize:
-        arr_labeled_tmp = arr_labeled_array.copy()
-        for ocount in range(arr_num_features):
-            if Size[ocount] < minsize:
-                arr_labeled_tmp[arr_labeled_tmp == (ocount + 1)] = 0
-        unq_lab_tmp = np.unique(arr_labeled_tmp)
-        num_features_tmp = len(unq_lab_tmp) - 1
-        for ocount in range(num_features_tmp):
-            arr_labeled_tmp[arr_labeled_tmp == unq_lab_tmp[ocount + 1]] = ocount + 1
-        arr_labeled_array = arr_labeled_tmp.copy()
-        arr_num_features = num_features_tmp
-        ReCompSize = True
-
-    # Re-Compute size of objects
-    if ReCompSize:
-        Size = np.zeros(arr_num_features)
-        for icount in range(arr_num_features):
-            Size[icount] = arr_labeled_array[arr_labeled_array == icount + 1].size
-
-    # Compute SAL objects (as Wernli et al, 2008)
-
-    # ----------------------------
-    # - Amplitude
-    #   Measure of total over whole domain
-    sal_amplitude = array.mean()
-
-    # ----------------------------
-    # - Location
-    #   Measure of location of objects wrt whole domain
-    # - based on centre of mass of fields and objects
-    # scipy.ndimage.center_of_mass
-    # docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.center_of_mass.html
-
-    # --- location 2 based on centre of mass of individual objects
-    # - distances computed in number of grid points
-    # - assumes small region so actual distances roughly equal?
-    # centre_of_mass() assumes data non-negative and non-missing
-    max_d = np.sqrt(array.shape[0] ** 2 + array.shape[1] ** 2)  # i.e. domain diagonal
-    targ_shifted = array - np.nanmin(array)
-    targCoM = ndimage.center_of_mass(np.nan_to_num(targ_shifted, nan=0))
-
-    # - Compute total sum of values per object (sum of all grid points) [Rn]
-    targTotal = np.zeros(arr_num_features)
-    for icount in range(arr_num_features):
-        targTotal[icount] = array[arr_labeled_array == icount + 1].sum()
-
-    # Compute centre of mass of each object and distance from centre of its total field
-    targ_distCoM = np.zeros(arr_num_features)
-    targ_obj_CoM = []
-    for icount in range(arr_num_features):
-        tmp_shifted = array.copy() - np.nanmin(array)
-        tmp_shifted[arr_labeled_array != icount + 1] = np.nan
-        CoMtmp = ndimage.center_of_mass(np.nan_to_num(tmp_shifted, nan=0))
-        dist_tmp = np.sqrt(
-            (CoMtmp[1] - targCoM[1]) ** 2 + (CoMtmp[0] - targCoM[0]) ** 2
-        )
-        targ_distCoM[icount] = dist_tmp
-        targ_obj_CoM.append(CoMtmp)
-
-    # Compute weighted average distance of each object from centre of its total field [r]
-    targ_wadistCoM = (targTotal * np.abs(targ_distCoM)).sum() / targTotal.sum()
-    sal_r = targ_wadistCoM / max_d
-
-    # ----------------------------
-    # - Structure
-    #   Measure of relative 'volume' in objects
-
-    # - Compute max value in each object
-    targMax = np.zeros(arr_num_features)
-    for icount in range(arr_num_features):
-        targMax[icount] = array[arr_labeled_array == icount + 1].max()
-
-    targVOL = targTotal / targMax
-
-    targ_waVOL = (targTotal * targVOL).sum() / targTotal.sum()
-
-    sal_waVOL = targ_waVOL
-
-    # ----------------------------
-
-    sal_dict = {
-        "sal_waVOL": sal_waVOL,
-        "sal_a": sal_amplitude,
-        "sal_r": sal_r,
-        "sal_targ_num": arr_num_features,
-        "sal_targ_size": Size,
-    }
-
-    return sal_dict
-
-
-def compute_sal_objects_time(
-    array: np.ndarray,  # shape [T,h,w]
-    eThreshFix=None,
-    thr_quantile=None,
-    thr_factor=None,
-    minFac=None,
-    minsize=0,
-    structure=np.ones((3, 3), dtype=int),
-):
-    """
-    Compute SAL objects for a 3d numpy field of shape (number of timesteps, latitude, longitude) wrt given threhold
-    Based on Wernli et al., 2008 and 2009
-    https://journals.ametsoc.org/view/journals/mwre/136/11/2008mwr2415.1.xml
-    https://journals.ametsoc.org/view/journals/wefo/24/6/2009waf2222271_1.xml
-
-    *Assumes input field are non-negative like precipitation. May behave
-    unexpectedly if negative values exist.
-
-    Extended to allow the use of:
-    - fixed thresholds independent of input data
-    - different minimum object size thresholds
-    - different structure for neighbour definitions
-    Copyright (c) 2026 Klima consulting
-    Author: Rosie Eade, Pierre Chapel
-
-    Parameters:
-    -----------
-    array : numpy.ndarray
-        field data as 3d [time, lat, lon] array
-    eThreshFix : float | None
-        Fixed threshold to be used to define event (same units as target)
-        If eThreshFix value given, this overrides quantile based options
-    thr_quantile : float | None
-        Quantile value in [0.0, 1.0] used to compute threshold to define
-        event, as Wernli et al. 2009 (they use thr_quantile=0.95)
-    thr_factor : float | None
-        Factor to reduce the quantile by, as Wernli et al. 2008 & 2009
-        (they use thr_factor=1/15)
-    minFac : float | str | None
-        Option to mask data less than threshold=minFac before computing
-        quantile, as Wernli et al. 2009 (they use 0.1 mm for precip)
-        Special case: minFac='min' implies use min value of field,
-        chosen to align with option in pysteps.
-    minsize : int = 0
-        Option to ignore options with size (no. grid points) < minsize
-    structure : numpy.ndarray, dtype=int, shape [3, 3]
-        This array defines what are classed as neighbouring grid points.
-        2 Options:
-        np.array([[0, 1, 0],[1, 1, 1],[0, 1, 0]], dtype=int) # Orthogonal-
-         only (default)
-        np.ones((3, 3), dtype=int) # Orthogonal and diagonal
-
-    Returns:
-    --------
-    dict
-        SAL objects for the given 3D field with keys :
-            - "sal_waVOL" : the 1D np.ndarray containing the weighted area volumes (objects representing structure) for each timestep where at least an object was detected.
-            - "sal_a" : the 1D np.ndarray containing the mean of precipitation of 2D fields (represents amplitude) for each timestep where at least an object was detected.
-            - "sal_r" : the 1D np.ndarray containing the weighted average distances of each object from centre of its total field (represents L2 term) for each timestep where at least an object was detected.
-            - "sal_targ_num" : the 1D np.ndarray containing the numbers of objects detected in the field for each timestep where at least an object was detected.
-            - "sal_targ_size" : the 1D np.ndarray containing the sizes of the events detected in each 2D field for each timestep where at least an object was detected.
-        }
-
-    See Also
-    --------
-
-    scipy.ndimage.label :
-    Identify objects using sp.ndimage.label
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
-    """
-    sal_waVOL = []
-    sal_a = []
-    sal_r = []
-    sal_targ_num = []
-    sal_targ_size = []
-
-    for tcount in range(array.shape[0]):
-        sal_tmp = compute_sal_objects(
-            array[tcount],
-            eThreshFix=eThreshFix,
-            thr_factor=thr_factor,
-            thr_quantile=thr_quantile,
-            minFac=minFac,
-            minsize=minsize,
-            structure=structure,
-        )
-
-        if sal_tmp["sal_waVOL"] != np.nan:
-            sal_waVOL.append(sal_tmp["sal_waVOL"])
-            sal_a.append(sal_tmp["sal_a"])
-            sal_r.append(sal_tmp["sal_r"])
-            sal_targ_num.append(sal_tmp["sal_targ_num"])
-            sal_targ_size.append(sal_tmp["sal_targ_size"])
-
-    sal_dict = {
-        "sal_waVOL": np.array(sal_waVOL),
-        "sal_a": np.array(sal_a),
-        "sal_r": np.array(sal_r),
-        "sal_targ_num": np.array(sal_targ_num),
-        "sal_targ_size": np.concat(sal_targ_size),
-    }
-    return sal_dict
-
-
-def plot_validation_salpdfs(
-    predictions,  # Model predictions precipitation (fine predicted)
-    targets,  # Ground truth precipitation (fine true)
-    coarse_inputs=None,  # Coarse inputs for comparison (optional)
-    filename="validation_sal_pdfs.png",
-    save_dir=None,
-    figsize_multiplier=None,  # Base size per subplot
-    bins_list=[np.arange(-2, 2, 0.05), np.arange(-2, 2, 0.05), np.arange(0, 2, 0.02)],
-):
-    """
-    Compute SAL scores for each pair of images (Prediction and Target).
-    Plot pdfs of each SAL element: Structure, Amplitude, Location,
-    and output pdf mean and SD. Uses function compute_sal().
-
-    Parameters
-    ----------
-    predictions : torch.Tensor or np.array
-        Model predictions of shape [batch_size, h, w]
-    targets : torch.Tensor or np.array
-        Ground truth of shape [batch_size, h, w]
-    coarse_inputs : torch.Tensor or np.array, optional
-        Coarse inputs of shape [batch_size, h, w]
-    filename : str, optional
-        Output filename for saving the plot.
-    save_dir : str, optional
-        Directory to save the plot.
-    figsize_multiplier : int, optional
-        Base size multiplier for subplots.
-    bins_list : list of numpy.ndarray or None
-        Define the bins used for each histogram: s, a, l
-        e.g. for whole possible range of values, use:
-        [np.arange(-2,2,0.05), np.arange(-2,2,0.05),
-            np.arange(0,2,0.02)]
-        [None, None, None] => Use default of hist function for all
-
-    Returns
-    -------
-    None
-    """
-    if save_dir is None:
-        save_dir = PlotConfig.DEFAULT_SAVE_DIR
-    if figsize_multiplier is None:
-        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
-
-    # Convert tensors to numpy
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if coarse_inputs is not None:
-        if hasattr(coarse_inputs, "detach"):
-            coarse_inputs = coarse_inputs.detach().cpu().numpy()
-
-    nimages, h, w = targets.shape
-
-    # ----------------------------------------------------
-    # Compute SAL scores for each individual pair of images
-
-    sal_s_vec = np.ones(nimages)
-    sal_a_vec = np.ones(nimages)
-    sal_l_vec = np.ones(nimages)
-    for ii in range(nimages):
-        sal_tmp = compute_sal(
-            predictions[ii],
-            targets[ii],
-            thr_quantile=0.95,
-            thr_factor=1 / 15,
-            minFac="min",
-            minsize=50,
-        )
-        sal_s_vec[ii] = sal_tmp[0]
-        sal_a_vec[ii] = sal_tmp[1]
-        sal_l_vec[ii] = sal_tmp[2]
-
-    if coarse_inputs is not None:
-        sal_s_vecC = np.ones(nimages)
-        sal_a_vecC = np.ones(nimages)
-        sal_l_vecC = np.ones(nimages)
-        for ii in range(nimages):
-            sal_tmp = compute_sal(
-                coarse_inputs[ii],
-                targets[ii],
-                thr_quantile=0.95,
-                thr_factor=1 / 15,
-                minFac="min",
-                minsize=50,
-            )
-            sal_s_vecC[ii] = sal_tmp[0]
-            sal_a_vecC[ii] = sal_tmp[1]
-            sal_l_vecC[ii] = sal_tmp[2]
-
-    # print summary of stats to terminal
-    print("---- Prediction ----")
-    print(f"S Mean: {np.nanmean(sal_s_vec):.3f}, SD: {np.nanstd(sal_s_vec):.3f}")
-    print(f"A Mean: {np.nanmean(sal_a_vec):.3f}, SD: {np.nanstd(sal_a_vec):.3f}")
-    print(f"L Mean: {np.nanmean(sal_l_vec):.3f}, SD: {np.nanstd(sal_l_vec):.3f}")
-    print("--------------------")
-
-    if coarse_inputs is not None:
-        print("---- Coarse     ----")
-        print(f"S Mean: {np.nanmean(sal_s_vecC):.3f}, SD: {np.nanstd(sal_s_vecC):.3f}")
-        print(f"A Mean: {np.nanmean(sal_a_vecC):.3f}, SD: {np.nanstd(sal_a_vecC):.3f}")
-        print(f"L Mean: {np.nanmean(sal_l_vecC):.3f}, SD: {np.nanstd(sal_l_vecC):.3f}")
-        print("--------------------")
-
-    # ----------------------------------------------------
-    # Plot pdfs of S, A, L values [nrows, ncols]
-
-    base_width_per_panel = 4.5
-    base_height_per_panel = 3.0
-
-    fig_width = base_width_per_panel
-    fig_height = 3 * base_height_per_panel
-
-    fig, axes = plt.subplots(
-        3, 1, figsize=(fig_width, fig_height), layout="constrained", squeeze=False
-    )
-
-    y_label = "density"
-
-    # --------------------
-    # Structure
-    ax = axes[0, 0]  # Row, Col
-
-    is_real = np.isfinite(sal_s_vec)  # Ignore nonfinite values
-    ax.hist(
-        sal_s_vec[is_real],
-        bins=bins_list[0],
-        edgecolor="black",
-        color="black",
-        density=True,
-        label="Prediction",
-        alpha=0.3,
-    )
-
-    if coarse_inputs is not None:
-        is_real = np.isfinite(sal_s_vecC)
-        ax.hist(
-            sal_s_vecC[is_real],
-            bins=bins_list[0],
-            edgecolor="blue",
-            color="blue",
-            density=True,
-            label="Coarse",
-            alpha=0.3,
-        )
-
-    ax.set_xlabel("Structure")
-    ax.set_ylabel(y_label)
-    ax.set_title("Structure")
-    ax.legend()
-
-    # --------------------
-    # Amplitude
-    ax = axes[1, 0]  # Row, Col
-
-    is_real = np.isfinite(sal_a_vec)  # Ignore nonfinite values
-    ax.hist(
-        sal_a_vec[is_real],
-        bins=bins_list[1],
-        edgecolor="black",
-        color="black",
-        density=True,
-        label="Prediction",
-        alpha=0.3,
-    )
-
-    if coarse_inputs is not None:
-        is_real = np.isfinite(sal_a_vecC)
-        ax.hist(
-            sal_a_vecC[is_real],
-            bins=bins_list[1],
-            edgecolor="blue",
-            color="blue",
-            density=True,
-            label="Coarse",
-            alpha=0.3,
-        )
-
-    ax.set_xlabel("Amplitude")
-    ax.set_ylabel(y_label)
-    ax.set_title("Amplitude")
-    ax.legend()
-
-    # --------------------
-    # Location
-    ax = axes[2, 0]  # Row, Col
-
-    is_real = np.isfinite(sal_l_vec)  # Ignore nonfinite values
-    ax.hist(
-        sal_l_vec[is_real],
-        bins=bins_list[2],
-        edgecolor="black",
-        color="black",
-        density=True,
-        label="Prediction",
-        alpha=0.3,
-    )
-
-    if coarse_inputs is not None:
-        is_real = np.isfinite(sal_l_vecC)
-        ax.hist(
-            sal_l_vecC[is_real],
-            bins=bins_list[2],
-            edgecolor="blue",
-            color="blue",
-            density=True,
-            label="Coarse",
-            alpha=0.3,
-        )
-
-    ax.set_xlabel("Location")
-    ax.set_ylabel(y_label)
-    ax.set_title("Location")
-    ax.legend()
-
-    # --------------------
-
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, filename)
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.close(fig)
-
     return save_path
 
 

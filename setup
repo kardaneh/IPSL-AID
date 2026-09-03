@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+IPSL_AID_BIN="$PROJECT_ROOT/.venv/bin/ipsl-aid"
+
 # ======================
 # Check IPSL-AID installation
 # ======================
-if ! command -v ipsl-aid &> /dev/null; then
-    echo "ERROR: ipsl-aid command not found. Please install the package first using: uv pip install -e ."
-    echo "       or activate the virtual environment if already installed using: source .venv/bin/activate"
+if [[ ! -x "$IPSL_AID_BIN" ]]; then
+    echo "ERROR: local executable not found: $IPSL_AID_BIN"
+    echo "Create the environment in $PROJECT_ROOT/.venv and install the project."
     exit 1
 fi
 
@@ -22,50 +25,49 @@ TODAY=$(date +"%Y%m%d_%H%M%S")
 # 2. Parameters
 # ======================
 
-run_type="train" # "train", ""train_regional"
+experiment_ID="Baseline"
+
+run_type="train" # resume the in4 run from epoch 28 and continue to epoch 40
 
 region="Europe" # Only for run_type="train_regional"
 region_size=("288" "720") # Only for run_type="train_regional"
 
 save_model=true
-save_checkpoint_name="difusion_model"
-load_checkpoint_name="difusion_model"
+save_checkpoint_name="${experiment_ID}_ddpmpp_model"
+load_checkpoint_name="experiment_best_model.pth.tar"
 save_per_samples=10000
 
 year_start=2015
 year_end=2019
-year_start_test=2020 #2020
-year_end_test=2020 #2020
+year_start_test=2020
+year_end_test=2020
 
-batch_size=36 #20 #40 # use maximum 18 for 1 GPU
-num_epochs=8
+batch_size=8 # first ST-only U-Net training run
+num_epochs=1
 learning_rate=0.0001
-num_workers=16
+num_workers=0
 
-datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+datadir="/projects/m26183/data_ST_sliced"
 per_var_datadir=(
-  "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
-  "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
-  "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
+  "VAR_ST=/projects/m26183/data_ST_sliced"
   )
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
-constant_varnames_list=("z" "lsm")
-constant_varnames_file="ERA5_const_sfc_variables.nc"
-normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard")
-units_list=("K" "m/s" "m/s" "m/h" "K" "K")
+varnames_list=("VAR_ST")
+constant_varnames_list=("lsm")
+constant_varnames_file="ESA_constants_sliced.nc"
+include_lsm_as_input=true
+normalization_types=("VAR_ST=standard")
+units_list=("K")
 dynamic_covariates=()
 dynamic_covariates_dir="../data_covariates/"
 
-sbatch=12 #12
+sbatch=35 # full sliced domain: 7 latitude blocks x 5 longitude blocks
 tbatch=1800
-batch_size_lat=145
-batch_size_lon=361
+batch_size_lat=120
+batch_size_lon=240
+coarse_input_shape=(42 60) # full-domain coarse grid used by coarse_down_up
 
 epsilon=0.02
 beta=1.0
@@ -75,19 +77,29 @@ pretrained_path=""
 model_name=""
 
 dtype="fp32"
-arch="adm" # options are "ddpmpp", "ncsnpp", and "adm"
+arch="ddpmpp" # architecture used by notebooks/Introduction.ipynb
 precond="unet" # edm for edm (default model), unet for unet,
+# Architecture parameters used by the notebook training.
+model_channels=32
+channel_mult=(1 2 4)
+num_blocks=2
+attn_resolutions=() # no self-attention
 # for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
+model_constant_channels=${#constant_varnames_list[@]}
+if [[ "$include_lsm_as_input" != true ]] && [[ " ${constant_varnames_list[*]} " =~ " lsm " ]]; then
+    model_constant_channels=$((model_constant_channels - 1))
+fi
+model_input_channels=$((${#varnames_list[@]} + 2 + model_constant_channels))
 
 if [[ "$precond" == "unet" ]]; then
-    in_channels=10     # number of variables + constants (lat + lon + z + lsm)
+    in_channels=$model_input_channels
     cond_channels=""   # no cond_channels for unet
 else  # for diffusion-based arch
-    in_channels=6      # number of variables only
-    cond_channels=10   # number of variables + lat + lon + z + lsm
+    in_channels=${#varnames_list[@]}
+    cond_channels=$model_input_channels
 fi
 
-out_channels=6 # number of variables
+out_channels=1 # VAR_ST only
 inference_type="direct" # "direct" for unet, "sampler" for diffusion
 
 compute_crps=false
@@ -109,17 +121,37 @@ solver="heun"
 # Add apply_filter parameter
 apply_filter=false
 
+# Keep LSM-as-input and ocean-only calculations independent.
+ocean_only_calculations=true
+lsm_threshold=0.5
+
 # ======================
 # 3. SLURM Configuration
 # ======================
 
-SLURM_ACCOUNT="EUHPC_D27_095"
-SLURM_PARTITION="boost_usr_prod"
-SLURM_QOS="boost_qos_bprod"
-SLURM_GRES=4
+SLURM_ACCOUNT="2026044"
+SLURM_PARTITION="gpu_h200"
+SLURM_QOS="q_ac_gpu_h200"
+SLURM_GPUS=1
+SLURM_MEM="64G"
 SLURM_NODES=1
 SLURM_NTASKS_PER_NODE=1
-SLURM_CPUS_PER_TASK=16
+SLURM_CPUS_PER_TASK=24
+SLURM_TIME="24:00:00"
+
+# Fail early before generating a job that cannot access its inputs.
+if [[ ! -d "$datadir" ]]; then
+    echo "ERROR: dataset directory is not accessible from Hal: $datadir"
+    exit 1
+fi
+if [[ ! -r "$datadir/$constant_varnames_file" ]]; then
+    echo "ERROR: constants file is not readable: $datadir/$constant_varnames_file"
+    exit 1
+fi
+if [[ "$ocean_only_calculations" == true ]] && [[ ! " ${constant_varnames_list[*]} " =~ " lsm " ]]; then
+    echo "ERROR: ocean_only_calculations=true requires lsm in constant_varnames_list"
+    exit 1
+fi
 
 # ======================
 # Generate Tag and Output Paths
@@ -140,6 +172,16 @@ base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
 base_parts+=("in${in_channels}")
 
+channel_mult_str=$(IFS=x ; echo "${channel_mult[*]}")
+attn_str="none"
+if [[ ${#attn_resolutions[@]} -gt 0 ]]; then
+    attn_str=$(IFS=x ; echo "${attn_resolutions[*]}")
+fi
+base_parts+=("mc${model_channels}")
+base_parts+=("cm${channel_mult_str}")
+base_parts+=("nb${num_blocks}")
+base_parts+=("attn${attn_str}")
+
 if [[ "$precond" == "edm" ]]; then
     base_parts+=("cond${cond_channels}")
 fi
@@ -147,9 +189,14 @@ fi
 base_parts+=("out${out_channels}")
 filter_str=$([[ "$apply_filter" == true ]] && echo "filter" || echo "nofilter")
 base_parts+=("${filter_str}")
+if [[ "$ocean_only_calculations" == true ]]; then
+    base_parts+=("oceanonly")
+fi
 
 # Create TRAINING model name parts (training-specific)
+coarse_input_shape_str=$(IFS=x ; echo "${coarse_input_shape[*]}")
 train_parts=("ep${num_epochs}")
+train_parts+=("coarse${coarse_input_shape_str}")
 train_parts+=("sb${sbatch}")
 train_parts+=("tb${tbatch}")
 train_parts+=("eps${eps_str}")
@@ -175,7 +222,7 @@ if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
 fi
 
 # Combine all parts
-model_parts=("${mode_str}" "${base_parts[@]}" "${train_parts[@]}")
+model_parts=("${experiment_ID}" "${mode_str}" "${base_parts[@]}" "${train_parts[@]}")
 
 # Model name (full configuration) - PROPERLY joined with underscores
 model_name=$(IFS=_ ; echo "${model_parts[*]}")
@@ -183,20 +230,19 @@ tag="${model_name}_bs${batch_size}_lr${lr_str}_${TODAY}"
 
 # Define output paths - hierarchical structure
 # Main folder: mode + base configuration - PROPERLY joined
-main_folder="${mode_str}_$(IFS=_ ; echo "${base_parts[*]}")"
+main_folder="${experiment_ID}_${mode_str}_$(IFS=_ ; echo "${base_parts[*]}")"
 
 # Sub folder: training parameters + date - PROPERLY joined
 train_parts_str=$(IFS=_ ; echo "${train_parts[*]}")
-sub_folder="train_${train_parts_str}_bs${batch_size}_lr${lr_str}"
+sub_folder="${experiment_ID}_train_${train_parts_str}_bs${batch_size}_lr${lr_str}"
 
 # Prefix: simple run identifier
-prefix="run_${TODAY}"
+prefix="${experiment_ID}_run_${TODAY}"
 
 # ======================
 # Generate SBATCH Script Only (removed run script)
 # ======================
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-sbatch_script="$PROJECT_ROOT/slurm/sbatch_diffusion_${main_folder}_${sub_folder}.sh"
+sbatch_script="$PROJECT_ROOT/slurm/${tag}.sh"
 
 # Create slurm_io directory if it doesn't exist
 mkdir -p "$PROJECT_ROOT/slurm_io"
@@ -207,8 +253,7 @@ mkdir -p "$PROJECT_ROOT/slurm_io"
 
 cat > $sbatch_script <<EOF
 #!/bin/bash
-#SBATCH --job-name=diffusion_${tag}
-#SBATCH --account=$SLURM_ACCOUNT
+#SBATCH --job-name=${tag}
 #SBATCH --partition=$SLURM_PARTITION
 EOF
 
@@ -221,13 +266,18 @@ else
 fi
 
 cat >> $sbatch_script <<EOF
+#SBATCH --job-name=${tag}
+#SBATCH --account=$SLURM_ACCOUNT
+#SBATCH --partition=$SLURM_PARTITION
+#SBATCH --qos=$SLURM_QOS
+#SBATCH --time=$SLURM_TIME
 #SBATCH --nodes=$SLURM_NODES
-#SBATCH --gpus-per-node=$SLURM_GRES
-#SBATCH --mem-per-gpu=64G
-#SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
+#SBATCH --ntasks=$SLURM_NTASKS_PER_NODE
 #SBATCH --cpus-per-task=$SLURM_CPUS_PER_TASK
-#SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
-#SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
+#SBATCH --gpus=$SLURM_GPUS
+#SBATCH --mem=$SLURM_MEM
+#SBATCH --error=$PROJECT_ROOT/slurm_io/${tag}_%j.err
+#SBATCH --output=$PROJECT_ROOT/slurm_io/${tag}_%j.out
 
 ulimit -s unlimited
 module purge
@@ -238,8 +288,12 @@ source $PROJECT_ROOT/.venv/bin/activate
 export PYTHONUNBUFFERED=1
 
 echo "===== Job Infos ====="
+echo "Experiment ID: $experiment_ID"
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "Include LSM as model input: $include_lsm_as_input"
+echo "Ocean-only calculations: $ocean_only_calculations"
+echo "LSM ocean threshold: $lsm_threshold"
 echo "Inference type: $inference_type"
 echo "Node list: \${SLURM_NODELIST}"
 echo "Job ID: \${SLURM_JOB_ID}"
@@ -264,7 +318,14 @@ ipsl-aid \\
     --precond "$precond" \\
     --in_channels "$in_channels" \\
     --out_channels "$out_channels" \\
+    --model_channels "$model_channels" \\
+    --channel_mult ${channel_mult[@]} \\
+    --num_blocks "$num_blocks" \\
+    --attn_resolutions ${attn_resolutions[@]} \\
     --apply_filter $apply_filter \\
+    --include_lsm_as_input $include_lsm_as_input \\
+    --ocean_only_calculations $ocean_only_calculations \\
+    --lsm_threshold $lsm_threshold \\
 EOF
 
 # Add cond_channels only for EDM
@@ -304,6 +365,7 @@ cat >> $sbatch_script <<EOF
     --sbatch "$sbatch" \\
     --batch_size_lat "$batch_size_lat" \\
     --batch_size_lon "$batch_size_lon" \\
+    --coarse_input_shape ${coarse_input_shape[@]} \\
     --epsilon "$epsilon" \\
     --beta "$beta" \\
     --margin "$margin" \\
@@ -326,8 +388,12 @@ chmod +x $sbatch_script
 # Final Output
 # ======================
 echo "=== Setup Complete ==="
+echo "Experiment ID: $experiment_ID"
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "Include LSM as model input: $include_lsm_as_input"
+echo "Ocean-only calculations: $ocean_only_calculations"
+echo "LSM ocean threshold: $lsm_threshold"
 echo "Inference type: $inference_type"
 echo "Run type: $run_type"
 echo "Save model: $save_model"

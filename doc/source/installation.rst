@@ -137,10 +137,10 @@ For development and documentation:
 .. code-block:: bash
 
    # Install development dependencies
-   uv pip install -e ".[dev]"
+   uv pip install --group dev
 
    # Install documentation dependencies
-   uv pip install -e ".[docs]"
+   uv pip install --group docs
 
 Development Installation
 ------------------------
@@ -151,7 +151,7 @@ For developers working on the codebase:
 
 .. code-block:: bash
 
-   uv pip install -e ".[dev]"
+   uv pip install --group dev
 
 2. Set up pre-commit hooks:
 

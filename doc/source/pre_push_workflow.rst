@@ -201,10 +201,10 @@ Step 5: Run Tests
 .. code-block:: bash
 
     # Full test suite (mandatory for Dev)
-    python -m pytest tests/ -v
+    python -m tests.test_all
 
     # Or specific module if changes are isolated
-    python -m pytest tests/test_preprocessing.py -v
+    python -m unittest tests.test_preprocessing -v
 
 **Success criteria for ``Dev``:**
 - ✅ **All** tests must pass (100%)
@@ -225,7 +225,7 @@ Step 6: Push to Dev
     git pull --rebase origin Dev
     # Resolve any conflicts
     pre-commit run --all-files
-    python -m pytest tests/ -v
+    python -m unittest tests.test_all -v
     git push origin Dev
 
 **🚫 NEVER use ``--force`` or ``--force-with-lease`` on ``Dev``** - this will
@@ -328,7 +328,7 @@ When your feature is ready to share with the team:
     pre-commit run --all-files
 
     # 4. Run tests (your feature should pass all tests)
-    python -m pytest tests/ -v
+    python -m unittest tests.test_all -v
 
     # 5. Squash messy commits (optional but recommended)
     git rebase -i origin/Dev
@@ -710,11 +710,11 @@ Before pushing, verify your changes don't break existing functionality:
 
 .. code-block:: bash
 
-    # Run the full test suite with pytest
-    python -m pytest tests/ -v
+    # Run the full test suite with unittest
+    python -m unittest tests.test_all -v
 
     # For a specific module
-    python -m pytest tests/test_networks.py -v
+    python -m unittest tests.test_networks -v
 
 **Success criteria:**
 
@@ -844,7 +844,7 @@ For ``Dev`` Branch (Team Collaboration)
 
     # Before push
     pre-commit run --all-files
-    python -m pytest tests/ -v
+    python -m unittest tests.test_all -v
 
     # Push (never force!)
     git push origin Dev
@@ -871,7 +871,7 @@ For ``feature/*`` Branch (Individual Development)
     git fetch origin
     git rebase origin/Dev
     pre-commit run --all-files
-    python -m pytest tests/ -v
+    python -m unittest tests.test_all -v
 
     # Push to remote
     git push -u origin feature/your-name-description
@@ -902,7 +902,7 @@ Based on your branches (``feature/you`` and ``Dev``):
 
     # Run quality checks
     pre-commit run --all-files
-    python -m pytest tests/ -v
+    python -m unittest tests.test_all -v
 
     # Push to your feature branch
     git push --force-with-lease origin feature/you

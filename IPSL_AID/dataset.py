@@ -621,6 +621,7 @@ class DataPreprocessor(Dataset):
         self.varnames_list = varnames_list
         self.units_list = units_list
         self.in_shape = in_shape
+        assert len(self.in_shape) == 2, "in_shape must be a tuple of length 2"
         self.batch_size_lat = batch_size_lat
         self.batch_size_lon = batch_size_lon
 
@@ -1040,8 +1041,23 @@ class DataPreprocessor(Dataset):
         """
 
         # Retrieve latitude and longitude arrays from the dataset
-        lat_array = self.loaded_dfs.latitude.values
-        lon_array = self.loaded_dfs.longitude.values
+        if hasattr(self.loaded_dfs, "latitude"):
+            lat_array = self.loaded_dfs.latitude.values
+        elif hasattr(self.loaded_dfs, "lat"):
+            lat_array = self.loaded_dfs.lat.values
+        else:
+            raise AttributeError(
+                "Dataset must have either 'latitude' or 'lat' coordinate."
+            )
+
+        if hasattr(self.loaded_dfs, "longitude"):
+            lon_array = self.loaded_dfs.longitude.values
+        elif hasattr(self.loaded_dfs, "lon"):
+            lon_array = self.loaded_dfs.lon.values
+        else:
+            raise AttributeError(
+                "Dataset must have either 'longitude' or 'lon' coordinate."
+            )
 
         # Find the index of the grid point closest to the requested lat/lon
         lat_idx = np.abs(lat_array - lat_value).argmin()
@@ -1717,8 +1733,26 @@ class DataPreprocessor(Dataset):
 
         # Load data
         full_data_org = self.loaded_dfs.isel(time=tindex)
-        lat = full_data_org.latitude.values.copy()
-        lon = full_data_org.longitude.values.copy()
+
+        if hasattr(full_data_org, "latitude"):
+            lat = full_data_org.latitude.values.copy()
+        elif hasattr(full_data_org, "lat"):
+            lat = full_data_org.lat.values.copy()
+        else:
+            raise AttributeError(
+                f"Dataset must have either 'latitude' or 'lat' coordinate. "
+                f"Available: {list(full_data_org.coords.keys())}"
+            )
+
+        if hasattr(full_data_org, "longitude"):
+            lon = full_data_org.longitude.values.copy()
+        elif hasattr(full_data_org, "lon"):
+            lon = full_data_org.lon.values.copy()
+        else:
+            raise AttributeError(
+                f"Dataset must have either 'longitude' or 'lon' coordinate. "
+                f"Available: {list(full_data_org.coords.keys())}"
+            )
 
         # Normalize to range [-1, 1] for better neural network input stability
         lat_norm = 2 * ((lat - lat.min()) / (lat.max() - lat.min())) - 1

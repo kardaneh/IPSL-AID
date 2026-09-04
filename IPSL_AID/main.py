@@ -326,6 +326,79 @@ def parse_args():
         "--out_channels", type=int, default=3, help="Number of output channels"
     )
 
+    parser.add_argument(
+        "--channel_mult",
+        type=int,
+        nargs="+",
+        default=[1, 2, 3, 4],
+        help="Channel multipliers per resolution. Example: --channel_mult 1 2 3 4",
+    )
+
+    parser.add_argument(
+        "--attn_resolutions",
+        type=int,
+        nargs="+",
+        default=[32, 16, 8],
+        help="Resolutions for attention. Example: --attn_resolutions 32 16 8",
+    )
+
+    parser.add_argument(
+        "--resample_filter",
+        type=float,
+        nargs="+",
+        default=[1, 3, 3, 1],
+        help="Resampling filter coefficients. Example: --resample_filter 1 3 3 1",
+    )
+
+    parser.add_argument(
+        "--model_channels",
+        type=int,
+        default=128,
+        help="Base channel multiplier for the network",
+    )
+
+    parser.add_argument(
+        "--num_blocks",
+        type=int,
+        default=2,
+        help="Number of residual blocks per resolution",
+    )
+
+    parser.add_argument(
+        "--dropout", type=float, default=0.10, help="Dropout probability"
+    )
+
+    parser.add_argument(
+        "--embedding_type",
+        type=str,
+        default="positional",
+        choices=["positional", "fourier"],
+        help="Timestep embedding type",
+    )
+
+    parser.add_argument(
+        "--encoder_type",
+        type=str,
+        default="standard",
+        choices=["standard", "skip", "residual"],
+        help="Encoder architecture type",
+    )
+
+    parser.add_argument(
+        "--decoder_type",
+        type=str,
+        default="standard",
+        choices=["standard", "skip"],
+        help="Decoder architecture type",
+    )
+
+    parser.add_argument(
+        "--channel_mult_noise",
+        type=int,
+        default=1,
+        help="Multiplier for noise embedding",
+    )
+
     # Checkpoint configuration
     parser.add_argument(
         "--save_model",
@@ -1259,6 +1332,28 @@ def setup_model(args, img_res, use_fp16, device, logger):
         f"Label dimension: {label_dim} (time_normalization: {args.time_normalization})"
     )
 
+    if args.arch == "adm":
+        model_kwargs = {
+            "model_channels": args.model_channels,
+            "channel_mult": args.channel_mult,
+            "num_blocks": args.num_blocks,
+            "attn_resolutions": args.attn_resolutions,
+            "dropout": args.dropout,
+        }
+    else:
+        model_kwargs = {
+            "model_channels": args.model_channels,
+            "channel_mult": args.channel_mult,
+            "num_blocks": args.num_blocks,
+            "attn_resolutions": args.attn_resolutions,
+            "dropout": args.dropout,
+            "embedding_type": args.embedding_type,
+            "encoder_type": args.encoder_type,
+            "decoder_type": args.decoder_type,
+            "resample_filter": args.resample_filter,
+            "channel_mult_noise": args.channel_mult_noise,
+        }
+
     opts = EasyDict(
         {
             "arch": args.arch,
@@ -1269,6 +1364,7 @@ def setup_model(args, img_res, use_fp16, device, logger):
             "out_channels": args.out_channels,
             "label_dim": label_dim,
             "use_fp16": use_fp16,
+            "model_kwargs": model_kwargs,
         }
     )
 

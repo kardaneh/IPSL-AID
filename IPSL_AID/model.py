@@ -117,90 +117,17 @@ def load_model_and_loss(opts, logger=None, device="cpu"):
     # --------------------------------------------------------
     network_kwargs = EasyDict()
 
-    if arch == "ddpmpp":
-        if diffusion_model:
-            network_kwargs.update(
-                dict(
-                    model_type="SongUNet",
-                    embedding_type="positional",
-                    encoder_type="standard",
-                    decoder_type="standard",
-                    channel_mult_noise=1,
-                    resample_filter=[1, 1],
-                    model_channels=128,
-                    channel_mult=[2, 2, 2],
-                )
-            )
-            log("Architecture DDPM++ / SongUNet selected")
+    if diffusion_model:
+        if arch in ["ddpmpp", "ncsnpp"]:
+            network_kwargs.model_type = "SongUNet"
+        elif arch == "adm":
+            network_kwargs.model_type = "DhariwalUNet"
         else:
-            network_kwargs.update(
-                dict(
-                    embedding_type="positional",
-                    encoder_type="standard",
-                    decoder_type="standard",
-                    channel_mult_noise=1,
-                    resample_filter=[1, 1],
-                    model_channels=128,
-                    channel_mult=[2, 2, 2],
-                    diffusion_model=False,  # Direct U-Net without preconditioning
-                )
-            )
-            log("Architecture DDPM++ / SongUNet selected for direct U-Net")
-
-    elif arch == "ncsnpp":
-        if diffusion_model:
-            network_kwargs.update(
-                dict(
-                    model_type="SongUNet",
-                    embedding_type="fourier",
-                    encoder_type="residual",
-                    decoder_type="standard",
-                    channel_mult_noise=2,
-                    resample_filter=[1, 3, 3, 1],
-                    model_channels=128,
-                    channel_mult=[2, 2, 2],
-                )
-            )
-            log("Architecture NCSN++ / SongUNet selected")
-        else:
-            network_kwargs.update(
-                dict(
-                    embedding_type="fourier",
-                    encoder_type="residual",
-                    decoder_type="standard",
-                    channel_mult_noise=2,
-                    resample_filter=[1, 3, 3, 1],
-                    model_channels=128,
-                    channel_mult=[2, 2, 2],
-                    diffusion_model=False,  # Direct U-Net without preconditioning
-                )
-            )
-            log("Architecture NCSN++ / SongUNet selected for direct U-Net")
-
-    elif arch == "adm":
-        if diffusion_model:
-            network_kwargs.update(
-                dict(
-                    model_type="DhariwalUNet",
-                    model_channels=128,
-                    channel_mult=[1, 2, 3, 4],
-                    num_blocks=2,
-                )
-            )
-            log("Architecture ADM / DhariwalUNet selected")
-        else:
-            network_kwargs.update(
-                dict(
-                    model_channels=128,
-                    channel_mult=[1, 2, 3, 4],
-                    num_blocks=2,
-                    diffusion_model=False,
-                )
-            )
-            log("Architecture ADM / DhariwalUNet selected for direct U-Net")
-
+            raise ValueError(f"❌ Invalid opts.arch '{opts.arch}'")
+        log(f"Architecture {arch.upper()} / {network_kwargs.model_type} selected")
     else:
-        raise ValueError(f"❌ Invalid opts.arch '{opts.arch}'")
+        network_kwargs.diffusion_model = False
+        log(f"Architecture {arch.upper()} selected for direct U-Net")
 
     # Allow overrides from opts.model_kwargs
     if hasattr(opts, "model_kwargs"):

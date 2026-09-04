@@ -36,6 +36,32 @@ class TestModelLoader(unittest.TestCase):
         self.label_dim = 4
         self.img_resolution = (144, 360)
 
+        self.model_kwargs_ddpmpp = {
+            "embedding_type": "positional",
+            "encoder_type": "standard",
+            "decoder_type": "standard",
+            "channel_mult_noise": 1,
+            "resample_filter": [1, 1],
+            "model_channels": 128,
+            "channel_mult": [2, 2, 2],
+        }
+
+        self.model_kwargs_ncsnpp = {
+            "embedding_type": "fourier",
+            "encoder_type": "residual",
+            "decoder_type": "standard",
+            "channel_mult_noise": 2,
+            "resample_filter": [1, 3, 3, 1],
+            "model_channels": 128,
+            "channel_mult": [2, 2, 2],
+        }
+
+        self.model_kwargs_adm = {
+            "model_channels": 128,
+            "channel_mult": [1, 2, 3, 4],
+            "num_blocks": 2,
+        }
+
         # Create logger
         self.logger = Logger(
             console_output=True,
@@ -62,6 +88,7 @@ class TestModelLoader(unittest.TestCase):
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
                 "use_fp16": False,
+                "model_kwargs": self.model_kwargs_ddpmpp,
             }
         )
 
@@ -108,6 +135,7 @@ class TestModelLoader(unittest.TestCase):
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
                 "use_fp16": False,
+                "model_kwargs": self.model_kwargs_ncsnpp,
             }
         )
 
@@ -154,6 +182,7 @@ class TestModelLoader(unittest.TestCase):
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
                 "use_fp16": False,
+                "model_kwargs": self.model_kwargs_adm,
             }
         )
 
@@ -201,6 +230,7 @@ class TestModelLoader(unittest.TestCase):
                 "in_channels": input_channels,
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
+                "model_kwargs": self.model_kwargs_adm,
             }
         )
 
@@ -245,6 +275,7 @@ class TestModelLoader(unittest.TestCase):
                 "in_channels": input_channels,
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
+                "model_kwargs": self.model_kwargs_ncsnpp,
             }
         )
 
@@ -289,6 +320,7 @@ class TestModelLoader(unittest.TestCase):
                 "in_channels": input_channels,
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
+                "model_kwargs": self.model_kwargs_ddpmpp,
             }
         )
 
@@ -333,6 +365,7 @@ class TestModelLoader(unittest.TestCase):
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
                 "use_fp16": False,
+                "model_kwargs": self.model_kwargs_ddpmpp,
             }
         )
 
@@ -365,6 +398,11 @@ class TestModelLoader(unittest.TestCase):
         if self.logger:
             self.logger.info("Testing model_kwargs override")
 
+        self.model_kwargs_override = {
+            "model_channels": 64,  # Override default
+            "channel_mult": [1, 2],  # Override default
+        }
+
         opts = EasyDict(
             {
                 "arch": "ddpmpp",
@@ -375,10 +413,7 @@ class TestModelLoader(unittest.TestCase):
                 "out_channels": self.out_channels,
                 "label_dim": self.label_dim,
                 "use_fp16": False,
-                "model_kwargs": {
-                    "model_channels": 64,  # Override default
-                    "channel_mult": [1, 2],  # Override default
-                },
+                "model_kwargs": self.model_kwargs_override,
             }
         )
 
@@ -409,6 +444,7 @@ class TestModelLoader(unittest.TestCase):
                 "out_channels": self.out_channels,  # No cond_channels specified
                 "label_dim": self.label_dim,
                 "use_fp16": False,
+                "model_kwargs": self.model_kwargs_ddpmpp,
             }
         )
 
@@ -449,6 +485,7 @@ class TestModelLoader(unittest.TestCase):
                     "out_channels": self.out_channels,
                     "label_dim": self.label_dim,
                     "use_fp16": False,
+                    "model_kwargs": self.model_kwargs_ddpmpp,
                 }
             )
             load_model_and_loss(opts, self.logger, self.device)

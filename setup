@@ -10,6 +10,112 @@ if ! command -v ipsl-aid &> /dev/null; then
 fi
 
 # ======================
+# 0. Machine Selection
+# ======================
+# Uncomment the machine you're using:
+MACHINE="DALIA"        # on Dalia
+#MACHINE="LEONARDO"    # on LEONARDO
+#MACHINE="HAL"         # on HAL
+
+# ======================
+# Machine-specific configurations
+# ======================
+if [ "$MACHINE" == "DALIA" ]; then
+    # Dalia-specific settings
+    SLURM_ACCOUNT=""  # No account needed on Dalia
+    SLURM_PARTITION=""  # No partition specified for Dalia
+    SLURM_QOS=""
+    SLURM_GRES=1
+    SLURM_NODES=1
+    SLURM_NTASKS_PER_NODE=1
+    SLURM_CPUS_PER_TASK=36
+    SLURM_TIME="12:00:00"
+    SLURM_DEBUG_TIME="00:30:00"
+
+    # Dalia-specific training parameters
+    BATCH_SIZE=64     # Maximum batch size for Dalia (1 GPU)
+    NUM_WORKERS=0     # Workers per GPU
+
+    # Environment activation for Dalia
+    ENV_ACTIVATE_CMD="source /lustre/work/pdl18162/udl8a60dc/miniforge3/etc/profile.d/conda.sh && conda activate ipsl-aid"
+    MODULE_LOAD_CMD="module load gcc/14.2.0 && module load slurm/slurm/24.11 && module load cuda13.1/toolkit"
+    # Data paths for Dalia
+    datadir="/lustre/work/pdl18162/udl8a60dc/data_ST_sliced"
+    per_var_datadir=(
+      "VAR_ST=/lustre/work/pdl18162/udl8a60dc/data_ST_sliced"
+    )
+    dynamic_covariates_dir="../data_covariates/"
+    constant_varnames_file="/lustre/work/pdl18162/udl8a60dc/data_ST_sliced/ESA_constants_sliced.nc"
+
+elif [ "$MACHINE" == "LEONARDO" ]; then
+    # LEONARDO-specific settings
+    SLURM_ACCOUNT="EUHPC_D27_095"
+    SLURM_PARTITION="boost_usr_prod"
+    SLURM_QOS="boost_qos_bprod"
+    SLURM_GRES=4
+    SLURM_NODES=1
+    SLURM_NTASKS_PER_NODE=1
+    SLURM_CPUS_PER_TASK=16
+    SLURM_TIME="24:00:00"
+    SLURM_DEBUG_TIME="00:30:00"
+
+    # LEONARDO-specific training parameters
+    BATCH_SIZE=18      # Maximum batch size for LEONARDO (1 GPU)
+    NUM_WORKERS=16     # Workers per GPU
+
+    # Environment activation for LEONARDO
+    ENV_ACTIVATE_CMD="source $PROJECT_ROOT/.venv/bin/activate"
+    MODULE_LOAD_CMD=""
+
+    # Data paths for LEONARDO
+    datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+    per_var_datadir=(
+      "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+      "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+      "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+      "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
+      "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
+      "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
+    )
+    dynamic_covariates_dir="../data_covariates/"
+
+elif [ "$MACHINE" == "HAL" ]; then
+    # HAL-specific settings
+    SLURM_ACCOUNT=""
+    SLURM_PARTITION="batch"
+    SLURM_QOS=""
+    SLURM_GRES=1
+    SLURM_NODES=1
+    SLURM_NTASKS_PER_NODE=1
+    SLURM_CPUS_PER_TASK=4
+    SLURM_TIME="24:00:00"
+    SLURM_DEBUG_TIME="00:30:00"
+
+    # HAL-specific training parameters
+    BATCH_SIZE=4       # Maximum batch size for HAL (1 GPU)
+    NUM_WORKERS=4      # Workers per GPU
+
+    # Environment activation for HAL
+    ENV_ACTIVATE_CMD="source $PROJECT_ROOT/.venv/bin/activate"
+    MODULE_LOAD_CMD=""
+    # Data paths for HAL
+    datadir="/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large"
+    per_var_datadir=(
+      "VAR_2T=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large"
+      "VAR_10U=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large"
+      "VAR_10V=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large"
+      "VAR_TP=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large_tp"
+      "VAR_D2M=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large_d2m_sstk"
+      "VAR_ST=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large_st"
+    )
+    dynamic_covariates_dir="../data_covariates/"
+else
+    echo "ERROR: Unknown machine: $MACHINE"
+    echo "Please set MACHINE to: DALIA, LEONARDO, or HAL"
+    exit 1
+fi
+
+# ======================
 # 1. Unified Debug Flag
 # ======================
 debug=false     # true = SLURM debug job + Python --debug true,  Note: Avoid True (use true instead)
@@ -27,13 +133,13 @@ run_type="train" # "train", ""train_regional"
 region="Europe" # Only for run_type="train_regional"
 region_size=("288" "720") # Only for run_type="train_regional"
 
-in_shape=("80" "128")  # Coarse resolution used for down/up sampling "80" "128"
+coarse_input_shape=("42" "60")  # Coarse resolution used for down/up sampling "80" "128"
 
 overlap_ratio=0.0 # 0.02 during inference
 
 save_model=true
-save_checkpoint_name="difusion_model"
-load_checkpoint_name="difusion_model"
+save_checkpoint_name="sst_unet_model"
+load_checkpoint_name="sst_unet_model"
 save_per_samples=10000
 
 year_start=2015
@@ -41,37 +147,27 @@ year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
 
-batch_size=70 #20 #40 # use maximum 18 for 1 GPU
-num_epochs=10
-learning_rate=0.0001
-num_workers=16
+batch_size=$BATCH_SIZE
+num_workers=$NUM_WORKERS
 
-datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-per_var_datadir=(
-  "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-  "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
-  "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
-  "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
-  )
+num_epochs=40
+learning_rate=0.0001
 
 per_var_coarse_datadir=()
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
-constant_varnames_list=("z" "lsm")
-constant_varnames_file="ERA5_const_sfc_variables.nc"
-normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard")
-units_list=("K" "m/s" "m/s" "m/h" "K" "K")
-dynamic_covariates=()
-dynamic_covariates_dir="../data_covariates/"
+varnames_list=("VAR_ST")
+constant_varnames_list=("lsm")
 
-sbatch=12 #12
+normalization_types=("VAR_2T=standard")
+units_list=("K")
+dynamic_covariates=()
+
+sbatch=20 #12 # 60 percent of the total blocks ot the domain
 tbatch=1800
-batch_size_lat=145
-batch_size_lon=361
+batch_size_lat=120
+batch_size_lon=240
 
 epsilon=0.02
 beta=1.0
@@ -81,20 +177,56 @@ pretrained_path=""
 model_name=""
 
 dtype="fp32"
-arch="adm" # options are "ddpmpp", "ncsnpp", and "adm"
-precond="edm" # edm for edm (default model), unet for unet,
-# for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
+arch="ddpmpp" # options are "ddpmpp", "ncsnpp", and "adm"
 
-if [[ "$precond" == "unet" ]]; then
-    in_channels=10     # number of variables + constants (lat + lon + z + lsm)
-    cond_channels=""   # no cond_channels for unet
-else  # for diffusion-based arch
-    in_channels=6      # number of variables only
-    cond_channels=10   # number of variables + lat + lon + z + lsm
+embedding_type="positional"
+encoder_type="standard"
+decoder_type="standard"
+resample_filter=(1 1)
+channel_mult_noise=1
+
+# Set architecture-specific defaults
+if [[ "$arch" == "adm" ]]; then
+    model_channels=128
+    channel_mult=(1 2 3 4)
+    num_blocks=2
+    attn_resolutions=(32 16 8)
+elif [[ "$arch" == "ddpmpp" ]]; then
+    model_channels=128
+    channel_mult=(2 2 2)
+    num_blocks=2
+    attn_resolutions=(16)
+elif [[ "$arch" == "ncsnpp" ]]; then
+    model_channels=128
+    channel_mult=(2 2 2)
+    num_blocks=4
+    attn_resolutions=(16)
+    embedding_type="fourier"
+    encoder_type="residual"
+    decoder_type="standard"
+    resample_filter=(1 3 3 1)
+    channel_mult_noise=2
 fi
 
-out_channels=6 # number of variables
-inference_type="sampler" # "direct" for unet, "sampler" for diffusion
+# Dropout is the same for all
+dropout=0.10
+
+precond="unet" # edm for edm (default model), unet for unet,
+# for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
+
+model_constant_channels=${#constant_varnames_list[@]}
+model_input_channels=$((${#varnames_list[@]} + 2 + model_constant_channels))
+
+if [[ "$precond" == "unet" ]]; then
+    in_channels=$model_input_channels
+    cond_channels=""   # no cond_channels for unet
+else  # for diffusion-based arch
+    in_channels=${#varnames_list[@]}
+    cond_channels=$model_input_channels
+fi
+
+out_channels=1 # number of variables
+inference_type="direct" # "direct" for unet, "sampler" for diffusion
 
 compute_crps=false
 
@@ -116,18 +248,6 @@ solver="heun"
 apply_filter=false
 
 # ======================
-# 3. SLURM Configuration
-# ======================
-
-SLURM_ACCOUNT="EUHPC_D27_095"
-SLURM_PARTITION="boost_usr_prod"
-SLURM_QOS="boost_qos_bprod"
-SLURM_GRES=4
-SLURM_NODES=1
-SLURM_NTASKS_PER_NODE=1
-SLURM_CPUS_PER_TASK=16
-
-# ======================
 # Generate Tag and Output Paths
 # ======================
 eps_str="${epsilon//./d}"
@@ -141,11 +261,26 @@ base_parts+=("norm_${time_normalization}")
 base_parts+=("lat${batch_size_lat}")
 base_parts+=("lon${batch_size_lon}")
 base_parts+=("vars${#varnames_list[@]}")
-# base_parts+=("coarse${in_shape[0]}x${in_shape[1]}")
+base_parts+=("coarse${coarse_input_shape[0]}x${coarse_input_shape[1]}")
 base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
 base_parts+=("in${in_channels}")
+
+# Add network architecture parameters to base_parts
+base_parts+=("ch${model_channels}")
+base_parts+=("mult$(IFS=_ ; echo "${channel_mult[*]}")")
+base_parts+=("blocks${num_blocks}")
+base_parts+=("attn$(IFS=_ ; echo "${attn_resolutions[*]}")")
+base_parts+=("drop${dropout//./d}")
+# Only add these for non-ADM architectures
+#if [[ "$arch" != "adm" ]]; then
+#    base_parts+=("emb${embedding_type}")
+#    base_parts+=("enc${encoder_type}")
+#    base_parts+=("dec${decoder_type}")
+#    base_parts+=("filter$(IFS=_ ; echo "${resample_filter[*]}")")
+#    base_parts+=("noise${channel_mult_noise}")
+#fi
 
 if [[ "$precond" == "edm" ]]; then
     base_parts+=("cond${cond_channels}")
@@ -203,7 +338,7 @@ prefix="run_${TODAY}"
 # Generate SBATCH Script Only (removed run script)
 # ======================
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-sbatch_script="$PROJECT_ROOT/slurm/sbatch_diffusion_${main_folder}_${sub_folder}.sh"
+sbatch_script="$PROJECT_ROOT/slurm/sbatch_${save_checkpoint_name}_${main_folder}_${sub_folder}.sh"
 
 # Create slurm_io directory if it doesn't exist
 mkdir -p "$PROJECT_ROOT/slurm_io"
@@ -214,37 +349,67 @@ mkdir -p "$PROJECT_ROOT/slurm_io"
 
 cat > $sbatch_script <<EOF
 #!/bin/bash
-#SBATCH --job-name=diffusion_${tag}
-#SBATCH --account=$SLURM_ACCOUNT
-#SBATCH --partition=$SLURM_PARTITION
+#SBATCH --job-name=${save_checkpoint_name}_${tag}
 EOF
+
+# Add account only if set
+if [ -n "$SLURM_ACCOUNT" ]; then
+    echo "#SBATCH --account=$SLURM_ACCOUNT" >> $sbatch_script
+fi
+
+# Add partition only if set
+if [ -n "$SLURM_PARTITION" ]; then
+    echo "#SBATCH --partition=$SLURM_PARTITION" >> $sbatch_script
+fi
 
 # SLURM debug selection
 if [ "$debug" = true ]; then
-    echo "#SBATCH --qos=boost_qos_dbg" >> $sbatch_script
-    echo "#SBATCH --time=00:30:00" >> $sbatch_script
+    echo "#SBATCH --time=$SLURM_DEBUG_TIME" >> $sbatch_script
+    if [ -n "$SLURM_QOS" ] && [ "$Machine" == "LEONARDO" ]; then
+        echo "#SBATCH --qos=boost_qos_dbg" >> $sbatch_script
+    fi
 else
-    echo "#SBATCH --time=24:00:00" >> $sbatch_script
+    echo "#SBATCH --time=$SLURM_TIME" >> $sbatch_script
 fi
+
 
 cat >> $sbatch_script <<EOF
 #SBATCH --nodes=$SLURM_NODES
 #SBATCH --gpus-per-node=$SLURM_GRES
-#SBATCH --mem-per-gpu=64G
 #SBATCH --ntasks-per-node=$SLURM_NTASKS_PER_NODE
 #SBATCH --cpus-per-task=$SLURM_CPUS_PER_TASK
-#SBATCH --error=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.err
-#SBATCH --output=$PROJECT_ROOT/slurm_io/diffusion_${tag}_%j.out
+EOF
+
+# Add --mem-per-gpu only for non-Dalia machines
+if [ "$MACHINE" != "DALIA" ]; then
+    echo "#SBATCH --mem-per-gpu=64G" >> $sbatch_script
+fi
+
+cat >> $sbatch_script <<EOF
+#SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.err
+#SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.out
 
 ulimit -s unlimited
 module purge
 
-# Activate virtual environment
-source $PROJECT_ROOT/.venv/bin/activate
+# Load modules if needed
+$MODULE_LOAD_CMD
+
+# Activate environment
+$ENV_ACTIVATE_CMD
 
 export PYTHONUNBUFFERED=1
 
-echo "===== Job Infos ====="
+echo "=========================================="
+echo "CONFIGURATION TEST VALUES"
+echo "=========================================="
+echo "Machine: $MACHINE"
+echo "ntasks-per-node: $SLURM_NTASKS_PER_NODE"
+echo "cpus-per-task: $SLURM_CPUS_PER_TASK"
+echo "num_workers: $num_workers"
+echo "=========================================="
+echo ""
+echo "=== Job Info ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
 echo "In shape / coarse resolution: ${in_shape[@]}"
@@ -254,7 +419,22 @@ echo "Job ID: \${SLURM_JOB_ID}"
 echo "Current dir: \$(pwd)"
 echo "Output main folder: $main_folder"
 echo "Output sub folder: $sub_folder"
-echo "====================="
+echo "=========================================="
+echo ""
+echo "=== Environment Info ==="
+echo "Python: \$(which python)"
+echo "Python version: \$(python --version 2>&1)"
+echo "PyTorch version: \$(python -c 'import torch; print(torch.__version__)' 2>/dev/null || echo 'Not installed')"
+echo "CUDA available: \$(python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null || echo 'False')"
+echo "CUDA version: \$(python -c 'import torch; print(torch.version.cuda)' 2>/dev/null || echo 'N/A')"
+echo "GPU count: \$(python -c 'import torch; print(torch.cuda.device_count())' 2>/dev/null || echo '0')"
+if python -c "import torch" 2>/dev/null && [ "\$(python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null)" == "True" ]; then
+    echo "GPU names: \$(python -c 'import torch; print(torch.cuda.get_device_name(0))' 2>/dev/null || echo 'Unknown')"
+    echo "GPU memory: \$(python -c 'import torch; print(f\"{torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB\")' 2>/dev/null || echo 'Unknown')"
+fi
+echo ""
+echo "=== IPSL-AID Training ==="
+echo "Start time: \$(date)"
 
 # Use ipsl-aid command directly
 ipsl-aid \\
@@ -273,7 +453,7 @@ ipsl-aid \\
     --in_channels "$in_channels" \\
     --out_channels "$out_channels" \\
     --apply_filter $apply_filter \\
-    --in_shape ${in_shape[@]} \\
+    --in_shape ${coarse_input_shape[@]} \\
     --overlap_ratio "$overlap_ratio" \\
 EOF
 
@@ -314,12 +494,23 @@ cat >> $sbatch_script <<EOF
     --sbatch "$sbatch" \\
     --batch_size_lat "$batch_size_lat" \\
     --batch_size_lon "$batch_size_lon" \\
+    --in_shape ${coarse_input_shape[@]} \\
     --epsilon "$epsilon" \\
     --beta "$beta" \\
     --margin "$margin" \\
     --dynamic_covariates_dir "$dynamic_covariates_dir" \\
     --dtype "$dtype" \\
     --num_steps "$num_steps" \\
+    --model_channels "$model_channels" \\
+    --channel_mult ${channel_mult[@]} \\
+    --num_blocks "$num_blocks" \\
+    --attn_resolutions ${attn_resolutions[@]} \\
+    --dropout "$dropout" \\
+    --embedding_type "$embedding_type" \\
+    --encoder_type "$encoder_type" \\
+    --decoder_type "$decoder_type" \\
+    --resample_filter ${resample_filter[@]} \\
+    --channel_mult_noise "$channel_mult_noise" \\
     --sigma_min "$sigma_min" \\
     --sigma_max "$sigma_max" \\
     --rho "$rho" \\
@@ -346,6 +537,20 @@ echo "Load checkpoint: $load_checkpoint_name"
 if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
     echo "Checkpoint file: $load_checkpoint_name"
 fi
+echo ""
+echo "=== Model Configuration ==="
+echo "Architecture: $arch"
+echo "Preconditioner: $precond"
+echo "Model channels: $model_channels"
+echo "Channel multipliers: ${channel_mult[@]}"
+echo "Num blocks: $num_blocks"
+echo "Attention resolutions: ${attn_resolutions[@]}"
+echo "Dropout: $dropout"
+echo "Embedding type: $embedding_type"
+echo "Encoder type: $encoder_type"
+echo "Decoder type: $decoder_type"
+echo "Resample filter: ${resample_filter[@]}"
+echo "Channel mult noise: $channel_mult_noise"
 echo ""
 echo "Model name parts: ${model_parts[*]}"
 echo "Model name: $model_name"

@@ -53,6 +53,13 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
 
 .. toctree::
    :maxdepth: 2
+   :caption: Case Studies
+
+   atmosphere_variable
+   sea_surface_temperature
+
+.. toctree::
+   :maxdepth: 2
    :caption: API Reference
 
    api/modules

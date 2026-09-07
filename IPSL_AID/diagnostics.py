@@ -1466,7 +1466,7 @@ def plot_ensemble_surface(
     lon_min, lon_max = lon_1d.min(), lon_1d.max()
 
     # Preserve the coordinate order carried by the data. ESA latitudes are
-    # ascending, while other datasets such as ERA5 may be descending. 
+    # ascending, while other datasets such as ERA5 may be descending.
     # shape check
     lat_block = np.asarray(lat_1d).squeeze()
     lon_block = np.asarray(lon_1d).squeeze()

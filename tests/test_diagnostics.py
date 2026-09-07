@@ -326,8 +326,8 @@ class TestPlottingFunctions(unittest.TestCase):
         np.random.seed(42)
         self.batch_size = 50
         self.num_vars = 4
-        self.h = 64
-        self.w = 64
+        self.h = 128
+        self.w = 128
 
         if self.logger:
             self.logger.info(

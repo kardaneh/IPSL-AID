@@ -177,7 +177,7 @@ pretrained_path=""
 model_name=""
 
 dtype="fp32"
-arch="ddpmpp" # options are "ddpmpp", "ncsnpp", and "adm"
+arch="adm" # options are "ddpmpp", "ncsnpp", and "adm"
 
 embedding_type="positional"
 encoder_type="standard"
@@ -189,18 +189,18 @@ channel_mult_noise=1
 if [[ "$arch" == "adm" ]]; then
     model_channels=128
     channel_mult=(1 2 3 4)
-    num_blocks=2
-    attn_resolutions=(32 16 8)
+    num_blocks=3 #2
+    attn_resolutions=(30 15) #(32 16 8)
 elif [[ "$arch" == "ddpmpp" ]]; then
     model_channels=128
-    channel_mult=(2 2 2)
+    channel_mult=(1 2 2 2)   #(2 2 2)
     num_blocks=2
-    attn_resolutions=(16)
+    attn_resolutions=(30 15) #(16)
 elif [[ "$arch" == "ncsnpp" ]]; then
     model_channels=128
-    channel_mult=(2 2 2)
-    num_blocks=4
-    attn_resolutions=(16)
+    channel_mult=(1 2 2 2)   #(2 2 2)
+    num_blocks=2
+    attn_resolutions=(30 15) #(16)
     embedding_type="fourier"
     encoder_type="residual"
     decoder_type="standard"

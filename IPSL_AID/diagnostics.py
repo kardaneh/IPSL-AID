@@ -1159,8 +1159,22 @@ def plot_surface(
 
     # Shape
     h, w = coarse_inputs[0, 0].shape
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     # Projection center
@@ -1451,8 +1465,21 @@ def plot_ensemble_surface(
     lat_min, lat_max = lat_1d.min(), lat_1d.max()
     lon_min, lon_max = lon_1d.min(), lon_1d.max()
 
-    lat_block = np.linspace(lat_max, lat_min, H)
-    lon_block = np.linspace(lon_min, lon_max, W)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != H:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {H}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != W:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {W}, "
+            f"got shape {lon_block.shape}"
+        )
 
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
@@ -1701,6 +1728,25 @@ def plot_zoom_comparison(
 
     lat_min, lat_max = lat.min(), lat.max()
     lon_min, lon_max = lon.min(), lon.max()
+
+    zoom_lat_min = zoom_box.get("lat_min", -np.inf)
+    zoom_lat_max = zoom_box.get("lat_max", np.inf)
+    zoom_lon_min = zoom_box.get("lon_min", -np.inf)
+    zoom_lon_max = zoom_box.get("lon_max", np.inf)
+
+    if (
+        zoom_lat_max < lat_min
+        or zoom_lat_min > lat_max
+        or zoom_lon_max < lon_min
+        or zoom_lon_min > lon_max
+    ):
+        print(
+            f"WARNING: Zoom box {zoom_box} does not overlap with data region "
+            f"lat=[{lat_min:.2f}, {lat_max:.2f}], "
+            f"lon=[{lon_min:.2f}, {lon_max:.2f}]. Skipping plot."
+        )
+        return None
+
     lon_center = float((lon_min + lon_max) / 2)
 
     lat_mask = (lat >= zoom_box["lat_min"]) & (lat <= zoom_box["lat_max"])
@@ -1996,14 +2042,25 @@ def plot_global_surface_robinson(
     if hasattr(lon_1d, "detach"):
         lon_1d = lon_1d.detach().cpu().numpy()  #
 
-    # Create 2D meshgrid from 1D coordinates
-    lat_min, lat_max = lat_1d.min(), lat_1d.max()
-    lon_min, lon_max = lon_1d.min(), lon_1d.max()
-
     # Shape
     h, w = coarse_inputs[0, 0].shape
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat2d, lon2d = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon2d = ((lon2d + 180) % 360) - 180  # normalize
@@ -2247,9 +2304,22 @@ def plot_MAE_map(
     lon_min, lon_max = lon_1d.min(), lon_1d.max()
 
     T, n_vars, h, w = predictions.shape
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -2440,8 +2510,22 @@ def plot_error_map(
 
     T, n_vars, h, w = predictions.shape
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -2547,12 +2631,15 @@ def plot_error_map(
         ax.set_title(plot_variable_names[i])
 
         cax = ax.inset_axes([0.1, -0.15, 0.8, 0.05])
-        fig.colorbar(
+        cbar = fig.colorbar(
             im,
             cax=cax,
             orientation="horizontal",
             label=f"{label}",
         )
+        ticks = np.linspace(vmin_list[i], vmax_list[i], num=4)
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels([f"{t:.1e}" for t in ticks])
 
     fig.subplots_adjust(top=0.85, bottom=0.25, left=0.08, right=0.95)
 
@@ -2716,8 +2803,22 @@ def plot_spread_skill_ratio_map(
 
     E, T, n_vars, h, w = predictions.shape
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -3839,7 +3940,6 @@ def plot_dry_frequency_map(
     lon_min, lon_max = lon_1d.min(), lon_1d.max()
 
     _, h, w = targets.shape
-
     lat_block = np.linspace(lat_max, lat_min, h)
     lon_block = np.linspace(lon_min, lon_max, w)
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
@@ -4008,23 +4108,13 @@ def compute_sal(
     https://journals.ametsoc.org/view/journals/mwre/136/11/2008mwr2415.1.xml
     https://journals.ametsoc.org/view/journals/wefo/24/6/2009waf2222271_1.xml
 
-    *Assumes input fields are non-negative like precipitation. May behave
+    Assumes input fields are non-negative like precipitation. May behave
     unexpectedly if negative values exist.
 
     Extended to allow the use of:
     - fixed thresholds independent of input data
     - different minimum object size thresholds
     - different structure for neighbour definitions
-    Copyright (c) 2026 Klima consulting
-    Author: Rosie Eade
-
-    CHANGES from original version:
-    https://github.com/RosieEade/verification_code
-    June 2026
-    - updated so no use of xarray or math python libraries
-    - simplified output so only straight S,A,L scores (and L1, L2)
-      (no object info or spatial plots)
-
 
     Parameters:
     -----------
@@ -4053,10 +4143,6 @@ def compute_sal(
         Option to ignore options with size (no. grid points) < minsize
     structure : numpy.ndarray, dtype=int, shape [3, 3]
         This array defines what are classed as neighbouring grid points.
-        2 Options:
-        np.array([[0, 1, 0],[1, 1, 1],[0, 1, 0]], dtype=int) # Orthogonal-
-         only (default)
-        np.ones((3, 3), dtype=int) # Orthogonal and diagonal
 
     Returns:
     --------
@@ -4067,11 +4153,9 @@ def compute_sal(
 
     See Also
     --------
-
     scipy.ndimage.label :
-    Identify objects using sp.ndimage.label
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
-
+        Identify objects using sp.ndimage.label
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
     """
 
     if target.shape != prediction.shape:
@@ -4315,15 +4399,13 @@ def compute_sal_objects(
     https://journals.ametsoc.org/view/journals/mwre/136/11/2008mwr2415.1.xml
     https://journals.ametsoc.org/view/journals/wefo/24/6/2009waf2222271_1.xml
 
-    *Assumes input field are non-negative like precipitation. May behave
+    Assumes input field are non-negative like precipitation. May behave
     unexpectedly if negative values exist.
 
     Extended to allow the use of:
     - fixed thresholds independent of input data
     - different minimum object size thresholds
     - different structure for neighbour definitions
-    Copyright (c) 2026 Klima consulting
-    Author: Rosie Eade, Pierre Chapel
 
     Parameters:
     -----------
@@ -4347,10 +4429,6 @@ def compute_sal_objects(
         Option to ignore options with size (no. grid points) < minsize
     structure : numpy.ndarray, dtype=int, shape [3, 3]
         This array defines what are classed as neighbouring grid points.
-        2 Options:
-        np.array([[0, 1, 0],[1, 1, 1],[0, 1, 0]], dtype=int) # Orthogonal-
-         only (default)
-        np.ones((3, 3), dtype=int) # Orthogonal and diagonal
 
     Returns:
     --------
@@ -4361,22 +4439,21 @@ def compute_sal_objects(
             - "sal_r" : weighted average distance of each object from centre of its total field (represents L2 term)
             - "sal_targ_num" : number of events detected in the field
             - "sal_targ_size" : array of sizes of the events detected
-        }
+
         if no objects are found, this function returns this dict :
-        {
-            "sal_waVOL": np.nan,
-            "sal_a": np.nan,
-            "sal_r": np.nan,
-            "sal_targ_num": 0,
-            "sal_targ_size" : np.zeros(1,)
-        }
+            {
+                "sal_waVOL": np.nan,
+                "sal_a": np.nan,
+                "sal_r": np.nan,
+                "sal_targ_num": 0,
+                "sal_targ_size" : np.zeros(1,)
+            }
 
     See Also
     --------
-
     scipy.ndimage.label :
-    Identify objects using sp.ndimage.label
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
+        Identify objects using sp.ndimage.label
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
     """
     # Code assumes that minsize is an integer so check (and convert)
     if minsize is None:
@@ -4561,15 +4638,13 @@ def compute_sal_objects_time(
     https://journals.ametsoc.org/view/journals/mwre/136/11/2008mwr2415.1.xml
     https://journals.ametsoc.org/view/journals/wefo/24/6/2009waf2222271_1.xml
 
-    *Assumes input field are non-negative like precipitation. May behave
+    Assumes input field are non-negative like precipitation. May behave
     unexpectedly if negative values exist.
 
     Extended to allow the use of:
     - fixed thresholds independent of input data
     - different minimum object size thresholds
     - different structure for neighbour definitions
-    Copyright (c) 2026 Klima consulting
-    Author: Rosie Eade, Pierre Chapel
 
     Parameters:
     -----------
@@ -4593,10 +4668,6 @@ def compute_sal_objects_time(
         Option to ignore options with size (no. grid points) < minsize
     structure : numpy.ndarray, dtype=int, shape [3, 3]
         This array defines what are classed as neighbouring grid points.
-        2 Options:
-        np.array([[0, 1, 0],[1, 1, 1],[0, 1, 0]], dtype=int) # Orthogonal-
-         only (default)
-        np.ones((3, 3), dtype=int) # Orthogonal and diagonal
 
     Returns:
     --------
@@ -4607,14 +4678,12 @@ def compute_sal_objects_time(
             - "sal_r" : the 1D np.ndarray containing the weighted average distances of each object from centre of its total field (represents L2 term) for each timestep where at least an object was detected.
             - "sal_targ_num" : the 1D np.ndarray containing the numbers of objects detected in the field for each timestep where at least an object was detected.
             - "sal_targ_size" : the 1D np.ndarray containing the sizes of the events detected in each 2D field for each timestep where at least an object was detected.
-        }
 
     See Also
     --------
-
     scipy.ndimage.label :
-    Identify objects using sp.ndimage.label
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
+        Identify objects using sp.ndimage.label
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html
     """
     sal_waVOL = []
     sal_a = []
@@ -4681,8 +4750,10 @@ def plot_validation_salpdfs(
     bins_list : list of numpy.ndarray or None
         Define the bins used for each histogram: s, a, l
         e.g. for whole possible range of values, use:
+
         [np.arange(-2,2,0.05), np.arange(-2,2,0.05),
             np.arange(0,2,0.02)]
+
         [None, None, None] => Use default of hist function for all
 
     Returns
@@ -5697,8 +5768,22 @@ def plot_mean_divergence_map(
 
     _, h, w = u_target.shape
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -5923,8 +6008,22 @@ def plot_mean_curl_map(
 
     _, h, w = u_target.shape
 
-    lat_block = np.linspace(lat_max, lat_min, h)
-    lon_block = np.linspace(lon_min, lon_max, w)
+    # Preserve the coordinate order carried by the data. ESA latitudes are
+    # ascending, while other datasets such as ERA5 may be descending.
+    lat_block = np.asarray(lat_1d).squeeze()
+    lon_block = np.asarray(lon_1d).squeeze()
+
+    if lat_block.ndim != 1 or lat_block.size != h:
+        raise ValueError(
+            f"Latitude coordinates must be 1D with size {h}, "
+            f"got shape {lat_block.shape}"
+        )
+    if lon_block.ndim != 1 or lon_block.size != w:
+        raise ValueError(
+            f"Longitude coordinates must be 1D with size {w}, "
+            f"got shape {lon_block.shape}"
+        )
+
     lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
 
     lon_center = float((lon_min + lon_max) / 2)

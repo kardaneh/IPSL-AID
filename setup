@@ -9,13 +9,25 @@ if ! command -v ipsl-aid &> /dev/null; then
     exit 1
 fi
 
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
 # ======================
-# 0. Machine Selection
+# 0. Unified Debug Flag
+# ======================
+debug=true     # true = SLURM debug job + Python --debug true,  Note: Avoid True (use true instead)
+                # false = full job + Python --debug false, Note: Avoid False (use false instead)
+
+DATE=$(date +"%Y%m%d")
+TODAY=$(date +"%Y%m%d_%H%M%S")
+
+# ======================
+# 1. Machine Selection
 # ======================
 # Uncomment the machine you're using:
-MACHINE="DALIA"        # on Dalia
+#MACHINE="DALIA"        # on Dalia
 #MACHINE="LEONARDO"    # on LEONARDO
 #MACHINE="HAL"         # on HAL
+MACHINE="AUSTRAL"     # on AUSTRAL
 
 # ======================
 # Machine-specific configurations
@@ -60,7 +72,7 @@ elif [ "$MACHINE" == "LEONARDO" ]; then
     SLURM_DEBUG_TIME="00:30:00"
 
     # LEONARDO-specific training parameters
-    BATCH_SIZE=18      # Maximum batch size for LEONARDO (1 GPU)
+    BATCH_SIZE=70      # Maximum batch size for LEONARDO (1 GPU)
     NUM_WORKERS=16     # Workers per GPU
 
     # Environment activation for LEONARDO
@@ -109,20 +121,56 @@ elif [ "$MACHINE" == "HAL" ]; then
       "VAR_ST=/net/nfs/ssd1/kardaneh/Data_LSM_1995-2000_Large_st"
     )
     dynamic_covariates_dir="../data_covariates/"
+
+elif [ "$MACHINE" == "AUSTRAL" ]; then
+    # AUSTRAL-specific SLURM settings
+    SLURM_ACCOUNT="2026044"
+    SLURM_QOS=""
+    SLURM_NODES=1
+    SLURM_NTASKS_PER_NODE=1
+    SLURM_CPUS_PER_TASK=16
+
+    if [ "$debug" = true ]; then
+        # Debug GPU partition: A100, max 1 GPU / 16 CPUs / 30 min
+        SLURM_PARTITION="gpu_debug"
+        SLURM_GRES=1
+        SLURM_TIME="00:30:00"
+
+        BATCH_SIZE=4
+    else
+        # Production
+        SLURM_PARTITION="gpu_all"   # A100, or "gpu_h200" for H200
+        SLURM_GRES=4
+        SLURM_TIME="24:00:00"
+
+        BATCH_SIZE=70
+    fi
+
+    # AUSTRAL-specific training parameters
+    NUM_WORKERS=16
+
+    # Environment activation for AUSTRAL
+    ENV_ACTIVATE_CMD="source $PROJECT_ROOT/.venv/bin/activate"
+    MODULE_LOAD_CMD=""
+
+    # Data paths for AUSTRAL
+    datadir="/home/2026044/PARTAGE/data_FOURxDaily"
+    per_var_datadir=(
+      "VAR_2T=/home/2026044/PARTAGE/data_FOURxDaily"
+      "VAR_10U=/home/2026044/PARTAGE/data_FOURxDaily"
+      "VAR_10V=/home/2026044/PARTAGE/data_FOURxDaily"
+      "VAR_TP=/home/2026044/PARTAGE/data_FOURxDaily_tp_3hmean"
+      "VAR_D2M=/home/2026044/PARTAGE/data/data_d2m_sstk"
+      "VAR_ST=/home/2026044/PARTAGE/data/data_st"
+    )
+    constant_varnames_file="/home/2026044/PARTAGE/data/data_FOURxDaily/ERA5_const_sfc_variables.nc"
+    dynamic_covariates_dir="../data_covariates/"
+
 else
     echo "ERROR: Unknown machine: $MACHINE"
-    echo "Please set MACHINE to: DALIA, LEONARDO, or HAL"
+    echo "Please set MACHINE to: DALIA, LEONARDO, HAL, or AUSTRAL"
     exit 1
 fi
-
-# ======================
-# 1. Unified Debug Flag
-# ======================
-debug=false     # true = SLURM debug job + Python --debug true,  Note: Avoid True (use true instead)
-                # false = full job + Python --debug false, Note: Avoid False (use false instead)
-
-DATE=$(date +"%Y%m%d")
-TODAY=$(date +"%Y%m%d_%H%M%S")
 
 # ======================
 # 2. Parameters
@@ -133,13 +181,13 @@ run_type="train" # "train", ""train_regional"
 region="Europe" # Only for run_type="train_regional"
 region_size=("288" "720") # Only for run_type="train_regional"
 
-coarse_input_shape=("42" "60")  # Coarse resolution used for down/up sampling "80" "128"
+coarse_input_shape=("143" "144")  # Coarse resolution used for down/up sampling "80" "128", "143" "144" for CMIP6
 
 overlap_ratio=0.0 # 0.02 during inference
 
 save_model=true
-save_checkpoint_name="sst_unet_model"
-load_checkpoint_name="sst_unet_model"
+save_checkpoint_name="diffusion"
+load_checkpoint_name="diffusion"
 save_per_samples=10000
 
 year_start=2015
@@ -150,24 +198,24 @@ year_end_test=2020 #2020
 batch_size=$BATCH_SIZE
 num_workers=$NUM_WORKERS
 
-num_epochs=40
+num_epochs=10
 learning_rate=0.0001
 
 per_var_coarse_datadir=()
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_ST")
-constant_varnames_list=("lsm")
+varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
+constant_varnames_list=("z" "lsm")
 
-normalization_types=("VAR_2T=standard")
-units_list=("K")
+normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard")
+units_list=("K" "m/s" "m/s" "m/h" "K" "K")
 dynamic_covariates=()
 
-sbatch=20 #12 # 60 percent of the total blocks ot the domain
+sbatch=12 #12 # 60 percent of the total blocks ot the domain
 tbatch=1800
-batch_size_lat=120
-batch_size_lon=240
+batch_size_lat=145
+batch_size_lon=361
 
 epsilon=0.02
 beta=1.0
@@ -189,8 +237,8 @@ channel_mult_noise=1
 if [[ "$arch" == "adm" ]]; then
     model_channels=128
     channel_mult=(1 2 3 4)
-    num_blocks=3 #2
-    attn_resolutions=(30 15) #(32 16 8)
+    num_blocks=2 #3
+    attn_resolutions=(32 16 8) #(30 15)
 elif [[ "$arch" == "ddpmpp" ]]; then
     model_channels=128
     channel_mult=(1 2 2 2)   #(2 2 2)
@@ -211,7 +259,7 @@ fi
 # Dropout is the same for all
 dropout=0.10
 
-precond="unet" # edm for edm (default model), unet for unet,
+precond="edm" # edm for edm (default model), unet for unet,
 # for diffusion in_channels = numbers of variables, for unet in_channels = numbers of variables + constants
 
 model_constant_channels=${#constant_varnames_list[@]}
@@ -225,8 +273,8 @@ else  # for diffusion-based arch
     cond_channels=$model_input_channels
 fi
 
-out_channels=1 # number of variables
-inference_type="direct" # "direct" for unet, "sampler" for diffusion
+out_channels=6 # number of variables
+inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 
 compute_crps=false
 
@@ -261,18 +309,18 @@ base_parts+=("norm_${time_normalization}")
 base_parts+=("lat${batch_size_lat}")
 base_parts+=("lon${batch_size_lon}")
 base_parts+=("vars${#varnames_list[@]}")
-base_parts+=("coarse${coarse_input_shape[0]}x${coarse_input_shape[1]}")
+base_parts+=("${coarse_input_shape[0]}x${coarse_input_shape[1]}")
 base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
 base_parts+=("in${in_channels}")
 
 # Add network architecture parameters to base_parts
-base_parts+=("ch${model_channels}")
-base_parts+=("mult$(IFS=_ ; echo "${channel_mult[*]}")")
-base_parts+=("blocks${num_blocks}")
-base_parts+=("attn$(IFS=_ ; echo "${attn_resolutions[*]}")")
-base_parts+=("drop${dropout//./d}")
+#base_parts+=("ch${model_channels}")
+#base_parts+=("mult$(IFS=_ ; echo "${channel_mult[*]}")")
+#base_parts+=("blocks${num_blocks}")
+#base_parts+=("attn$(IFS=_ ; echo "${attn_resolutions[*]}")")
+#base_parts+=("drop${dropout//./d}")
 # Only add these for non-ADM architectures
 #if [[ "$arch" != "adm" ]]; then
 #    base_parts+=("emb${embedding_type}")
@@ -337,7 +385,7 @@ prefix="run_${TODAY}"
 # ======================
 # Generate SBATCH Script Only (removed run script)
 # ======================
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+# PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 sbatch_script="$PROJECT_ROOT/slurm/sbatch_${save_checkpoint_name}_${main_folder}_${sub_folder}.sh"
 
 # Create slurm_io directory if it doesn't exist
@@ -365,7 +413,7 @@ fi
 # SLURM debug selection
 if [ "$debug" = true ]; then
     echo "#SBATCH --time=$SLURM_DEBUG_TIME" >> $sbatch_script
-    if [ -n "$SLURM_QOS" ] && [ "$Machine" == "LEONARDO" ]; then
+    if [ -n "$SLURM_QOS" ] && [ "$MACHINE" == "LEONARDO" ]; then
         echo "#SBATCH --qos=boost_qos_dbg" >> $sbatch_script
     fi
 else
@@ -388,6 +436,8 @@ fi
 cat >> $sbatch_script <<EOF
 #SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.out
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge
@@ -412,7 +462,7 @@ echo ""
 echo "=== Job Info ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
-echo "In shape / coarse resolution: ${in_shape[@]}"
+echo "In shape / coarse resolution: ${coarse_input_shape[@]}"
 echo "Inference type: $inference_type"
 echo "Node list: \${SLURM_NODELIST}"
 echo "Job ID: \${SLURM_JOB_ID}"
@@ -494,7 +544,6 @@ cat >> $sbatch_script <<EOF
     --sbatch "$sbatch" \\
     --batch_size_lat "$batch_size_lat" \\
     --batch_size_lon "$batch_size_lon" \\
-    --in_shape ${coarse_input_shape[@]} \\
     --epsilon "$epsilon" \\
     --beta "$beta" \\
     --margin "$margin" \\
@@ -529,7 +578,7 @@ chmod +x $sbatch_script
 echo "=== Setup Complete ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
-echo "In shape / coarse resolution: ${in_shape[@]}"
+echo "In shape / coarse resolution: ${coarse_input_shape[@]}"
 echo "Inference type: $inference_type"
 echo "Run type: $run_type"
 echo "Save model: $save_model"

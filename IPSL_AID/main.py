@@ -467,7 +467,7 @@ def parse_args():
         "--overlap_ratio",
         type=float,
         default=0.02,
-        help="Spatial overlap ratio between inference blocks (0.02 = 2%).",
+        help="Spatial overlap ratio between inference blocks (0.02 = 2%%).",
     )
 
     # EDM sampler configuration

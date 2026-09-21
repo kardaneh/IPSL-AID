@@ -14,7 +14,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 # ======================
 # 0. Unified Debug Flag
 # ======================
-debug=true     # true = SLURM debug job + Python --debug true,  Note: Avoid True (use true instead)
+debug=false     # true = SLURM debug job + Python --debug true,  Note: Avoid True (use true instead)
                 # false = full job + Python --debug false, Note: Avoid False (use false instead)
 
 DATE=$(date +"%Y%m%d")
@@ -436,8 +436,6 @@ fi
 cat >> $sbatch_script <<EOF
 #SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.out
-#SBATCH --mail-user=kkingston@ipsl.fr
-#SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge

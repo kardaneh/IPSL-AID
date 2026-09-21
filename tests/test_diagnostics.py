@@ -532,6 +532,7 @@ class TestPlottingFunctions(unittest.TestCase):
             variable_names=self.variable_names,
             save_dir=self.output_dir,
             filename="validation_pdfs_standard.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -545,6 +546,7 @@ class TestPlottingFunctions(unittest.TestCase):
             variable_names=self.variable_names,
             save_dir=self.output_dir,
             filename="validation_pdfs_no_coarse.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -562,6 +564,7 @@ class TestPlottingFunctions(unittest.TestCase):
             variable_names=self.variable_names,
             save_dir=self.output_dir,
             filename="validation_pdfs_torch.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -695,6 +698,7 @@ class TestPlottingFunctions(unittest.TestCase):
             mode="train",
             filename="spatiotemporal_dense_",
             save_dir=self.output_dir,
+            logger=self.logger,
         )
 
         self.assertTrue(
@@ -756,6 +760,7 @@ class TestPlottingFunctions(unittest.TestCase):
             variable_names=variable_names,
             filename="plot_surface_standard.png",
             save_dir=self.output_dir,
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -776,6 +781,7 @@ class TestPlottingFunctions(unittest.TestCase):
             variable_names=variable_names,
             filename="plot_surface_torch.png",
             save_dir=self.output_dir,
+            logger=self.logger,
         )
 
         self.assertTrue(
@@ -835,6 +841,7 @@ class TestPlottingFunctions(unittest.TestCase):
             timestamp=timestamp,
             filename="plot_ensemble_surface_numpy.png",
             save_dir=self.output_dir,
+            logger=self.logger,
         )
 
         self.assertTrue(os.path.exists(expected_path))
@@ -849,6 +856,7 @@ class TestPlottingFunctions(unittest.TestCase):
             timestamp=timestamp,
             filename="plot_ensemble_surface_torch.png",
             save_dir=self.output_dir,
+            logger=self.logger,
         )
 
         self.assertTrue(os.path.exists(expected_path))
@@ -898,6 +906,7 @@ class TestPlottingFunctions(unittest.TestCase):
             filename="plot_zoom_numpy.png",
             save_dir=self.output_dir,
             zoom_box=zoom_box,
+            logger=self.logger,
         )
 
         self.assertTrue(os.path.exists(expected_path))
@@ -913,6 +922,7 @@ class TestPlottingFunctions(unittest.TestCase):
             filename="plot_zoom_torch.png",
             save_dir=self.output_dir,
             zoom_box=zoom_box,
+            logger=self.logger,
         )
 
         self.assertTrue(os.path.exists(expected_path))
@@ -1425,6 +1435,7 @@ class TestPlottingFunctions(unittest.TestCase):
             valid_loss_history=self.valid_loss_history,
             save_dir=self.output_dir,
             filename="loss_histories_standard.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1436,6 +1447,7 @@ class TestPlottingFunctions(unittest.TestCase):
             metric_names=["rmse", "mae", "r2"],
             save_dir=self.output_dir,
             filename="average_metrics_standard.png",
+            logger=self.logger,
         )
 
         self.assertTrue(
@@ -1501,6 +1513,7 @@ class TestPlottingFunctions(unittest.TestCase):
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
             save_dir=self.output_dir,
             filename="qq_quantiles_standard.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1515,6 +1528,7 @@ class TestPlottingFunctions(unittest.TestCase):
             quantiles=[0.90, 0.95, 0.99],
             save_dir=self.output_dir,
             filename="qq_quantiles_single_var.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1533,6 +1547,7 @@ class TestPlottingFunctions(unittest.TestCase):
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
             save_dir=self.output_dir,
             filename="qq_quantiles_torch.png",
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1568,6 +1583,7 @@ class TestPlottingFunctions(unittest.TestCase):
                 np.arange(-2, 2, 0.05),
                 np.arange(0, 2, 0.02),
             ],
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1586,6 +1602,7 @@ class TestPlottingFunctions(unittest.TestCase):
                 np.arange(-2, 2, 0.05),
                 np.arange(0, 2, 0.02),
             ],
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1601,7 +1618,7 @@ class TestPlottingFunctions(unittest.TestCase):
         A = np.zeros((32, 32))
         A[10:20, 10:20] = 1
         A[20:30, 20:30] = 1
-        sal_objects = compute_sal_objects(A)
+        sal_objects = compute_sal_objects(A, logger=self.logger)
 
         # test waVOL is equal to theoretical value to 3 decimal places:
         self.assertAlmostEqual(
@@ -1667,6 +1684,7 @@ class TestPlottingFunctions(unittest.TestCase):
             save_dir=self.output_dir,
             filename="validation_mvcorr_numpy.png",
             figsize_multiplier=3,
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1682,6 +1700,7 @@ class TestPlottingFunctions(unittest.TestCase):
             save_dir=self.output_dir,
             filename="comparison_mvcorr_numpy.png",
             figsize_multiplier=3,
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1702,6 +1721,7 @@ class TestPlottingFunctions(unittest.TestCase):
             save_dir=self.output_dir,
             filename="comparison_mvcorr_torch.png",
             figsize_multiplier=3,
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1715,6 +1735,7 @@ class TestPlottingFunctions(unittest.TestCase):
             save_dir=self.output_dir,
             filename="comparison_mv_corr_space_numpy.png",
             figsize_multiplier=3,
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"
@@ -1729,6 +1750,7 @@ class TestPlottingFunctions(unittest.TestCase):
             save_dir=self.output_dir,
             filename="comparison_mvcorr_space_torch.png",
             figsize_multiplier=3,
+            logger=self.logger,
         )
         self.assertTrue(
             os.path.exists(expected_path), f"File not found: {expected_path}"

@@ -812,6 +812,7 @@ def plot_loss_histories(
     filename="training_validation_loss.png",
     save_dir="./results",
     figsize_multiplier=4,
+    logger=None,
 ):
     """
     Plots training and validation loss in a single panel.
@@ -856,8 +857,10 @@ def plot_loss_histories(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
+    if logger is not None:
+        logger.info(f"Loss history plot saved to: '{save_path}'")
+
     return save_path
-    print(f"Loss history plot saved to: '{save_path}'")
 
 
 def plot_average_metrics(
@@ -866,6 +869,7 @@ def plot_average_metrics(
     filename="average_metrics.png",
     save_dir="./results",
     figsize_multiplier=4,
+    logger=None,
 ):
     """
     Plots average metrics across all variables in a row-based layout with shared x-axis.
@@ -886,7 +890,8 @@ def plot_average_metrics(
         Directory to save the plot.
     """
     if not metric_names:
-        print("No metric names provided")
+        if logger is not None:
+            logger.warning("No metric names provided")
         return
 
     num_rows = len(metric_names)
@@ -953,6 +958,7 @@ def plot_spatiotemporal_histograms(
     filename="average_metrics.png",
     save_dir="./results",
     figsize_multiplier=4,
+    logger=None,
 ):
     """
     Plot two 2D hexagonal bin histograms showing spatial-temporal data coverage:
@@ -1015,7 +1021,8 @@ def plot_spatiotemporal_histograms(
     in the "./plots" directory.
     """
     if not centers or not tindices:
-        print(f"No data to plot for {mode} mode")
+        if logger is not None:
+            logger.warning(f"No data to plot for {mode} mode")
         return
 
     # Convert to numpy arrays for efficient processing
@@ -1102,6 +1109,7 @@ def plot_surface(
     filename="forecast_plot.png",
     save_dir=None,
     figsize_multiplier=None,
+    logger=None,
 ):
     """
     Plot side-by-side forecast maps (coarse_inputs input, true target, model prediction, and difference)
@@ -1282,7 +1290,8 @@ def plot_surface(
         #        f"Forecast for {timestamp.strftime('%Y-%m-%d %H:%M')}",
         #        fontsize=16, y=1.02
         #    )
-        print(f"Forecast for {timestamp.strftime('%Y-%m-%d %H:%M')}")
+        if logger is not None:
+            logger.info(f"Forecast for {timestamp.strftime('%Y-%m-%d %H:%M')}")
 
     # Plot each variable
     for col_idx in range(n_vars):
@@ -1419,6 +1428,7 @@ def plot_ensemble_surface(
     timestamp=None,
     filename="ensemble_surface.png",
     save_dir="./results",
+    logger=None,
 ):
     """
     Plot ensemble members, ensemble mean, and ensemble spread.
@@ -1649,7 +1659,8 @@ def plot_ensemble_surface(
         )
 
     if timestamp is not None:
-        print(f"Ensemble predictions — {timestamp}")
+        if logger is not None:
+            logger.info(f"Ensemble predictions — {timestamp}")
 
     fig.subplots_adjust(
         top=0.90,
@@ -1676,6 +1687,7 @@ def plot_zoom_comparison(
     filename="zoom_plot.png",
     save_dir=None,
     zoom_box=None,
+    logger=None,
 ):
     """
     Plot a comparison between ground truth and model predictions with a geographic zoom.
@@ -1741,11 +1753,12 @@ def plot_zoom_comparison(
         or zoom_lon_max < lon_min
         or zoom_lon_min > lon_max
     ):
-        print(
-            f"WARNING: Zoom box {zoom_box} does not overlap with data region "
-            f"lat=[{lat_min:.2f}, {lat_max:.2f}], "
-            f"lon=[{lon_min:.2f}, {lon_max:.2f}]. Skipping plot."
-        )
+        if logger is not None:
+            logger.warning(
+                f"WARNING: Zoom box {zoom_box} does not overlap with data region "
+                f"lat=[{lat_min:.2f}, {lat_max:.2f}], "
+                f"lon=[{lon_min:.2f}, {lon_max:.2f}]. Skipping plot."
+            )
         return None
 
     lon_center = float((lon_min + lon_max) / 2)
@@ -3146,6 +3159,7 @@ def plot_validation_pdfs(
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
     save_npz=False,
+    logger=None,
 ):
     """
     Create PDF (Probability Density Function) plots comparing distributions of
@@ -3327,13 +3341,14 @@ def plot_validation_pdfs(
         stats_text.append(f"Correlation: {correlation:.4f}")
 
         # Log statistics instead of plotting them
-        print(f"[PDF stats] {plot_name}")
-        print(f"  Predictions: μ={pred_mean:.3f}, σ={pred_std:.3f}")
-        print(f"  Ground Truth: μ={target_mean:.3f}, σ={target_std:.3f}")
-        if coarse_inputs is not None:
-            print(f"  Coarse: μ={coarse_mean:.3f}, σ={coarse_std:.3f}")
-        print(f"  KL Divergence: {kl_divergence:.4f}")
-        print(f"  Correlation: {correlation:.4f}")
+        if logger is not None:
+            logger.info(f"[PDF stats] {plot_name}")
+            logger.info(f"  Predictions: μ={pred_mean:.3f}, σ={pred_std:.3f}")
+            logger.info(f"  Ground Truth: μ={target_mean:.3f}, σ={target_std:.3f}")
+            if coarse_inputs is not None:
+                logger.info(f"  Coarse: μ={coarse_mean:.3f}, σ={coarse_std:.3f}")
+            logger.info(f"  KL Divergence: {kl_divergence:.4f}")
+            logger.info(f"  Correlation: {correlation:.4f}")
 
         # ax.set_xlabel(f'{var_name}')
         ax.set_xlabel(plot_name)
@@ -3689,6 +3704,7 @@ def plot_qq_quantiles(
     save_dir="./results",
     figsize_multiplier=4,
     save_npz=False,
+    logger=None,
 ):
     """
     Create QQ-plats at different quantiles comparing model predictions and
@@ -3793,9 +3809,13 @@ def plot_qq_quantiles(
             qq_npz_data[key + "pred"] = qs_pred
             qq_npz_data[key + "coarse"] = qs_coarse
 
-        print(f"[QQ Quantiles] {plot_name}")
+        if logger is not None:
+            logger.info(f"[QQ Quantiles] {plot_name}")
         for q, qt, qp, qc in zip(quantiles, qs_target, qs_pred, qs_coarse):
-            print(f"  q={q:.3f} | Truth={qt:.4f} | Pred={qp:.4f} | Coarse={qc:.4f} ")
+            if logger is not None:
+                logger.info(
+                    f"  q={q:.3f} | Truth={qt:.4f} | Pred={qp:.4f} | Coarse={qc:.4f} "
+                )
 
         # ---- Plot predicted quantiles ----
         for q_idx, q in enumerate(quantiles):
@@ -4102,6 +4122,7 @@ def compute_sal(
     minFac=None,
     minsize=0,
     structure=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=int),
+    logger=None,
 ):
     """
     Compute SAL score for single 2d numpy field wrt given threhold(s)
@@ -4212,14 +4233,18 @@ def compute_sal(
     targ_min = target.min()
     pred_min = prediction.min()
     if targ_min < 0 or pred_min < 0:
-        print("WARNING: input fields contain negative values. SAL score function ")
-        print("assumes non-negative values, so may behave unexpectedly.")
+        if logger is not None:
+            logger.warning(
+                "WARNING: input fields contain negative values. SAL score function "
+            )
+            logger.info("assumes non-negative values, so may behave unexpectedly.")
 
     # If all data below event thresholds, then no objects can be found
     targ_max = target.max()
     pred_max = prediction.max()
     if targ_max <= eThresh or pred_max <= eThreshPr:
-        print("No Objects Found: Event thresholds too large")
+        if logger is not None:
+            logger.warning("No Objects Found: Event thresholds too large")
         return np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
 
     targ_masked: np.ndarray = (target > eThresh) & np.isfinite(target)
@@ -4249,7 +4274,8 @@ def compute_sal(
     predSizemax = predSize.max()
     # If all objects below size thresholds, then no objects can be found
     if targSizemax < minsize or predSizemax < minsize:
-        print("No Objects Found: Objects too small")
+        if logger is not None:
+            logger.warning("No Objects Found: Objects too small")
         return np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
 
     if minsize > 1 and targSizemin < minsize:
@@ -4393,6 +4419,7 @@ def compute_sal_objects(
     minFac=None,
     minsize=0,
     structure=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=int),
+    logger=None,
 ):
     """
     Compute SAL objects for a single 2d numpy field wrt given threhold
@@ -4492,8 +4519,11 @@ def compute_sal_objects(
     # Check for negative values
     array_min = array.min()
     if array_min < 0:
-        print("WARNING: input field contain negative values. SAL score function ")
-        print("assumes non-negative values, so may behave unexpectedly.")
+        if logger is not None:
+            logger.warning(
+                "WARNING: input field contain negative values. SAL score function "
+            )
+            logger.info("assumes non-negative values, so may behave unexpectedly.")
 
     # Setup empty xarray dataset for the case where no objects are found
     no_object_dict = {
@@ -4512,7 +4542,8 @@ def compute_sal_objects(
     # If all data below event thresholds, then no objects can be found
     arr_max = array.max()
     if arr_max <= eThresh:
-        print("No Objects Found: Event thresholds too large")
+        if logger is not None:
+            logger.warning("No Objects Found: Event thresholds too large")
         return no_object_dict
 
     arr_masked: np.ndarray = (array > eThresh) & np.isfinite(array)
@@ -4530,7 +4561,8 @@ def compute_sal_objects(
     Sizemax = Size.max()
     # If all objects below size thresholds, then no objects can be found
     if Sizemax < minsize:
-        print("No Objects Found: Objects too small")
+        if logger is not None:
+            logger.warning("No Objects Found: Objects too small")
         return no_object_dict
 
     if minsize > 1 and Sizemin < minsize:
@@ -4728,6 +4760,7 @@ def plot_validation_salpdfs(
     save_dir=None,
     figsize_multiplier=None,  # Base size per subplot
     bins_list=[np.arange(-2, 2, 0.05), np.arange(-2, 2, 0.05), np.arange(0, 2, 0.02)],
+    logger=None,
 ):
     """
     Compute SAL scores for each pair of images (Prediction and Target).
@@ -4814,18 +4847,32 @@ def plot_validation_salpdfs(
             sal_l_vecC[ii] = sal_tmp[2]
 
     # print summary of stats to terminal
-    print("---- Prediction ----")
-    print(f"S Mean: {np.nanmean(sal_s_vec):.3f}, SD: {np.nanstd(sal_s_vec):.3f}")
-    print(f"A Mean: {np.nanmean(sal_a_vec):.3f}, SD: {np.nanstd(sal_a_vec):.3f}")
-    print(f"L Mean: {np.nanmean(sal_l_vec):.3f}, SD: {np.nanstd(sal_l_vec):.3f}")
-    print("--------------------")
+    if logger is not None:
+        logger.info("---- Prediction ----")
+        logger.info(
+            f"S Mean: {np.nanmean(sal_s_vec):.3f}, SD: {np.nanstd(sal_s_vec):.3f}"
+        )
+        logger.info(
+            f"A Mean: {np.nanmean(sal_a_vec):.3f}, SD: {np.nanstd(sal_a_vec):.3f}"
+        )
+        logger.info(
+            f"L Mean: {np.nanmean(sal_l_vec):.3f}, SD: {np.nanstd(sal_l_vec):.3f}"
+        )
+        logger.info("--------------------")
 
     if coarse_inputs is not None:
-        print("---- Coarse     ----")
-        print(f"S Mean: {np.nanmean(sal_s_vecC):.3f}, SD: {np.nanstd(sal_s_vecC):.3f}")
-        print(f"A Mean: {np.nanmean(sal_a_vecC):.3f}, SD: {np.nanstd(sal_a_vecC):.3f}")
-        print(f"L Mean: {np.nanmean(sal_l_vecC):.3f}, SD: {np.nanstd(sal_l_vecC):.3f}")
-        print("--------------------")
+        if logger is not None:
+            logger.info("---- Coarse     ----")
+            logger.info(
+                f"S Mean: {np.nanmean(sal_s_vecC):.3f}, SD: {np.nanstd(sal_s_vecC):.3f}"
+            )
+            logger.info(
+                f"A Mean: {np.nanmean(sal_a_vecC):.3f}, SD: {np.nanstd(sal_a_vecC):.3f}"
+            )
+            logger.info(
+                f"L Mean: {np.nanmean(sal_l_vecC):.3f}, SD: {np.nanstd(sal_l_vecC):.3f}"
+            )
+            logger.info("--------------------")
 
     # ----------------------------------------------------
     # Plot pdfs of S, A, L values [nrows, ncols]
@@ -5000,6 +5047,7 @@ def plot_validation_mvcorr_space(
     filename="validation_mvcorr_space.png",
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
+    logger=None,
 ):
     """
     Compute multivariate correlation over the space dimensions and plot as time-series,
@@ -5040,7 +5088,8 @@ def plot_validation_mvcorr_space(
     batch_size, num_vars, h, w = predictions.shape
 
     if num_vars < 2:
-        print("ERROR: need at least 2 variables but num_vars < 2")
+        if logger is not None:
+            logger.error("ERROR: need at least 2 variables but num_vars < 2")
         return "0"
 
     # Default variable names if not provided
@@ -5137,6 +5186,7 @@ def plot_validation_mvcorr(
     filename="validation_mvcorr_time.png",
     save_dir="./results",
     figsize_multiplier=4,  # Base size per subplot
+    logger=None,
 ):
     """
     Compute multivariate correlation over the time dimension and plot as maps,
@@ -5201,7 +5251,8 @@ def plot_validation_mvcorr(
     batch_size, num_vars, h, w = predictions.shape
 
     if num_vars < 2:
-        print("ERROR: need at least 2 variables but num_vars < 2")
+        if logger is not None:
+            logger.error("ERROR: need at least 2 variables but num_vars < 2")
         return "0"
 
     # Default variable names if not provided

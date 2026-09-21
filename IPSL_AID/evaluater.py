@@ -1652,6 +1652,7 @@ def reconstruct_original_layout(
             quantiles=[0.90, 0.95, 0.975, 0.99, 0.995],
             filename=f"{args.run_type}_qq_epoch_{epoch}_spatial_block_{spatial_idx:03d}.png",
             save_dir=paths.results,
+            logger=logger,
         )
 
         logger.info(f"Saved QQ plot to {save_path}")
@@ -1685,6 +1686,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_validation_pdfs_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
             save_dir=paths.results,
+            logger=logger,
         )
         logger.info(f"Saved validation PDFs plot to: {save_path}")
 
@@ -1739,6 +1741,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_mvcorr_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
             save_dir=paths.results,
+            logger=logger,
         )
 
         logger.info(f"Saved multivariate correlation map to: {save_path}")
@@ -1761,6 +1764,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_plot_surface_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
             save_dir=paths.results,
+            logger=logger,
         )
         logger.info(f"Saved surface plot to: {save_path}")
 
@@ -1784,6 +1788,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_mvcorr_space_epoch_{epoch}_sblock_{spatial_idx:03d}.png",
             save_dir=paths.results,
+            logger=logger,
         )
 
         logger.info(
@@ -1824,6 +1829,7 @@ def reconstruct_original_layout(
             filename=f"{args.run_type}_full_domain_qq_epoch_{epoch}.png",
             save_dir=paths.results,
             save_npz=True,
+            logger=logger,
         )
         logger.info(f"Saved full domain QQ plot to {save_path}")
 
@@ -1857,6 +1863,7 @@ def reconstruct_original_layout(
             filename=f"{args.run_type}_full_domain_validation_pdfs_epoch_{epoch}.png",
             save_dir=paths.results,
             save_npz=True,
+            logger=logger,
         )
         logger.info(f"Saved full domain validation PDFs plot to: {save_path}")
 
@@ -1929,6 +1936,7 @@ def reconstruct_original_layout(
                 variable_names=args.varnames_list,
                 filename=f"{args.run_type}_full_domain_surface_epoch_{epoch}_time_{time_idx:03d}.png",
                 save_dir=paths.results,
+                logger=logger,
             )
             logger.info(
                 f"Saved full domain surface plot (time {time_idx}) to: {save_path}"
@@ -1944,6 +1952,7 @@ def reconstruct_original_layout(
                     variable_names=args.varnames_list,
                     filename=f"{args.run_type}_full_domain_zoom_comparison_epoch_{epoch}_time_{time_idx:03d}.png",
                     save_dir=paths.results,
+                    logger=logger,
                 )
                 logger.info(
                     f"Saved full domain zoom comparison (time {time_idx}) to: {save_path}"
@@ -1962,6 +1971,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_mvcorr_epoch_{epoch}.png",
             save_dir=paths.results,
+            logger=logger,
         )
 
         logger.info(f"Saved full domain multivariate correlation map to: {save_path}")
@@ -1986,6 +1996,7 @@ def reconstruct_original_layout(
             variable_names=args.varnames_list,
             filename=f"{args.run_type}_full_domain_mvcorr_space_epoch_{epoch}.png",
             save_dir=paths.results,
+            logger=logger,
         )
 
         logger.info(

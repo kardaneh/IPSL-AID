@@ -262,6 +262,32 @@ def parse_args():
         default=None,
         help="Per-variable data directories as VAR=path pairs",
     )
+    parser.add_argument(
+        "--region_datadirs",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Data directories corresponding to the regional centers",
+    )
+    parser.add_argument(
+        "--region_constants_files",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Constant files corresponding to the regional centers",
+    )
+    parser.add_argument(
+        "--global_coordinates_file",
+        type=str,
+        default=None,
+        help="NetCDF file containing the global latitude and longitude coordinates",
+    )
+    parser.add_argument(
+        "--coarse_resolution_deg",
+        type=float,
+        default=None,
+        help="Coarse spatial resolution in degrees for regional datasets",
+    )
 
     # Data processing parameters
     parser.add_argument(
@@ -448,19 +474,17 @@ def parse_args():
     parser.add_argument(
         "--region_center",
         type=float,
-        nargs=2,
+        nargs="+",
         default=None,
-        help="Latitude and longitude center for regional inference "
-        "(used only when run_type=inference_regional)",
+        help="One or more latitude/longitude center pairs for regional runs",
     )
 
     parser.add_argument(
         "--region_size",
         type=int,
-        nargs=2,
+        nargs="+",
         default=None,
-        help="Requested regional size in grid points (lat lon) "
-        "for regional inference (used only when run_type=inference_regional)",
+        help="One or more regional-size pairs in grid points (lat lon)",
     )
 
     parser.add_argument(
@@ -535,13 +559,115 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--discretization",
+        type=str,
+        default="edm",
+        choices=["vp", "ve", "iddpm", "edm"],
+        help="Time-step discretization scheme used by the sampler",
+    )
+
+    parser.add_argument(
+        "--schedule",
+        type=str,
+        default="linear",
+        choices=["vp", "ve", "linear"],
+        help="Noise schedule used to space sigma values during sampling",
+    )
+
+    parser.add_argument(
+        "--scaling",
+        type=str,
+        default="none",
+        choices=["vp", "none"],
+        help="Input/output scaling convention applied to the model",
+    )
+
+    parser.add_argument(
+        "--epsilon_s",
+        type=float,
+        default=1e-3,
+        help="Small time offset used to avoid division by zero near t=0",
+    )
+
+    parser.add_argument(
+        "--C_1",
+        type=float,
+        default=0.001,
+        help="C_1 coefficient used in the IDDPM discretization",
+    )
+
+    parser.add_argument(
+        "--C_2",
+        type=float,
+        default=0.008,
+        help="C_2 coefficient used in the IDDPM discretization",
+    )
+
+    parser.add_argument(
+        "--M",
+        type=int,
+        default=1000,
+        help="Number of discretization intervals used in the IDDPM schedule",
+    )
+
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=1.0,
+        help="Interpolation parameter for the Heun 2nd-order correction step",
+    )
+
+    parser.add_argument(
         "--compute_crps", type=lambda x: x.lower() == "true", default=False
     )
 
     parser.add_argument("--crps_ensemble_size", type=int, default=10)
     parser.add_argument("--crps_batch_size", type=int, default=2)
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.region_center is not None and len(args.region_center) % 2 != 0:
+        parser.error("--region_center must contain latitude/longitude pairs")
+
+    if args.region_size is not None:
+        if len(args.region_size) % 2 != 0:
+            parser.error("--region_size must contain latitude/longitude size pairs")
+        if any(size <= 0 for size in args.region_size):
+            parser.error("--region_size values must be strictly positive")
+
+    if args.region_center is not None and args.region_size is not None:
+        if len(args.region_center) != len(args.region_size):
+            parser.error(
+                "--region_center and --region_size must describe the same "
+                "number of regions"
+            )
+
+    if args.region_center is not None and len(args.region_center) > 2:
+        if args.region_size is None:
+            parser.error(
+                "--region_size is required when multiple region centers are provided"
+            )
+
+    if args.region_size is not None and len(args.region_size) > 2:
+        if args.region_center is None:
+            parser.error(
+                "--region_center is required when multiple region sizes are provided"
+            )
+
+    if args.region_size is not None:
+        if len(args.region_size) == 2:
+            args.region_size = tuple(args.region_size)
+        else:
+            args.region_size = [
+                tuple(args.region_size[i : i + 2])
+                for i in range(0, len(args.region_size), 2)
+            ]
+
+    if args.coarse_resolution_deg is not None and args.coarse_resolution_deg <= 0:
+        parser.error("--coarse_resolution_deg must be strictly positive")
+    # A physical grid resolution cannot be zero or negative.
+
+    return args
 
 
 def make_divisible_hw(h, w, n):
@@ -915,6 +1041,48 @@ def setup_data_paths(args, paths, logger):
     logger.info(f"Training years: {train_years}")
     logger.info(f"Testing years: {test_years}")
 
+    if args.region_datadirs is not None:
+        train_region_datasets = (
+            None if args.run_type in ["inference", "inference_regional"] else {}
+        )
+        valid_region_datasets = {}
+
+        regional_args = argparse.Namespace(**vars(args))
+        regional_args.region_datadirs = None
+        regional_args.per_var_datadir = None
+
+        for region_index, region_datadir in enumerate(args.region_datadirs):
+            regional_paths = EasyDict(paths)
+            regional_paths.datadir = region_datadir
+
+            (
+                region_norm_mapping,
+                region_steps,
+                region_normalization_type,
+                region_index_mapping,
+                region_train_ds,
+                region_valid_ds,
+            ) = setup_data_paths(regional_args, regional_paths, logger)
+
+            if train_region_datasets is not None:
+                train_region_datasets[region_index] = region_train_ds
+            valid_region_datasets[region_index] = region_valid_ds
+
+            if region_index == 0:
+                norm_mapping = region_norm_mapping
+                steps = region_steps
+                normalization_type = region_normalization_type
+                index_mapping = region_index_mapping
+
+        return (
+            norm_mapping,
+            steps,
+            normalization_type,
+            index_mapping,
+            train_region_datasets,
+            valid_region_datasets,
+        )
+
     # ------------------------------------------------------------------
     # Per-variable data paths configuration (using EasyDict)
     # ------------------------------------------------------------------
@@ -1265,6 +1433,10 @@ def create_data_loaders(
         apply_filter=args.apply_filter,
         region_center=args.region_center,
         region_size=args.region_size,
+        region_constants_files=args.region_constants_files,
+        global_coordinates_file=args.global_coordinates_file,
+        coarse_resolution_deg=args.coarse_resolution_deg,
+        # Forward the physical resolution used to derive each regional coarse shape.
         overlap_ratio=args.overlap_ratio,
         logger=logger,
     )
@@ -1403,7 +1575,10 @@ def resolve_region_center(args):
     - Longitude follows the convention [0, 360].
     """
 
-    if args.run_type != "inference_regional" and args.run_type != "train_regional":
+    if (
+        args.run_type not in ["train_regional", "inference_regional"]
+        and args.region_datadirs is None
+    ):
         return None
 
     # predefined region center coordinates (lat, lon)
@@ -1430,9 +1605,13 @@ def resolve_region_center(args):
 
     # case 3: explicit coordinates
     if args.region_center is not None:
-        if len(args.region_center) != 2:
-            raise ValueError("--region_center must contain exactly two values: lat lon")
-        return tuple(args.region_center)
+        if len(args.region_center) == 2:
+            return tuple(args.region_center)
+        if len(args.region_center) % 2 == 0:
+            return [
+                tuple(args.region_center[i : i + 2])
+                for i in range(0, len(args.region_center), 2)
+            ]
 
     # case 4: nothing provided (error)
     raise ValueError(

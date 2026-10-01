@@ -817,7 +817,7 @@ def plot_loss_histories(
     """
     Plots training and validation loss in a single panel.
 
-    Parameters:
+    Parameters
     -----------
     train_loss_history : list or array
         History of training loss values.
@@ -4138,25 +4138,25 @@ def compute_sal(
     - different minimum object size thresholds
     - different structure for neighbour definitions
 
-    Parameters:
+    Parameters
     -----------
     prediction : numpy.ndarray
         Prediction field data as 2d [lat, lon] array
     target : numpy.ndarray
         Target field data, same shape as prediction
-    eThreshFix : float | None
+    eThreshFix : float or None
         Fixed threshold to be used to define event (same units as target)
         If eThreshFix value given, this overrides quantile based options
-    eThreshPrFix : float | None
+    eThreshPrFix : float or None
         Fixed threshold to be used to define event (same units as target)
         If None, uses eThreshFix.
-    thr_quantile : float | None
+    thr_quantile : float or None
         Quantile value in [0.0, 1.0] used to compute threshold to define
         event, as Wernli et al. 2009 (they use thr_quantile=0.95)
-    thr_factor : float | None
+    thr_factor : float or None
         Factor to reduce the quantile by, as Wernli et al. 2008 & 2009
         (they use thr_factor=1/15)
-    minFac : float | str | None
+    minFac : float, str, or None
         Option to mask data less than threshold=minFac before computing
         quantile, as Wernli et al. 2009 (they use 0.1 mm for precip)
         Special case: minFac='min' implies use min value of field,
@@ -4166,7 +4166,7 @@ def compute_sal(
     structure : numpy.ndarray, dtype=int, shape [3, 3]
         This array defines what are classed as neighbouring grid points.
 
-    Returns:
+    Returns
     --------
     numpy.ndarray
         SAL scores for single input target and prediction field pair
@@ -4431,24 +4431,25 @@ def compute_sal_objects(
     unexpectedly if negative values exist.
 
     Extended to allow the use of:
+
     - fixed thresholds independent of input data
     - different minimum object size thresholds
     - different structure for neighbour definitions
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     array : numpy.ndarray
         field data as 2d [lat, lon] array
-    eThreshFix : float | None
+    eThreshFix : float or None
         Fixed threshold to be used to define event (same units as target)
         If eThreshFix value given, this overrides quantile based options
-    thr_quantile : float | None
+    thr_quantile : float or None
         Quantile value in [0.0, 1.0] used to compute threshold to define
         event, as Wernli et al. 2009 (they use thr_quantile=0.95)
-    thr_factor : float | None
+    thr_factor : float or None
         Factor to reduce the quantile by, as Wernli et al. 2008 & 2009
         (they use thr_factor=1/15)
-    minFac : float | str | None
+    minFac : float, str, or None
         Option to mask data less than threshold=minFac before computing
         quantile, as Wernli et al. 2009 (they use 0.1 mm for precip)
         Special case: minFac='min' implies use min value of field,
@@ -4458,23 +4459,28 @@ def compute_sal_objects(
     structure : numpy.ndarray, dtype=int, shape [3, 3]
         This array defines what are classed as neighbouring grid points.
 
-    Returns:
-    --------
+    Returns
+    -------
     dict
-        SAL objects for single input 2D field with keys :
-            - "sal_waVOL" : contains the weighted area volume (object representing structure)
-            - "sal_a" : mean of precipitation of field (represents amplitude)
-            - "sal_r" : weighted average distance of each object from centre of its total field (represents L2 term)
-            - "sal_targ_num" : number of events detected in the field
-            - "sal_targ_size" : array of sizes of the events detected
+        SAL objects for a single input 2D field with the following keys:
 
-        if no objects are found, this function returns this dict :
+        * ``sal_waVOL`` : weighted area volume (object representing structure)
+        * ``sal_a`` : mean precipitation of the field (represents amplitude)
+        * ``sal_r`` : weighted average distance of each object from the centre
+          of its total field (represents the L2 term)
+        * ``sal_targ_num`` : number of events detected in the field
+        * ``sal_targ_size`` : array of sizes of the events detected
+
+        If no objects are found, this function returns:
+
+        .. code-block:: python
+
             {
                 "sal_waVOL": np.nan,
                 "sal_a": np.nan,
                 "sal_r": np.nan,
                 "sal_targ_num": 0,
-                "sal_targ_size" : np.zeros(1,)
+                "sal_targ_size": np.zeros(1,),
             }
 
     See Also
@@ -4679,20 +4685,20 @@ def compute_sal_objects_time(
     - different minimum object size thresholds
     - different structure for neighbour definitions
 
-    Parameters:
+    Parameters
     -----------
     array : numpy.ndarray
         field data as 3d [time, lat, lon] array
-    eThreshFix : float | None
+    eThreshFix : float or None
         Fixed threshold to be used to define event (same units as target)
         If eThreshFix value given, this overrides quantile based options
-    thr_quantile : float | None
+    thr_quantile : float or None
         Quantile value in [0.0, 1.0] used to compute threshold to define
         event, as Wernli et al. 2009 (they use thr_quantile=0.95)
-    thr_factor : float | None
+    thr_factor : float or None
         Factor to reduce the quantile by, as Wernli et al. 2008 & 2009
         (they use thr_factor=1/15)
-    minFac : float | str | None
+    minFac : float, str, or None
         Option to mask data less than threshold=minFac before computing
         quantile, as Wernli et al. 2009 (they use 0.1 mm for precip)
         Special case: minFac='min' implies use min value of field,
@@ -4702,7 +4708,7 @@ def compute_sal_objects_time(
     structure : numpy.ndarray, dtype=int, shape [3, 3]
         This array defines what are classed as neighbouring grid points.
 
-    Returns:
+    Returns
     --------
     dict
         SAL objects for the given 3D field with keys :
@@ -4999,7 +5005,7 @@ def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
     """
     Calculate Pearson correlation between 2 N-dimensional numpy arrays.
 
-    Parameters:
+    Parameters
     -----------
     arr1 : numpy.ndarray
         First N-dimensional array
@@ -5008,7 +5014,7 @@ def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
     axis : int or type of int, default=0
         Axis or tuple of axes over which to compute correlation
 
-    Returns:
+    Returns
     --------
     numpy.ndarray
         Pearson correlation coefficients. Output has N - len(axis) dimensions

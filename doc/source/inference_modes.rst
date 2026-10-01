@@ -14,13 +14,44 @@ downstream climate impact studies.
 Global Inference
 ----------------
 
-For global coverage, 20 fixed blocks corresponding to the ERA5 resolution of
-:math:`1440\times721` are used to produce global predictions:
+Global inference enables the generation of high-resolution predictions over
+the entire globe using a block-based approach.
 
-1. **Tiling**: Divide globe into overlapping blocks
-2. **Processing**: Run inference on each block
-3. **Merging**: Stitch blocks together with blending
-4. **Postprocessing**: Apply consistency checks and corrections
+For global coverage, the ERA5 spatial domain of :math:`1440 \times 721`
+grid points is divided into spatial blocks, which are processed independently
+by the trained model.
+
+To reduce discontinuities at block boundaries, IPSL-AID supports spatial
+overlap between adjacent blocks. Overlapping predictions are combined using
+smooth weighted blending to ensure spatial continuity across the global domain.
+
+The global inference procedure consists of three main steps:
+
+1. **Tiling**: Divide the global domain into spatial blocks with a configurable overlap.
+2. **Processing**: Run inference independently on each block.
+3. **Merging**: Reconstruct the global field using weighted blending in overlapping regions.
+
+
+Spatial Overlap
+^^^^^^^^^^^^^^^
+
+The ``overlap_ratio`` parameter controls the spatial overlap between adjacent
+blocks. A value of ``0.0`` disables overlap, while ``0.02`` corresponds to
+a 2% overlap.
+
+Overlapping predictions are merged using Hann-based weighting functions
+to reduce discontinuities at block boundaries.
+
+The default overlap ratio is ``0.02`` (2%). Increasing this value can
+improve spatial continuity but may increase computational cost.
+
+Configuration:
+
+.. code-block:: yaml
+
+   inference:
+     run_type: inference
+     overlap_ratio: 0.02
 
 Regional Inference
 ------------------

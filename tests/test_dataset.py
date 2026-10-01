@@ -16,6 +16,7 @@ import torch
 import json
 import sys
 import os
+from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -752,6 +753,105 @@ class TestDataPreprocessor(unittest.TestCase):
                 f"✅ Generate random batch centers test passed - generated {len(centers)} centers"
             )
 
+    def test_generate_random_batch_centers_multi_region(self):
+        """Test global sampling and region tracking in multi-region mode."""
+        preprocessor = object.__new__(DataPreprocessor)
+        preprocessor.H = 10
+        preprocessor.W = 20
+        preprocessor.global_latitudes = np.arange(100)
+        preprocessor.global_longitudes = np.arange(200)
+        preprocessor.region_center = [(50, 100), (70, 150)]
+        preprocessor.region_size = [(20, 20), (10, 10)]
+        preprocessor.region_indices = [0, 1]
+        preprocessor.loaded_dfs = {
+            0: xr.Dataset(
+                coords={
+                    "latitude": np.arange(41, 61),
+                    "longitude": np.arange(91, 111),
+                }
+            ),
+            1: xr.Dataset(
+                coords={
+                    "latitude": np.arange(66, 76),
+                    "longitude": np.arange(146, 156),
+                }
+            ),
+        }
+        preprocessor.batch_size_lat = 2
+        preprocessor.batch_size_lon = 2
+        preprocessor.valid_region_bounds = {
+            0: (42, 60, 92, 110),
+            1: (67, 75, 147, 155),
+        }
+        preprocessor.debug = False
+        preprocessor.logger = self.logger
+
+        with mock.patch(
+            "IPSL_AID.dataset.np.random.randint", side_effect=[50, 100]
+        ) as randint:
+            centers = preprocessor.generate_random_batch_centers(1, multi_regional=True)
+
+        self.assertEqual(centers, [(50, 100)])
+        self.assertEqual(preprocessor.random_region_indices, [0])
+        self.assertEqual(randint.call_args_list[0], mock.call(1, 99))
+        self.assertEqual(randint.call_args_list[1], mock.call(0, 200))
+
+    def test_valid_multiregional_centers_uses_actual_region_boundaries(self):
+        """Test exact acceptance at spatial boundaries of an even region."""
+        preprocessor = object.__new__(DataPreprocessor)
+        preprocessor.global_latitudes = -89.975 + 0.05 * np.arange(3600)
+        preprocessor.global_longitudes = -179.975 + 0.05 * np.arange(7200)
+        preprocessor.region_center = [(-17.0, 50.0)]
+        preprocessor.region_size = [(840, 1200)]
+        preprocessor.region_indices = [0]
+        preprocessor.loaded_dfs = {
+            0: xr.Dataset(
+                coords={
+                    "lat": preprocessor.global_latitudes[1040:1880],
+                    "lon": preprocessor.global_longitudes[4000:5200],
+                }
+            )
+        }
+        preprocessor.batch_size_lat = 120
+        preprocessor.batch_size_lon = 240
+        preprocessor.valid_region_bounds = {0: (1100, 1820, 4120, 5080)}
+
+        valid_lon_center = 4600
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(1099, valid_lon_center),
+            (False, None),
+        )
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(1100, valid_lon_center),
+            (True, 0),
+        )
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(1820, valid_lon_center),
+            (True, 0),
+        )
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(1821, valid_lon_center),
+            (False, None),
+        )
+
+        valid_lat_center = 1460
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(valid_lat_center, 4119),
+            (False, None),
+        )
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(valid_lat_center, 4120),
+            (True, 0),
+        )
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(valid_lat_center, 5080),
+            (True, 0),
+        )
+        self.assertEqual(
+            preprocessor.valid_multiregional_centers(valid_lat_center, 5081),
+            (False, None),
+        )
+
     def test_extract_batch(self):
         """Test spatial batch extraction."""
         if self.logger:
@@ -1246,6 +1346,289 @@ class TestDataPreprocessor(unittest.TestCase):
         if self.logger:
             self.logger.info(
                 f"✅ __getitem__ train mode test passed - inputs shape: {sample['inputs'].shape}"
+            )
+
+    def test_getitem_multi_region_uses_local_dataset_and_center(self):
+        """Test selection and local indexing of a smaller regional dataset."""
+        region_dataset = self.ds.isel(
+            latitude=slice(2, 34), longitude=slice(4, 68)
+        ).copy(deep=True)
+        for var_name in self.varnames_list:
+            region_dataset[var_name].values[...] = 777.0
+
+        region_constants_path = os.path.join(self.temp_dir, "region_1_constants.nc")
+        xr.Dataset(
+            {
+                "lsm": (
+                    ("time", "latitude", "longitude"),
+                    np.full((1, 32, 64), 0.75, dtype=np.float32),
+                )
+            },
+            coords={
+                "time": region_dataset.time.values[:1],
+                "latitude": region_dataset.latitude.values,
+                "longitude": region_dataset.longitude.values,
+            },
+        ).to_netcdf(region_constants_path)
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs={0: self.ds, 1: region_dataset},
+            constants_file_path=None,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=1,
+            debug=False,
+            mode="train",
+            run_type="train",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=["lsm"],
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            region_center=[
+                (
+                    float(self.ds.latitude.values[18]),
+                    float(self.ds.longitude.values[18]),
+                ),
+                (
+                    float(self.ds.latitude.values[18]),
+                    float(self.ds.longitude.values[36]),
+                ),
+            ],
+            region_size=[(36, 72), (32, 64)],
+            region_constants_files=[self.const_path, region_constants_path],
+            global_coordinates_file=self.const_path,
+            coarse_resolution_deg=10.0,
+            logger=self.logger,
+        )
+
+        self.assertEqual(
+            preprocessor.valid_region_bounds,
+            {0: (16, 20, 16, 56), 1: (18, 18, 20, 52)},
+        )
+
+        def fixed_centers(n_batches, multi_regional=False):
+            self.assertEqual(n_batches, 1)
+            self.assertTrue(multi_regional)
+            preprocessor.random_region_indices = [1]
+            return [(18, 36)]
+
+        with mock.patch.object(
+            preprocessor,
+            "generate_random_batch_centers",
+            side_effect=fixed_centers,
+        ) as generate_centers:
+            with mock.patch(
+                "IPSL_AID.dataset.coarse_down_up", wraps=coarse_down_up
+            ) as coarsen:
+                sample = preprocessor[0]
+
+        generate_centers.assert_called_once_with(1, multi_regional=True)
+        self.assertEqual(coarsen.call_args.kwargs["input_shape"], (16, 32))
+        # The 32 x 64 regional grid keeps a 10-degree physical coarse resolution.
+        self.assertEqual(preprocessor.center_tracker, [(16, 32)])
+        self.assertEqual(sample["fine"].shape, (len(self.varnames_list), 32, 32))
+        torch.testing.assert_close(
+            sample["fine"], torch.full_like(sample["fine"], 777.0)
+        )
+        self.assertEqual(sample["inputs"].shape, (len(self.varnames_list) + 3, 32, 32))
+        torch.testing.assert_close(
+            sample["inputs"][-1], torch.full_like(sample["inputs"][-1], 0.75)
+        )
+
+        global_lat = self.ds.latitude.values
+        global_lon = self.ds.longitude.values
+        region_lat = region_dataset.latitude.values
+        region_lon = region_dataset.longitude.values
+        expected_lat = (
+            2
+            * ((region_lat - global_lat.min()) / (global_lat.max() - global_lat.min()))
+            - 1
+        )
+        expected_lon = (
+            2
+            * ((region_lon - global_lon.min()) / (global_lon.max() - global_lon.min()))
+            - 1
+        )
+        expected_lat_block = np.repeat(expected_lat[:, None], 32, axis=1)
+        expected_lon_block = np.repeat(expected_lon[16:48][None, :], 32, axis=0)
+
+        torch.testing.assert_close(
+            sample["inputs"][len(self.varnames_list)],
+            torch.from_numpy(expected_lat_block).to(torch.float32),
+        )
+        torch.testing.assert_close(
+            sample["inputs"][len(self.varnames_list) + 1],
+            torch.from_numpy(expected_lon_block).to(torch.float32),
+        )
+
+    def test_validation_multi_region_tiles_and_selects_each_region(self):
+        """Test deterministic tiling and selection of regional validation data."""
+        region_0 = self.ds.isel(latitude=slice(2, 34), longitude=slice(4, 68)).copy(
+            deep=True
+        )
+        region_1 = self.ds.isel(latitude=slice(2, 34), longitude=slice(20, 52)).copy(
+            deep=True
+        )
+        for var_name in self.varnames_list:
+            region_0[var_name].values[...] = 111.0
+            region_1[var_name].values[...] = 777.0
+
+        regional_constants = []
+        for region_index, (region_dataset, lsm_value) in enumerate(
+            [(region_0, 0.25), (region_1, 0.75)]
+        ):
+            constants_path = os.path.join(
+                self.temp_dir, f"validation_region_{region_index}_constants.nc"
+            )
+            xr.Dataset(
+                {
+                    "lsm": (
+                        ("time", "latitude", "longitude"),
+                        np.full(
+                            (
+                                1,
+                                region_dataset.sizes["latitude"],
+                                region_dataset.sizes["longitude"],
+                            ),
+                            lsm_value,
+                            dtype=np.float32,
+                        ),
+                    )
+                },
+                coords={
+                    "time": region_dataset.time.values[:1],
+                    "latitude": region_dataset.latitude.values,
+                    "longitude": region_dataset.longitude.values,
+                },
+            ).to_netcdf(constants_path)
+            regional_constants.append(constants_path)
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs={0: region_0, 1: region_1},
+            constants_file_path=None,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=1,
+            sbatch=1,
+            debug=False,
+            mode="validation",
+            run_type="train",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=["lsm"],
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            region_constants_files=regional_constants,
+            global_coordinates_file=self.const_path,
+            coarse_resolution_deg=10.0,
+            logger=self.logger,
+        )
+
+        self.assertEqual(
+            preprocessor.eval_slices,
+            [
+                (0, 32, 0, 32),
+                (0, 32, 32, 64),
+                (0, 32, 0, 32),
+            ],
+        )
+        self.assertEqual(preprocessor.eval_region_indices, [0, 0, 1])
+        self.assertEqual(preprocessor.sbatch, 3)
+
+        with mock.patch(
+            "IPSL_AID.dataset.coarse_down_up", wraps=coarse_down_up
+        ) as coarsen:
+            sample = preprocessor[2]
+
+        self.assertEqual(coarsen.call_args.kwargs["input_shape"], (16, 16))
+        # The selected 32 x 32 region derives its own 10-degree coarse shape.
+        torch.testing.assert_close(
+            sample["fine"], torch.full_like(sample["fine"], 777.0)
+        )
+        torch.testing.assert_close(
+            sample["inputs"][-1], torch.full_like(sample["inputs"][-1], 0.75)
+        )
+
+    def test_validation_multi_region_rejects_non_divisible_region(self):
+        """Test rejection of regional validation domains with incomplete blocks."""
+        non_divisible_region = self.ds.isel(
+            latitude=slice(0, 33), longitude=slice(4, 68)
+        )
+
+        with self.assertRaisesRegex(ValueError, "latitude size 33"):
+            DataPreprocessor(
+                years=self.years,
+                loaded_dfs={0: non_divisible_region},
+                constants_file_path=None,
+                varnames_list=self.varnames_list,
+                units_list=self.units_list,
+                in_shape=self.in_shape,
+                batch_size_lat=self.batch_size_lat,
+                batch_size_lon=self.batch_size_lon,
+                steps=self.steps,
+                tbatch=1,
+                sbatch=1,
+                debug=False,
+                mode="validation",
+                run_type="train",
+                time_normalization="linear",
+                norm_mapping=self.norm_mapping,
+                index_mapping=self.index_mapping,
+                normalization_type=self.normalization_type,
+                constant_variables=None,
+                dtype=(torch.float32, np.float32),
+                apply_filter=False,
+                logger=self.logger,
+            )
+
+    def test_multi_region_rejects_different_time_coordinates(self):
+        """Test that one temporal index has the same meaning in every region."""
+        shifted_time_region = self.ds.assign_coords(
+            time=self.ds.time.values + np.timedelta64(1, "h")
+        )
+
+        with self.assertRaisesRegex(ValueError, "same time coordinate"):
+            DataPreprocessor(
+                years=self.years,
+                loaded_dfs={0: self.ds, 1: shifted_time_region},
+                constants_file_path=None,
+                varnames_list=self.varnames_list,
+                units_list=self.units_list,
+                in_shape=self.in_shape,
+                batch_size_lat=self.batch_size_lat,
+                batch_size_lon=self.batch_size_lon,
+                steps=self.steps,
+                tbatch=1,
+                sbatch=1,
+                debug=False,
+                mode="train",
+                run_type="train",
+                time_normalization="linear",
+                norm_mapping=self.norm_mapping,
+                index_mapping=self.index_mapping,
+                normalization_type=self.normalization_type,
+                constant_variables=None,
+                dtype=(torch.float32, np.float32),
+                apply_filter=False,
+                logger=self.logger,
             )
 
     def test_getitem_regional_train_mode(self):

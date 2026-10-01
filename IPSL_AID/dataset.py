@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston, Pierre Chapel
+# Authors: Kazem Ardaneh, Kishanthan Kingston, Pierre Chapel, Mehdi Lakbar, and others
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -457,6 +457,8 @@ class DataPreprocessor(Dataset):
         Array of time indices for current epoch.
     eval_slices : list of tuple or None
         List of spatial slices for evaluation mode.
+    eval_region_indices : list or None
+        Regional dataset key associated with each evaluation slice.
     train_slices : list of tuple
         Spatial slices used during regional training, when applicable.
     region_center : tuple of float or None
@@ -548,6 +550,9 @@ class DataPreprocessor(Dataset):
         apply_filter=False,
         region_center=None,  # (lat_value, lon_value)
         region_size=None,
+        region_constants_files=None,
+        global_coordinates_file=None,
+        coarse_resolution_deg=None,
         overlap_ratio=0.0,  # 0.02
         logger=None,
     ):
@@ -610,6 +615,12 @@ class DataPreprocessor(Dataset):
             Fixed geographic center (lat, lon) for spatial sampling.
         region_size : tuple of int or None, optional
             Regional-domain size in latitude and longitude grid points.
+        region_constants_files : list of str or None, optional
+            Constant-variable files ordered like the regional datasets.
+        global_coordinates_file : str or None, optional
+            NetCDF file containing the global latitude and longitude coordinates.
+        coarse_resolution_deg : float or None, optional
+            Physical coarse-grid resolution in degrees.
         overlap_ratio : float, optional
             Fractional overlap between adjacent blocks during global inference.
         logger : logging.Logger, optional
@@ -661,6 +672,13 @@ class DataPreprocessor(Dataset):
 
         self.region_center = region_center
         self.region_size = region_size
+        self.region_constants_files = region_constants_files
+        # Regional constant files follow the same order as the regional datasets.
+        self.global_coordinates_file = global_coordinates_file
+        self.global_latitudes = None
+        self.global_longitudes = None
+        self.coarse_resolution_deg = coarse_resolution_deg
+        # A physical resolution lets each regional domain derive its own coarse shape.
 
         self.overlap_ratio = overlap_ratio
 
@@ -700,7 +718,74 @@ class DataPreprocessor(Dataset):
         self.logger.info(f"Spatial dimensions: {self.H} x {self.W}")
         self.logger.info(f"batch size: {self.batch_size_lat} x {self.batch_size_lon}")
 
-        if self.constant_variables is not None and self.constants_file_path is not None:
+        self.region_const_vars = None
+        # Keep regional constant arrays separate because regional shapes may differ.
+
+        if self.constant_variables is not None and isinstance(loaded_dfs, dict):
+            if self.region_constants_files is None:
+                raise ValueError(
+                    "region_constants_files is required when constant variables "
+                    "are used in multi-region mode"
+                )
+            if len(self.region_constants_files) != len(loaded_dfs):
+                raise ValueError(
+                    "region_constants_files must contain one file per regional dataset"
+                )
+
+            self.const_vars = None
+            self.region_const_vars = {}
+            region_indices = list(loaded_dfs.keys())
+            # Preserve the dictionary order established from region_datadirs.
+
+            for region_index, constants_file in zip(
+                region_indices, self.region_constants_files
+            ):
+                self.logger.info(
+                    f"Opening constant variables file for region {region_index}: "
+                    f"{constants_file}"
+                )
+                ds_const = xr.open_dataset(constants_file).load()
+
+                if "time" in ds_const.dims:
+                    ds_const = ds_const.isel(time=0)
+                # Constant files may contain a singleton time dimension or no time.
+
+                first_const = ds_const[self.constant_variables[0]]
+                const_H, const_W = first_const.shape[-2:]
+                region_const_vars = np.zeros(
+                    (len(self.constant_variables), const_H, const_W)
+                )
+                # Allocate each regional array from its actual spatial dimensions.
+
+                for i, const_varname in enumerate(self.constant_variables):
+                    const_var = ds_const[const_varname]
+
+                    if const_varname != "lsm":
+                        self.logger.info(
+                            f"Normalizing {const_varname} for region {region_index}"
+                        )
+                        latitude = (
+                            ds_const.latitude
+                            if hasattr(ds_const, "latitude")
+                            else ds_const.lat
+                        )
+                        weighted_var = const_var.weighted(np.cos(np.radians(latitude)))
+                        mean_var = weighted_var.mean().values
+                        std_var = weighted_var.std().values
+                        region_const_vars[i] = ((const_var - mean_var) / std_var).values
+                    else:
+                        region_const_vars[i] = const_var.values
+
+                self.region_const_vars[region_index] = region_const_vars
+                ds_const.close()
+                # Store constants with the same key used by self.loaded_dfs.
+
+            self.logger.info(
+                f"Loaded regional constant variables: {self.constant_variables}"
+            )
+        elif (
+            self.constant_variables is not None and self.constants_file_path is not None
+        ):
             self.logger.info(f"Opening constant variables file: {constants_file_path}")
             # Open file
             ds_const = xr.open_dataset(self.constants_file_path).load()
@@ -752,15 +837,144 @@ class DataPreprocessor(Dataset):
         """
         # Cache for loaded data
         self.loaded_dfs = loaded_dfs
-        self.etime = len(self.loaded_dfs["time"])
-        # ----------------------------------------------------------
-        # 1. Extract time components from xarray
-        # ----------------------------------------------------------
-        self.time = self.loaded_dfs.time
+        self.multi_region = isinstance(loaded_dfs, dict)
+
+        if self.multi_region:
+            if isinstance(self.region_center, tuple):
+                self.region_center = [self.region_center]
+            if isinstance(self.region_size, tuple):
+                self.region_size = [self.region_size]
+            # Use the same internal list-of-tuples representation for one or many regions.
+
+            if not loaded_dfs:
+                raise ValueError("loaded_dfs cannot be empty")
+
+            self.region_indices = list(loaded_dfs.keys())
+            reference_dfs = loaded_dfs[self.region_indices[0]]
+
+            for region_index in self.region_indices[1:]:
+                region_time = loaded_dfs[region_index].time.values
+                if not np.array_equal(region_time, reference_dfs.time.values):
+                    raise ValueError(
+                        "All regional datasets must have the same time coordinate"
+                    )
+            # A shared time index must refer to the same timestamp in every region.
+        else:
+            self.region_indices = None
+            reference_dfs = loaded_dfs
+
+        if self.global_coordinates_file is not None:
+            self.logger.info(
+                f"Opening global coordinates file: {self.global_coordinates_file}"
+            )
+            with xr.open_dataset(self.global_coordinates_file) as global_coordinates:
+                if "latitude" in global_coordinates:
+                    self.global_latitudes = global_coordinates["latitude"].values.copy()
+                elif "lat" in global_coordinates:
+                    self.global_latitudes = global_coordinates["lat"].values.copy()
+                else:
+                    raise ValueError(
+                        "Global coordinates file must contain a 'latitude' or 'lat' coordinate."
+                    )
+
+                if "longitude" in global_coordinates:
+                    self.global_longitudes = global_coordinates[
+                        "longitude"
+                    ].values.copy()
+                elif "lon" in global_coordinates:
+                    self.global_longitudes = global_coordinates["lon"].values.copy()
+                else:
+                    raise ValueError(
+                        "Global coordinates file must contain a 'longitude' or 'lon' coordinate."
+                    )
+
+        self.valid_region_bounds = {}
+        if (
+            self.multi_region
+            and self.global_coordinates_file is not None
+            and self.region_size is not None
+        ):
+            global_lat = np.asarray(self.global_latitudes)
+            global_lon = np.asarray(self.global_longitudes)
+            half_lat = self.batch_size_lat // 2
+            half_lon = self.batch_size_lon // 2
+
+            for position, region_size in enumerate(self.region_size):
+                region_index = self.region_indices[position]
+                active_dfs = self.loaded_dfs[region_index]
+
+                if hasattr(active_dfs, "latitude"):
+                    region_latitudes = np.asarray(active_dfs.latitude.values)
+                elif hasattr(active_dfs, "lat"):
+                    region_latitudes = np.asarray(active_dfs.lat.values)
+                else:
+                    raise AttributeError(
+                        "Regional dataset must have either 'latitude' or 'lat' coordinate."
+                    )
+
+                if hasattr(active_dfs, "longitude"):
+                    region_longitudes = np.asarray(active_dfs.longitude.values)
+                elif hasattr(active_dfs, "lon"):
+                    region_longitudes = np.asarray(active_dfs.lon.values)
+                else:
+                    raise AttributeError(
+                        "Regional dataset must have either 'longitude' or 'lon' coordinate."
+                    )
+
+                region_size_lat, region_size_lon = region_size
+                if (
+                    len(region_latitudes) != region_size_lat
+                    or len(region_longitudes) != region_size_lon
+                ):
+                    raise ValueError(
+                        f"Region {region_index} has data shape "
+                        f"({len(region_latitudes)}, {len(region_longitudes)}) but "
+                        f"region_size is ({region_size_lat}, {region_size_lon})"
+                    )
+
+                if (
+                    region_size_lat < self.batch_size_lat
+                    or region_size_lon < self.batch_size_lon
+                ):
+                    raise ValueError(
+                        f"Region {region_index} with size {region_size} is smaller "
+                        f"than batch size "
+                        f"({self.batch_size_lat}, {self.batch_size_lon})"
+                    )
+
+                first_valid_lat = region_latitudes[half_lat]
+                last_valid_lat = region_latitudes[region_size_lat - half_lat]
+                first_valid_lat_index = int(
+                    np.abs(global_lat - first_valid_lat).argmin()
+                )
+                last_valid_lat_index = int(np.abs(global_lat - last_valid_lat).argmin())
+
+                first_valid_lon = region_longitudes[half_lon]
+                last_valid_lon = region_longitudes[region_size_lon - half_lon]
+                first_valid_lon_index = int(
+                    np.abs(global_lon - first_valid_lon).argmin()
+                )
+                last_valid_lon_index = int(np.abs(global_lon - last_valid_lon).argmin())
+
+                self.valid_region_bounds[region_index] = (
+                    min(first_valid_lat_index, last_valid_lat_index),
+                    max(first_valid_lat_index, last_valid_lat_index),
+                    min(first_valid_lon_index, last_valid_lon_index),
+                    max(first_valid_lon_index, last_valid_lon_index),
+                )
+                # Cache each region's valid global-center bounds once at initialization.
+
+        self.time = reference_dfs.time
+        self.etime = len(reference_dfs["time"])
+
         self.year = self.time.dt.year
         self.month = self.time.dt.month
         self.day = self.time.dt.day
         self.hour = self.time.dt.hour
+
+        # ----------------------------------------------------------
+        # 1. Extract time components from xarray
+        # ----------------------------------------------------------
 
         # ----------------------------------------------------------
         # 2. Normalized year
@@ -823,10 +1037,56 @@ class DataPreprocessor(Dataset):
             #   0.1 to 0.2 = lightweight blending, ~30-75% more blocks
             #   0.5 = full Hann (perfect reconstruction property, ~3x more blocks)
             use_hann = self.run_type == "inference"
-            self.eval_slices = self.generate_evaluation_slices(
-                use_hann_blending=use_hann,
-                overlap_ratio=self.overlap_ratio,
-            )
+
+            if self.multi_region:
+                if use_hann:
+                    raise ValueError(
+                        "Multi-region inference is not supported; provide a single "
+                        "regional dataset for inference"
+                    )
+
+                self.eval_slices = []
+                self.eval_region_indices = []
+                # Keep historical four-value slices and track their regions separately.
+
+                for region_index in self.region_indices:
+                    region_dataset = self.loaded_dfs[region_index]
+                    latitude_name = (
+                        "latitude" if "latitude" in region_dataset.sizes else "lat"
+                    )
+                    longitude_name = (
+                        "longitude" if "longitude" in region_dataset.sizes else "lon"
+                    )
+                    region_H = region_dataset.sizes[latitude_name]
+                    region_W = region_dataset.sizes[longitude_name]
+
+                    if region_H % self.batch_size_lat != 0:
+                        raise ValueError(
+                            f"Region {region_index} latitude size {region_H} must "
+                            f"be divisible by batch_size_lat={self.batch_size_lat}"
+                        )
+                    if region_W % self.batch_size_lon != 0:
+                        raise ValueError(
+                            f"Region {region_index} longitude size {region_W} must "
+                            f"be divisible by batch_size_lon={self.batch_size_lon}"
+                        )
+                    # Exact divisibility guarantees complete, non-overlapping coverage.
+
+                    region_slices = self.generate_evaluation_slices(
+                        use_hann_blending=False,
+                        overlap_ratio=0.0,
+                        domain_H=region_H,
+                        domain_W=region_W,
+                    )
+                    self.eval_slices.extend(region_slices)
+                    self.eval_region_indices.extend([region_index] * len(region_slices))
+                    # Each local slice remains paired with its regional dataset key.
+            else:
+                self.eval_region_indices = None
+                self.eval_slices = self.generate_evaluation_slices(
+                    use_hann_blending=use_hann,
+                    overlap_ratio=self.overlap_ratio,
+                )
             # To Do: a key to add if all sbatch to taken or not
             self.sbatch = len(
                 self.eval_slices
@@ -942,6 +1202,7 @@ class DataPreprocessor(Dataset):
         # self.sample_time_steps_by_doy()
         # Also regenerate random centers for the new epoch
         self.random_centers = [None] * self.sbatch
+        self.random_region_indices = [None] * self.sbatch if self.multi_region else None
         self.last_tbatch_index = -1
 
     def sample_time_steps_by_doy(self):
@@ -1013,7 +1274,7 @@ class DataPreprocessor(Dataset):
                 for ds in datasets:
                     ds.close()
 
-    def get_center_indices_from_latlon(self, lat_value, lon_value):
+    def get_center_indices_from_latlon(self, lat_value, lon_value, dataset=None):
         """
         Convert geographic coordinates (latitude, longitude) to nearest grid indices.
 
@@ -1023,6 +1284,9 @@ class DataPreprocessor(Dataset):
             Latitude in degrees.
         lon_value : float
             Longitude in degrees.
+        dataset : xarray.Dataset or None, optional
+            Dataset whose latitude and longitude coordinates must be used.
+            When omitted, the historical self.loaded_dfs dataset is used.
 
         Returns
         -------
@@ -1040,20 +1304,23 @@ class DataPreprocessor(Dataset):
           internal batch extraction logic.
         """
 
+        active_dfs = self.loaded_dfs if dataset is None else dataset
+        # Keep the historical dataset by default, or use the selected regional one.
+
         # Retrieve latitude and longitude arrays from the dataset
-        if hasattr(self.loaded_dfs, "latitude"):
-            lat_array = self.loaded_dfs.latitude.values
-        elif hasattr(self.loaded_dfs, "lat"):
-            lat_array = self.loaded_dfs.lat.values
+        if hasattr(active_dfs, "latitude"):
+            lat_array = active_dfs.latitude.values
+        elif hasattr(active_dfs, "lat"):
+            lat_array = active_dfs.lat.values
         else:
             raise AttributeError(
                 "Dataset must have either 'latitude' or 'lat' coordinate."
             )
 
-        if hasattr(self.loaded_dfs, "longitude"):
-            lon_array = self.loaded_dfs.longitude.values
-        elif hasattr(self.loaded_dfs, "lon"):
-            lon_array = self.loaded_dfs.lon.values
+        if hasattr(active_dfs, "longitude"):
+            lon_array = active_dfs.longitude.values
+        elif hasattr(active_dfs, "lon"):
+            lon_array = active_dfs.lon.values
         else:
             raise AttributeError(
                 "Dataset must have either 'longitude' or 'lon' coordinate."
@@ -1065,7 +1332,20 @@ class DataPreprocessor(Dataset):
 
         return lat_idx, lon_idx
 
-    def generate_random_batch_centers(self, n_batches):
+    def valid_multiregional_centers(self, lat_random, lon_random):
+        """Return the region containing a complete block around a global center."""
+        for region_index, bounds in self.valid_region_bounds.items():
+            valid_lat_start, valid_lat_end, valid_lon_start, valid_lon_end = bounds
+
+            if (
+                valid_lat_start <= lat_random <= valid_lat_end
+                and valid_lon_start <= lon_random <= valid_lon_end
+            ):
+                return True, region_index
+
+        return False, None
+
+    def generate_random_batch_centers(self, n_batches, multi_regional=False):
         """
         Generate random (latitude, longitude) centers for batch sampling.
 
@@ -1073,6 +1353,9 @@ class DataPreprocessor(Dataset):
         ----------
         n_batches : int
             Number of random centers to generate.
+        multi_regional : bool, optional
+            Sample on the global grid and retain only centers contained in one
+            of the configured regions.
 
         Returns
         -------
@@ -1085,15 +1368,38 @@ class DataPreprocessor(Dataset):
         - Longitude centers can be any value due to cyclic wrapping.
         """
         centers = []
+        region_indices = []
         half_lat = self.batch_size_lat // 2
 
+        if multi_regional:
+            if self.global_latitudes is None or self.global_longitudes is None:
+                raise ValueError(
+                    "global_coordinates_file is required for multi-region sampling"
+                )
+            sampling_height = len(self.global_latitudes)
+            sampling_width = len(self.global_longitudes)
+        else:
+            sampling_height = self.H
+            sampling_width = self.W
+
         try:
-            for _ in range(n_batches):
+            while len(centers) < n_batches:
                 # Latitude: avoid poles (non-cyclic)
-                lat_center = np.random.randint(half_lat, self.H - half_lat)
+                lat_center = np.random.randint(half_lat, sampling_height - half_lat)
                 # Longitude: any (cyclic)
-                lon_center = np.random.randint(0, self.W)
+                lon_center = np.random.randint(0, sampling_width)
+
+                if multi_regional:
+                    valid_center, region_index = self.valid_multiregional_centers(
+                        lat_center, lon_center
+                    )
+                    if not valid_center:
+                        continue
+                    region_indices.append(region_index)
+
                 centers.append((lat_center, lon_center))
+
+            self.random_region_indices = region_indices if multi_regional else None
 
             if self.debug:
                 self.logger.info(
@@ -1111,6 +1417,8 @@ class DataPreprocessor(Dataset):
         self,
         use_hann_blending=False,
         overlap_ratio=0.0,
+        domain_H=None,
+        domain_W=None,
     ):
         """
         Generate deterministic spatial slices for evaluation mode.
@@ -1122,6 +1430,10 @@ class DataPreprocessor(Dataset):
             This is intended for global inference only.
         overlap_ratio : float, optional
             Fraction of each block overlapping with adjacent blocks.
+        domain_H : int or None, optional
+            Height of the domain to tile. Defaults to self.H.
+        domain_W : int or None, optional
+            Width of the domain to tile. Defaults to self.W.
 
         Returns
         -------
@@ -1129,10 +1441,14 @@ class DataPreprocessor(Dataset):
             List of (lat_start, lat_end, lon_start, lon_end) tuples.
         """
 
+        active_H = self.H if domain_H is None else domain_H
+        active_W = self.W if domain_W is None else domain_W
+        # Optional dimensions let the existing tiling logic serve each region.
+
         if not use_hann_blending:
             # Original validation behavior: keep it unchanged.
-            n_blocks_lat = self.H // self.batch_size_lat
-            n_blocks_lon = self.W // self.batch_size_lon
+            n_blocks_lat = active_H // self.batch_size_lat
+            n_blocks_lon = active_W // self.batch_size_lon
 
             # Create grid of block indices.
             lat_idx, lon_idx = np.mgrid[0:n_blocks_lat, 0:n_blocks_lon]
@@ -1165,12 +1481,12 @@ class DataPreprocessor(Dataset):
         )
 
         lat_starts = make_starts(
-            self.H,
+            active_H,
             self.batch_size_lat,
             stride_lat,
         )
         lon_starts = make_starts(
-            self.W,
+            active_W,
             self.batch_size_lon,
             stride_lon,
         )
@@ -1285,8 +1601,8 @@ class DataPreprocessor(Dataset):
         Raises
         ------
         AssertionError
-            If input tensor dimensions don't match grid dimensions or
-            if indices are invalid.
+            If the requested batch exceeds the input dimensions or if the
+            latitude indices are invalid.
 
         Notes
         -----
@@ -1297,9 +1613,14 @@ class DataPreprocessor(Dataset):
         """
         try:
             H, W = data.shape[-2:]
+            # Regional datasets may have different full-domain spatial dimensions.
+
             assert (
-                H == self.H and W == self.W
-            ), f"Input tensor shape ({H}, {W}) does not match sampler grid ({self.H}, {self.W})"
+                self.batch_size_lat <= H
+            ), f"batch height {self.batch_size_lat} exceeds input height {H}"
+            assert (
+                self.batch_size_lon <= W
+            ), f"batch width {self.batch_size_lon} exceeds input width {W}"
 
             half_lat = self.batch_size_lat // 2
             half_lon = self.batch_size_lon // 2
@@ -1310,11 +1631,9 @@ class DataPreprocessor(Dataset):
 
             # --- Sanity check (should always hold given center generation logic) ---
             assert (
-                0 <= lat_start <= self.H - self.batch_size_lat
+                0 <= lat_start <= H - self.batch_size_lat
             ), f"Invalid lat_start={lat_start}"
-            assert (
-                self.batch_size_lat <= lat_end <= self.H
-            ), f"Invalid lat_end={lat_end}"
+            assert self.batch_size_lat <= lat_end <= H, f"Invalid lat_end={lat_end}"
 
             # --- Longitude (cyclic) ---
             shift = W // 2 - ilon
@@ -1348,7 +1667,9 @@ class DataPreprocessor(Dataset):
             )
             raise
 
-    def build_fine_coarse_blocks(self, npfeatures_full, lat_center, lon_center):
+    def build_fine_coarse_blocks(
+        self, npfeatures_full, lat_center, lon_center, input_shape=None
+    ):
         """
         Build fine, optionally filtered, and coarse-resolution spatial blocks
         centered at a given location.
@@ -1361,6 +1682,8 @@ class DataPreprocessor(Dataset):
             Latitude center index.
         lon_center : int
             Longitude center index.
+        input_shape : tuple of int or None, optional
+            Coarse shape for the active domain. Falls back to self.in_shape.
 
         Returns
         -------
@@ -1395,6 +1718,9 @@ class DataPreprocessor(Dataset):
             npfeatures_full, lat_center, lon_center
         )
 
+        active_in_shape = self.in_shape if input_shape is None else input_shape
+        # Keep the historical fixed shape unless an active regional shape is supplied.
+
         if self.apply_filter:
             fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
             fine_filtered_block, filtered_indices = self.extract_batch(
@@ -1408,13 +1734,13 @@ class DataPreprocessor(Dataset):
 
             # Apply coarsening to the full domain of the filtered HR field
             coarse_full = coarse_down_up(
-                fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+                fine_filtered_full, npfeatures_full, input_shape=active_in_shape
             )
         else:
             fine_filtered_block = None
             # Apply coarsening directly to the full domain of the raw HR field
             coarse_full = coarse_down_up(
-                npfeatures_full, npfeatures_full, input_shape=self.in_shape
+                npfeatures_full, npfeatures_full, input_shape=active_in_shape
             )
 
         coarse_block, coarse_indices = self.extract_batch(
@@ -1710,6 +2036,7 @@ class DataPreprocessor(Dataset):
         - Applies multi-scale processing if apply_filter is True.
         - Normalizes data according to provided statistics.
         """
+
         if self.debug:
             self.logger.info("------------------- GET ITEM INFO -------------------")
 
@@ -1731,8 +2058,57 @@ class DataPreprocessor(Dataset):
                 f"Spatial batch index (sindex): {sindex}\n"
             )
 
+        active_dfs = self.loaded_dfs
+        active_const_vars = self.const_vars
+        local_random_center = None
+        # These defaults preserve the historical single-dataset execution path.
+
+        if (
+            self.multi_region
+            and self.mode == "train"
+            and self.run_type in ["train", "resume_train"]
+        ):
+            if self.last_tbatch_index != tbatch_index:
+                self.random_centers = self.generate_random_batch_centers(
+                    self.sbatch, multi_regional=True
+                )
+                self.last_tbatch_index = tbatch_index
+
+            assert (
+                self.random_centers[sindex] is not None
+            ), f"Random center at index {sindex} has not been generated yet."
+            assert (
+                self.random_region_indices[sindex] is not None
+            ), f"Region index at position {sindex} has not been generated yet."
+
+            global_lat_center, global_lon_center = self.random_centers[sindex]
+            region_index = self.random_region_indices[sindex]
+            active_dfs = self.loaded_dfs[region_index]
+            # The stored region index is the key of the selected regional dataset.
+            active_const_vars = self.region_const_vars[region_index]
+            # Select constants with the same key as the active weather dataset.
+
+            lat_value = self.global_latitudes[global_lat_center]
+            lon_value = self.global_longitudes[global_lon_center]
+            # Convert global grid indices back to physical coordinates.
+            local_random_center = self.get_center_indices_from_latlon(
+                lat_value, lon_value, dataset=active_dfs
+            )
+            # The resulting center is expressed on the selected regional grid.
+
+        elif self.multi_region and self.mode == "validation":
+            region_index = self.eval_region_indices[sindex]
+            active_dfs = self.loaded_dfs[region_index]
+            active_const_vars = (
+                self.region_const_vars[region_index]
+                if self.region_const_vars is not None
+                else None
+            )
+            # Validation slices select data and constants from the same region.
+
         # Load data
-        full_data_org = self.loaded_dfs.isel(time=tindex)
+        full_data_org = active_dfs.isel(time=tindex)
+        # From this point onward, processing uses a single xarray.Dataset.
 
         if hasattr(full_data_org, "latitude"):
             lat = full_data_org.latitude.values.copy()
@@ -1754,9 +2130,70 @@ class DataPreprocessor(Dataset):
                 f"Available: {list(full_data_org.coords.keys())}"
             )
 
+        local_H = len(lat)
+        local_W = len(lon)
+        # Allocate intermediate arrays from the active region's actual dimensions.
+
+        active_in_shape = self.in_shape
+        if self.coarse_resolution_deg is not None:
+            if local_H < 2 or local_W < 2:
+                raise ValueError(
+                    "At least two latitude and longitude points are required to "
+                    "derive a coarse shape"
+                )
+
+            fine_resolution_lat = float(np.median(np.abs(np.diff(lat))))
+            longitude_steps = np.abs((np.diff(lon) + 180.0) % 360.0 - 180.0)
+            fine_resolution_lon = float(np.median(longitude_steps))
+            # Derive the native grid spacing from the active region's coordinates.
+
+            active_in_shape = (
+                max(
+                    1,
+                    int(
+                        round(
+                            local_H * fine_resolution_lat / self.coarse_resolution_deg
+                        )
+                    ),
+                ),
+                max(
+                    1,
+                    int(
+                        round(
+                            local_W * fine_resolution_lon / self.coarse_resolution_deg
+                        )
+                    ),
+                ),
+            )
+            # Different regional sizes now preserve the same physical coarse resolution.
+
         # Normalize to range [-1, 1] for better neural network input stability
-        lat_norm = 2 * ((lat - lat.min()) / (lat.max() - lat.min())) - 1
-        lon_norm = 2 * ((lon - lon.min()) / (lon.max() - lon.min())) - 1
+        if self.global_latitudes is not None and self.global_longitudes is not None:
+            lat_reference = self.global_latitudes
+            lon_reference = self.global_longitudes
+            # Use one shared geographic reference for all training regions.
+        else:
+            lat_reference = lat
+            lon_reference = lon
+            # Preserve the historical local normalization without a global file.
+
+        lat_norm = (
+            2
+            * (
+                (lat - lat_reference.min())
+                / (lat_reference.max() - lat_reference.min())
+            )
+            - 1
+        )
+        lon_norm = (
+            2
+            * (
+                (lon - lon_reference.min())
+                / (lon_reference.max() - lon_reference.min())
+            )
+            - 1
+        )
+        # The same physical coordinate now receives the same value in every region.
 
         # 2D meshgrids of normalized latitude and longitude (shape: H x W)
         lat_grid, lon_grid = np.meshgrid(lat_norm, lon_norm, indexing="ij")
@@ -1803,14 +2240,17 @@ class DataPreprocessor(Dataset):
 
                 lat_start, lat_end, lon_start, lon_end = lat_indices
 
-                npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+                npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
                 for var_name in self.varnames_list:
                     iv = self.index_mapping[var_name]
                     npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
                 fine_block, fine_filtered_block, coarse, fine_indices = (
                     self.build_fine_coarse_blocks(
-                        npfeatures_full, lat_center, lon_center
+                        npfeatures_full,
+                        lat_center,
+                        lon_center,
+                        input_shape=active_in_shape,
                     )
                 )
 
@@ -1820,7 +2260,7 @@ class DataPreprocessor(Dataset):
                 lon_batch = lon_grid[lat_start:lat_end, lon_start:lon_end]
 
                 # Extract data for all variables into the WHOLE spatial domain first (same as training)
-                npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+                npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
                 for i, var_name in enumerate(self.varnames_list):
                     npfeatures_full[i, :, :] = full_data_org[var_name].values
 
@@ -1847,12 +2287,16 @@ class DataPreprocessor(Dataset):
 
                     # Apply coarsening to the full domain of the filtered HR field
                     coarse_full = coarse_down_up(
-                        fine_filtered_full, npfeatures_full, input_shape=self.in_shape
+                        fine_filtered_full,
+                        npfeatures_full,
+                        input_shape=active_in_shape,
                     )
                 else:
                     # Apply coarsening directly to the full domain of the raw HR field
                     coarse_full = coarse_down_up(
-                        npfeatures_full, npfeatures_full, input_shape=self.in_shape
+                        npfeatures_full,
+                        npfeatures_full,
+                        input_shape=active_in_shape,
                     )
 
                 coarse_block = coarse_full[:, lat_start:lat_end, lon_start:lon_end]
@@ -1900,13 +2344,18 @@ class DataPreprocessor(Dataset):
 
             lat_start, lat_end, lon_start, lon_end = lat_indices
 
-            npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+            npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
             for var_name in self.varnames_list:
                 iv = self.index_mapping[var_name]
                 npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
             fine_block, fine_filtered_block, coarse, fine_indices = (
-                self.build_fine_coarse_blocks(npfeatures_full, lat_center, lon_center)
+                self.build_fine_coarse_blocks(
+                    npfeatures_full,
+                    lat_center,
+                    lon_center,
+                    input_shape=active_in_shape,
+                )
             )
 
             assert fine_indices == lat_indices, (
@@ -1914,17 +2363,25 @@ class DataPreprocessor(Dataset):
                 f"  lat/lon indices: {lat_indices}\n"
                 f"  data indices: {fine_indices}"
             )
-
         else:  # train (global)
             # Random spatial sampling for training
-            if self.last_tbatch_index != tbatch_index:
-                self.random_centers = self.generate_random_batch_centers(self.sbatch)
-                self.last_tbatch_index = tbatch_index
+            if self.multi_region:
+                assert (
+                    local_random_center is not None
+                ), "Local random center was not resolved for multi-region training."
+                lat_center, lon_center = local_random_center
+                # Extraction functions must receive indices on the local grid.
+            else:
+                if self.last_tbatch_index != tbatch_index:
+                    self.random_centers = self.generate_random_batch_centers(
+                        self.sbatch
+                    )
+                    self.last_tbatch_index = tbatch_index
 
-            assert (
-                self.random_centers[sindex] is not None
-            ), f"Random center at index {sindex} has not been generated yet."
-            lat_center, lon_center = self.random_centers[sindex]
+                assert (
+                    self.random_centers[sindex] is not None
+                ), f"Random center at index {sindex} has not been generated yet."
+                lat_center, lon_center = self.random_centers[sindex]
             self.center_tracker.append((lat_center, lon_center))
 
             if self.debug:
@@ -1944,13 +2401,18 @@ class DataPreprocessor(Dataset):
             )
 
             # Extract data for all variables into a NumPy array (full domain)
-            npfeatures_full = np.zeros([len(self.varnames_list), self.H, self.W])
+            npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
             for var_name in self.varnames_list:
                 iv = self.index_mapping[var_name]
                 npfeatures_full[iv, :, :] = full_data_org[var_name].values
 
             fine_block, fine_filtered_block, coarse, fine_indices = (
-                self.build_fine_coarse_blocks(npfeatures_full, lat_center, lon_center)
+                self.build_fine_coarse_blocks(
+                    npfeatures_full,
+                    lat_center,
+                    lon_center,
+                    input_shape=active_in_shape,
+                )
             )
 
             assert fine_indices == lat_indices, (
@@ -2078,9 +2540,9 @@ class DataPreprocessor(Dataset):
             self.logger.info(f"  Feature composition before constants: {feature.shape}")
 
         if self.constant_variables is not None:
-            assert self.const_vars is not None, (
+            assert active_const_vars is not None, (
                 f"Constant variables {self.constant_variables} were specified "
-                f"but const_vars could not be loaded. Please check the file path and variable names."
+                f"but active_const_vars could not be loaded. Please check the file paths and variable names."
             )
 
             if self.mode == "validation":
@@ -2091,7 +2553,7 @@ class DataPreprocessor(Dataset):
                     # we can have mode validation and run_type train_regional at the same time.
                     # For inference_regional, use extract_batch
                     const_batch, const_indices = self.extract_batch(
-                        self.const_vars, lat_center, lon_center
+                        active_const_vars, lat_center, lon_center
                     )
                     assert const_indices == lat_indices, (
                         f"Indices mismatch for constant variables:\n"
@@ -2101,13 +2563,13 @@ class DataPreprocessor(Dataset):
 
                 else:  # validation, inference_global
                     # For evaluation, use direct slicing
-                    const_batch = self.const_vars[
+                    const_batch = active_const_vars[
                         :, lat_start:lat_end, lon_start:lon_end
                     ]
             else:
                 # For training (global or regional), use extract_batch
                 const_batch, const_indices = self.extract_batch(
-                    self.const_vars, lat_center, lon_center
+                    active_const_vars, lat_center, lon_center
                 )
                 assert const_indices == lat_indices, (
                     f"Indices mismatch for constant variables:\n"

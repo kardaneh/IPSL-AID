@@ -10,7 +10,6 @@ if ! command -v ipsl-aid &> /dev/null; then
 fi
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-
 # ======================
 # 0. Unified Debug Flag
 # ======================
@@ -27,7 +26,7 @@ TODAY=$(date +"%Y%m%d_%H%M%S")
 #MACHINE="DALIA"        # on Dalia
 #MACHINE="LEONARDO"    # on LEONARDO
 #MACHINE="HAL"         # on HAL
-MACHINE="AUSTRAL"     # on AUSTRAL
+MACHINE="DALIA"     # on DALIA
 
 # ======================
 # Machine-specific configurations
@@ -41,23 +40,40 @@ if [ "$MACHINE" == "DALIA" ]; then
     SLURM_NODES=1
     SLURM_NTASKS_PER_NODE=1
     SLURM_CPUS_PER_TASK=36
-    SLURM_TIME="12:00:00"
+    SLURM_TIME="24:00:00"
     SLURM_DEBUG_TIME="00:30:00"
 
     # Dalia-specific training parameters
-    BATCH_SIZE=64     # Maximum batch size for Dalia (1 GPU)
+    BATCH_SIZE=32     # Maximum batch size for Dalia (1 GPU)
     NUM_WORKERS=0     # Workers per GPU
 
     # Environment activation for Dalia
     ENV_ACTIVATE_CMD="source /lustre/work/pdl18162/udl8a60dc/miniforge3/etc/profile.d/conda.sh && conda activate ipsl-aid"
     MODULE_LOAD_CMD="module load gcc/14.2.0 && module load slurm/slurm/24.11 && module load cuda13.1/toolkit"
     # Data paths for Dalia
-    datadir="/lustre/work/pdl18162/udl8a60dc/data_ST_sliced"
-    per_var_datadir=(
-      "VAR_ST=/lustre/work/pdl18162/udl8a60dc/data_ST_sliced"
+
+    # The required --datadir has no role when --region_datadirs is provided.
+    datadir=""
+    # per_var_datadir=()  # Not used: each regional file contains VAR_ST.
+    region_datadirs=(
+      "/lustre/work/pdl18162/udl8a60dc/data_ST_western_sliced"
+      "/lustre/work/pdl18162/udl8a60dc/data_ST_carribean_sliced"
     )
+    region_constants_files=(
+      "/lustre/work/pdl18162/udl8a60dc/data_ST_western_sliced/ESA_constants_sliced.nc"
+      "/lustre/work/pdl18162/udl8a60dc/data_ST_carribean_sliced/ESA_constants_caribbean_360x480.nc"
+    )
+    global_coordinates_file="$PROJECT_ROOT/data/global_coordinates.nc"
+    # constant_varnames_file is replaced by region_constants_files.
+    constant_varnames_file=""
     dynamic_covariates_dir="../data_covariates/"
-    constant_varnames_file="/lustre/work/pdl18162/udl8a60dc/data_ST_sliced/ESA_constants_sliced.nc"
+
+    #datadir="/lustre/work/pdl18162/udl8a60dc/data_ST_sliced"
+    #per_var_datadir=(
+    #  "VAR_ST=/lustre/work/pdl18162/udl8a60dc/data_ST_sliced"
+    #)
+    #dynamic_covariates_dir="../data_covariates/"
+    #constant_varnames_file="/lustre/work/pdl18162/udl8a60dc/data_ST_sliced/ESA_constants_sliced.nc"
 
 elif [ "$MACHINE" == "LEONARDO" ]; then
     # LEONARDO-specific settings
@@ -179,18 +195,18 @@ fi
 run_type="train" # "train", ""train_regional"
 
 region="Europe" # Only for run_type="train_regional"
-region_size=("288" "720") # Only for run_type="train_regional"
-
-coarse_input_shape=("143" "144")  # Coarse resolution used for down/up sampling "80" "128", "143" "144" for CMIP6
+region_center=("-17" "50" "12" "-64")
+region_size=("840" "1200" "360" "480")   # Only for run_type="train_regional"
+coarse_resolution_deg=1.0   # Coarse resolution in degree used for down/up sampling "80" "128"
 
 overlap_ratio=0.0 # 0.02 during inference
 
 save_model=true
-save_checkpoint_name="diffusion"
-load_checkpoint_name="diffusion"
+save_checkpoint_name="sst_diffusion_model"
+load_checkpoint_name="sst_diffusion_model"
 save_per_samples=10000
 
-year_start=2015
+year_start=2011
 year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
@@ -208,8 +224,8 @@ time_normalization="cos_sin"
 varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
 constant_varnames_list=("z" "lsm")
 
-normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard" "VAR_D2M=standard" "VAR_ST=standard")
-units_list=("K" "m/s" "m/s" "m/h" "K" "K")
+normalization_types=("VAR_ST=standard")
+units_list=("K")
 dynamic_covariates=()
 
 sbatch=12 #12 # 60 percent of the total blocks ot the domain
@@ -237,8 +253,8 @@ channel_mult_noise=1
 if [[ "$arch" == "adm" ]]; then
     model_channels=128
     channel_mult=(1 2 3 4)
-    num_blocks=2 #3
-    attn_resolutions=(32 16 8) #(30 15)
+    num_blocks=2
+    attn_resolutions=(30 15) #(32 16 8)
 elif [[ "$arch" == "ddpmpp" ]]; then
     model_channels=128
     channel_mult=(1 2 2 2)   #(2 2 2)
@@ -273,7 +289,7 @@ else  # for diffusion-based arch
     cond_channels=$model_input_channels
 fi
 
-out_channels=6 # number of variables
+out_channels=${#varnames_list[@]} # number of variables
 inference_type="sampler" # "direct" for unet, "sampler" for diffusion
 
 compute_crps=false
@@ -290,6 +306,33 @@ sigma_max=80.0
 rho=7
 s_churn=40
 solver="heun"
+
+# Sampler Parameters
+num_steps=10          # int   > 0                  (number of sampling steps)
+sigma_min=0.002       # float or "None"           (auto-selected per discretization if "None")
+sigma_max=80.0        # float or "None"           (auto-selected per discretization if "None")
+rho=7                 # float > 0                 (EDM time-step exponent)
+solver="heun"         # "heun" | "euler"
+
+# Sampler — Stochasticity
+s_churn=40            # float >= 0                (stochasticity strength)
+s_min=0               # float                     (min sigma for stochasticity)
+s_max=inf             # float                     (max sigma for stochasticity)
+s_noise=1.0           # float >= 0                (noise scale for stochasticity)
+
+# Sampler — Discretization / Schedule / Scaling
+discretization="edm"     # "vp" | "ve" | "iddpm" | "edm"
+schedule="linear"        # "vp" | "ve" | "linear"
+scaling="none"         # "vp" | "none"
+
+# Sampler — VP / IDDPM coefficients
+epsilon_s=1e-3        # float > 0                 (VP / IDDPM small-time offset)
+C_1=0.001             # float > 0                 (IDDPM clip lower bound)
+C_2=0.008             # float > 0                 (IDDPM schedule shape)
+M=1000                # int   > 0                 (IDDPM discretization intervals)
+
+# Sampler — Heun 2nd-order correction
+alpha=1.0             # float > 0                 (interpolation weight in Heun step)
 
 
 # Add apply_filter parameter
@@ -309,7 +352,7 @@ base_parts+=("norm_${time_normalization}")
 base_parts+=("lat${batch_size_lat}")
 base_parts+=("lon${batch_size_lon}")
 base_parts+=("vars${#varnames_list[@]}")
-base_parts+=("${coarse_input_shape[0]}x${coarse_input_shape[1]}")
+base_parts+=("coarse_reso${coarse_resolution_deg}")
 base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
@@ -330,7 +373,7 @@ base_parts+=("in${in_channels}")
 #    base_parts+=("noise${channel_mult_noise}")
 #fi
 
-if [[ "$precond" == "edm" ]]; then
+if [[ "$precond" != "unet" ]]; then
     base_parts+=("cond${cond_channels}")
 fi
 
@@ -350,14 +393,14 @@ sigma_min_str="${sigma_min//./d}"
 sigma_max_str="${sigma_max//./d}"
 rho_str="${rho//./d}"
 
-if [[ "$inference_type" == "sampler" ]]; then
-    train_parts+=("steps${num_steps}")
-    train_parts+=("sigmin${sigma_min_str}")
-    train_parts+=("sigmax${sigma_max_str}")
-    train_parts+=("rho${rho_str}")
-    train_parts+=("s_churn${s_churn}")
-    train_parts+=("solver_${solver}")
-fi
+#if [[ "$inference_type" == "sampler" ]]; then
+#    train_parts+=("steps${num_steps}")
+#    train_parts+=("sigmin${sigma_min_str}")
+#    train_parts+=("sigmax${sigma_max_str}")
+#    train_parts+=("rho${rho_str}")
+#    train_parts+=("s_churn${s_churn}")
+#    train_parts+=("solver_${solver}")
+#fi
 
 # Add checkpoint info to model name if not training from scratch
 if [[ "$run_type" == "resume_train" || "$run_type" == "inference" ]]; then
@@ -385,7 +428,6 @@ prefix="run_${TODAY}"
 # ======================
 # Generate SBATCH Script Only (removed run script)
 # ======================
-# PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 sbatch_script="$PROJECT_ROOT/slurm/sbatch_${save_checkpoint_name}_${main_folder}_${sub_folder}.sh"
 
 # Create slurm_io directory if it doesn't exist
@@ -397,7 +439,7 @@ mkdir -p "$PROJECT_ROOT/slurm_io"
 
 cat > $sbatch_script <<EOF
 #!/bin/bash
-#SBATCH --job-name=${save_checkpoint_name}_${tag}
+#SBATCH --job-name=${save_checkpoint_name}
 EOF
 
 # Add account only if set
@@ -434,8 +476,8 @@ if [ "$MACHINE" != "DALIA" ]; then
 fi
 
 cat >> $sbatch_script <<EOF
-#SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.err
-#SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_${tag}_%j.out
+#SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_%j.err
+#SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_%j.out
 
 ulimit -s unlimited
 module purge
@@ -460,7 +502,7 @@ echo ""
 echo "=== Job Info ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
-echo "In shape / coarse resolution: ${coarse_input_shape[@]}"
+echo "Coarse resolution: $coarse_resolution_deg degrees"
 echo "Inference type: $inference_type"
 echo "Node list: \${SLURM_NODELIST}"
 echo "Job ID: \${SLURM_JOB_ID}"
@@ -501,28 +543,32 @@ ipsl-aid \\
     --in_channels "$in_channels" \\
     --out_channels "$out_channels" \\
     --apply_filter $apply_filter \\
-    --in_shape ${coarse_input_shape[@]} \\
     --overlap_ratio "$overlap_ratio" \\
 EOF
 
-# Add cond_channels only for EDM
-[[ "$precond" == "edm" ]] && echo "    --cond_channels \"$cond_channels\" \\" >> $sbatch_script
+# Add cond_channels only for EDM/vp/ve
+[[ "$precond" != "unet" ]] && echo "    --cond_channels \"$cond_channels\" \\" >> $sbatch_script
 
 # Add optional parameters
 [ -n "$pretrained_path" ] && echo "    --pretrained_path \"$pretrained_path\" \\" >> $sbatch_script
 [ -n "$model_name" ] && echo "    --model_name \"$model_name\" \\" >> $sbatch_script
 
 # Regional only
-if [[ "$run_type" == "train_regional" || "$run_type" == "inference_regional" ]]; then
-    [ -n "$region" ] && echo "    --region \"$region\" \\" >> $sbatch_script
+if [[ "$run_type" == "train_regional" || "$run_type" == "inference_regional" || ${#region_datadirs[@]} -gt 0 ]]; then
+    [[ "$run_type" == "train_regional" || "$run_type" == "inference_regional" ]] && [ -n "$region" ] && echo "    --region \"$region\" \\" >> $sbatch_script
+    [ ${#region_center[@]} -gt 0 ] && echo "    --region_center ${region_center[@]} \\" >> $sbatch_script
     [ ${#region_size[@]} -gt 0 ] && echo "    --region_size ${region_size[@]} \\" >> $sbatch_script
+    [ ${#region_datadirs[@]} -gt 0 ] && echo "    --region_datadirs ${region_datadirs[@]} \\" >> $sbatch_script
+    [ ${#region_constants_files[@]} -gt 0 ] && echo "    --region_constants_files ${region_constants_files[@]} \\" >> $sbatch_script
+    [ -n "$global_coordinates_file" ] && echo "    --global_coordinates_file \"$global_coordinates_file\" \\" >> $sbatch_script
+    [ -n "$coarse_resolution_deg" ] && echo "    --coarse_resolution_deg \"$coarse_resolution_deg\" \\" >> $sbatch_script
 fi
 
 # Add arrays
 [ ${#varnames_list[@]} -gt 0 ] && echo "    --varnames_list ${varnames_list[@]} \\" >> $sbatch_script
 [ ${#normalization_types[@]} -gt 0 ] && echo "    --normalization_types ${normalization_types[@]} \\" >> $sbatch_script
 [ ${#constant_varnames_list[@]} -gt 0 ] && echo "    --constant_varnames_list ${constant_varnames_list[@]} \\" >> $sbatch_script
-echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $sbatch_script
+[ -n "$constant_varnames_file" ] && echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $sbatch_script
 [ ${#units_list[@]} -gt 0 ] && echo "    --units_list ${units_list[@]} \\" >> $sbatch_script
 [ ${#dynamic_covariates[@]} -gt 0 ] && echo "    --dynamic_covariates ${dynamic_covariates[@]} \\" >> $sbatch_script
 
@@ -536,7 +582,6 @@ cat >> $sbatch_script <<EOF
     --learning_rate "$learning_rate" \\
     --num_workers "$num_workers" \\
     --datadir "$datadir" \\
-    --per_var_datadir ${per_var_datadir[@]} \\
     --time_normalization "$time_normalization" \\
     --tbatch "$tbatch" \\
     --sbatch "$sbatch" \\
@@ -547,7 +592,6 @@ cat >> $sbatch_script <<EOF
     --margin "$margin" \\
     --dynamic_covariates_dir "$dynamic_covariates_dir" \\
     --dtype "$dtype" \\
-    --num_steps "$num_steps" \\
     --model_channels "$model_channels" \\
     --channel_mult ${channel_mult[@]} \\
     --num_blocks "$num_blocks" \\
@@ -558,11 +602,23 @@ cat >> $sbatch_script <<EOF
     --decoder_type "$decoder_type" \\
     --resample_filter ${resample_filter[@]} \\
     --channel_mult_noise "$channel_mult_noise" \\
+    --num_steps "$num_steps" \\
     --sigma_min "$sigma_min" \\
     --sigma_max "$sigma_max" \\
     --rho "$rho" \\
-    --s_churn "$s_churn" \\
     --solver "$solver" \\
+    --s_churn "$s_churn" \\
+    --s_min "$s_min" \\
+    --s_max "$s_max" \\
+    --s_noise "$s_noise" \\
+    --discretization "$discretization" \\
+    --schedule "$schedule" \\
+    --scaling "$scaling" \\
+    --epsilon_s "$epsilon_s" \\
+    --C_1 "$C_1" \\
+    --C_2 "$C_2" \\
+    --M "$M" \\
+    --alpha "$alpha" \\
     --compute_crps "$compute_crps"
 
 exit \$?
@@ -576,7 +632,7 @@ chmod +x $sbatch_script
 echo "=== Setup Complete ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
-echo "In shape / coarse resolution: ${coarse_input_shape[@]}"
+echo "Coarse resolution: $coarse_resolution_deg degrees"
 echo "Inference type: $inference_type"
 echo "Run type: $run_type"
 echo "Save model: $save_model"

@@ -23,10 +23,10 @@ TODAY=$(date +"%Y%m%d_%H%M%S")
 # 1. Machine Selection
 # ======================
 # Uncomment the machine you're using:
-#MACHINE="DALIA"        # on Dalia
+MACHINE="DALIA"        # on Dalia
 #MACHINE="LEONARDO"    # on LEONARDO
 #MACHINE="HAL"         # on HAL
-MACHINE="DALIA"     # on DALIA
+#MACHINE="AUSTRAL"     # on AUSTRAL
 
 # ======================
 # Machine-specific configurations
@@ -214,24 +214,24 @@ year_end_test=2020 #2020
 batch_size=$BATCH_SIZE
 num_workers=$NUM_WORKERS
 
-num_epochs=10
+num_epochs=40
 learning_rate=0.0001
 
 per_var_coarse_datadir=()
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP" "VAR_D2M" "VAR_ST")
-constant_varnames_list=("z" "lsm")
+varnames_list=("VAR_ST")
+constant_varnames_list=("lsm")
 
 normalization_types=("VAR_ST=standard")
 units_list=("K")
 dynamic_covariates=()
 
-sbatch=12 #12 # 60 percent of the total blocks ot the domain
+sbatch=20 #12 # 60 percent of the total blocks ot the domain
 tbatch=1800
-batch_size_lat=145
-batch_size_lon=361
+batch_size_lat=120
+batch_size_lon=240
 
 epsilon=0.02
 beta=1.0

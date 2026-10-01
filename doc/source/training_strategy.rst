@@ -1,6 +1,13 @@
 Training Strategy
 =================
+IPSL-AID can be employed for both **regional** and **global** training.
+In the global setting, spatial blocks are drawn freely across the entire
+domain, whereas in the regional setting the sampling is constrained so
+that every block lies entirely inside one of the user-specified regions.
 
+
+Random Block Sampling for global training
+-----------------------------------------
 Training is performed **globally**, using a **random block strategy**:
 
 - Spatial blocks are randomly sampled across the globe
@@ -10,9 +17,6 @@ Training is performed **globally**, using a **random block strategy**:
 
 This design allows a single model to learn global dynamics while remaining usable
 for regional inference.
-
-Random Block Sampling
----------------------
 
 During each training epoch, :math:`s` spatial blocks of size :math:`144\times360`
 are generated, with block centers placed randomly. The longitude of each block
@@ -28,6 +32,60 @@ boundaries.
 Several values for the number of spatial blocks per epoch (:math:`s=6`, 9, and 12)
 were evaluated, and using 12 blocks was identified as an effective balance
 between computational efficiency and spatial diversity.
+
+Multi-Region Random Block Sampling
+----------------------------------
+IPSL-AID model can be trained on several regions simultaneously. In this case,  the random
+block sampler is restricted so that **every sampled block lies entirely
+inside one of the regions specified by the user**. This prevents the model
+from being trained on blocks that straddle the boundary between a region
+and its surrounding area, or on blocks that fall in a region that is not
+part of the training domain.
+
+The procedure relies on three ingredients:
+
+1. **Global coordinate reference**
+   A global latitude/longitude grid (provided through
+   ``global_coordinates_file``) defines the reference frame in which
+   random centers are drawn.
+
+2. **Per-region validity bounds**
+   For each region, the set of *valid block centers* on the global grid is
+   precomputed. A center :math:`(i_{\text{lat}}, i_{\text{lon}})` is valid
+   for a region if a full block of size
+   :math:`({\rm batch_{size}^{lat}, batch_{size}^{lon}})` centered on
+   it is entirely contained in that region. These bounds are cached once
+   at initialization in ``valid_region_bounds``.
+
+3. **Rejection sampling**
+   At each training step, random centers are drawn uniformly on the global
+   grid. A center is **accepted only if it belongs to the valid bounds of
+   at least one region**, otherwise it is rejected and a new center is
+   drawn. The region that contains the accepted center is stored alongside
+   it, so that the corresponding regional dataset and its constant
+   variables can be retrieved later.
+
+Mathematically, a candidate center :math:`(i_{\text{lat}}, i_{\text{lon}})` is
+accepted if there exists a region :math:`r` with valid latitude bounds
+:math:`[i_{\text{lat}}^{\min,r}, i_{\text{lat}}^{\max,r}]` and valid
+longitude bounds
+:math:`[i_{\text{lon}}^{\min,r}, i_{\text{lon}}^{\max,r}]` such that:
+
+.. math::
+
+   i_{\text{lat}}^{\min,r} \;\le\; i_{\text{lat}} \;\le\; i_{\text{lat}}^{\max,r}
+   \quad\text{and}\quad
+   i_{\text{lon}}^{\min,r} \;\le\; i_{\text{lon}} \;\le\; i_{\text{lon}}^{\max,r}.
+
+If the candidate satisfies this condition, the sampler records both the
+global center and the index of the region :math:`r`. The block is then
+extracted from the regional dataset associated with :math:`r`, after
+mapping the global center back to the regional grid using
+``get_center_indices_from_latlon``. This guarantees that:
+
+- the block is spatially consistent with the region it belongs to;
+- the correct regional constants (topography, land–sea mask, …) are
+  attached to the sample.
 
 Coarse-Down-Up Procedure
 ------------------------

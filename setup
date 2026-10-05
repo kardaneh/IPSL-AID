@@ -23,8 +23,8 @@ TODAY=$(date +"%Y%m%d_%H%M%S")
 # 1. Machine Selection
 # ======================
 # Uncomment the machine you're using:
-MACHINE="DALIA"        # on Dalia
-#MACHINE="LEONARDO"    # on LEONARDO
+#MACHINE="DALIA"        # on Dalia
+MACHINE="LEONARDO"    # on LEONARDO
 #MACHINE="HAL"         # on HAL
 #MACHINE="AUSTRAL"     # on AUSTRAL
 
@@ -77,7 +77,7 @@ if [ "$MACHINE" == "DALIA" ]; then
 
 elif [ "$MACHINE" == "LEONARDO" ]; then
     # LEONARDO-specific settings
-    SLURM_ACCOUNT="EUHPC_D27_095"
+    SLURM_ACCOUNT="EUHPC_D36_053"
     SLURM_PARTITION="boost_usr_prod"
     SLURM_QOS="boost_qos_bprod"
     SLURM_GRES=4
@@ -96,15 +96,14 @@ elif [ "$MACHINE" == "LEONARDO" ]; then
     MODULE_LOAD_CMD=""
 
     # Data paths for LEONARDO
-    datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+    datadir="/leonardo_work/EUHPC_D36_053/kkingston/data/data_FOURxDaily"
     per_var_datadir=(
-      "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-      "VAR_10U=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-      "VAR_10V=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
-      "VAR_TP=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_tp"
-      "VAR_D2M=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_d2m_sstk"
-      "VAR_ST=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily_st"
+      "VAR_2T.fine=/leonardo_work/EUHPC_D36_053/kkingston/data/data_FOURxDaily"
+      "VAR_10U.fine=/leonardo_work/EUHPC_D36_053/kkingston/data/data_FOURxDaily"
+      "VAR_10V.fine=/leonardo_work/EUHPC_D36_053/kkingston/data/data_FOURxDaily"
+      "VAR_TP.fine=/leonardo_work/EUHPC_D36_053/kkingston/data/data_FOURxDaily_tp_3hmean"
     )
+    constant_varnames_file="/leonardo_work/EUHPC_D36_053/kkingston/data/data_FOURxDaily/ERA5_const_sfc_variables.nc"
     dynamic_covariates_dir="../data_covariates/"
 
 elif [ "$MACHINE" == "HAL" ]; then
@@ -172,12 +171,10 @@ elif [ "$MACHINE" == "AUSTRAL" ]; then
     # Data paths for AUSTRAL
     datadir="/home/2026044/PARTAGE/data_FOURxDaily"
     per_var_datadir=(
-      "VAR_2T=/home/2026044/PARTAGE/data_FOURxDaily"
-      "VAR_10U=/home/2026044/PARTAGE/data_FOURxDaily"
-      "VAR_10V=/home/2026044/PARTAGE/data_FOURxDaily"
-      "VAR_TP=/home/2026044/PARTAGE/data_FOURxDaily_tp_3hmean"
-      "VAR_D2M=/home/2026044/PARTAGE/data/data_d2m_sstk"
-      "VAR_ST=/home/2026044/PARTAGE/data/data_st"
+      "VAR_2T.fine=/home/2026044/PARTAGE/data/data_FOURxDaily"
+      "VAR_10U.fine=/home/2026044/PARTAGE/data/data_FOURxDaily"
+      "VAR_10V.fine=/home/2026044/PARTAGE/data/data_FOURxDaily"
+      "VAR_TP.fine=/home/2026044/PARTAGE/data/data_FOURxDaily_tp_3hmean"
     )
     constant_varnames_file="/home/2026044/PARTAGE/data/data_FOURxDaily/ERA5_const_sfc_variables.nc"
     dynamic_covariates_dir="../data_covariates/"
@@ -199,14 +196,16 @@ region_center=("-17" "50" "12" "-64")
 region_size=("840" "1200" "360" "480")   # Only for run_type="train_regional"
 coarse_resolution_deg=1.0   # Coarse resolution in degree used for down/up sampling "80" "128"
 
+coarse_input_shape=("143" "144")  # Coarse resolution used for down/up sampling "80" "128", "143" "144" for CMIP6
+
 overlap_ratio=0.0 # 0.02 during inference
 
 save_model=true
-save_checkpoint_name="sst_diffusion_model"
-load_checkpoint_name="sst_diffusion_model"
+save_checkpoint_name="diffusion_model"
+load_checkpoint_name="diffusion_model"
 save_per_samples=10000
 
-year_start=2011
+year_start=2015
 year_end=2019
 year_start_test=2020 #2020
 year_end_test=2020 #2020
@@ -214,24 +213,22 @@ year_end_test=2020 #2020
 batch_size=$BATCH_SIZE
 num_workers=$NUM_WORKERS
 
-num_epochs=40
+num_epochs=10
 learning_rate=0.0001
-
-per_var_coarse_datadir=()
 
 time_normalization="cos_sin"
 
-varnames_list=("VAR_ST")
-constant_varnames_list=("lsm")
+varnames_list=("VAR_2T" "VAR_10U" "VAR_10V" "VAR_TP")
+constant_varnames_list=("z" "lsm")
 
-normalization_types=("VAR_ST=standard")
-units_list=("K")
+normalization_types=("VAR_2T=standard" "VAR_10U=standard" "VAR_10V=standard" "VAR_TP=log1p_standard")
+units_list=("K" "m/s" "m/s" "m/h")
 dynamic_covariates=()
 
-sbatch=20 #12 # 60 percent of the total blocks ot the domain
+sbatch=12 #12 # 60 percent of the total blocks ot the domain
 tbatch=1800
-batch_size_lat=120
-batch_size_lon=240
+batch_size_lat=145
+batch_size_lon=361
 
 epsilon=0.02
 beta=1.0
@@ -254,7 +251,7 @@ if [[ "$arch" == "adm" ]]; then
     model_channels=128
     channel_mult=(1 2 3 4)
     num_blocks=2
-    attn_resolutions=(30 15) #(32 16 8)
+    attn_resolutions=(32 16 8) #(30 15)
 elif [[ "$arch" == "ddpmpp" ]]; then
     model_channels=128
     channel_mult=(1 2 2 2)   #(2 2 2)
@@ -299,16 +296,8 @@ if [[ "$compute_crps" == true && "$inference_type" != "sampler" ]]; then
     compute_crps=false
 fi
 
-# EDM Sampler Parameters
-num_steps=10
-sigma_min=0.002
-sigma_max=80.0
-rho=7
-s_churn=40
-solver="heun"
-
 # Sampler Parameters
-num_steps=10          # int   > 0                  (number of sampling steps)
+num_steps=10          # int   > 0                 (number of sampling steps)
 sigma_min=0.002       # float or "None"           (auto-selected per discretization if "None")
 sigma_max=80.0        # float or "None"           (auto-selected per discretization if "None")
 rho=7                 # float > 0                 (EDM time-step exponent)
@@ -323,7 +312,7 @@ s_noise=1.0           # float >= 0                (noise scale for stochasticity
 # Sampler — Discretization / Schedule / Scaling
 discretization="edm"     # "vp" | "ve" | "iddpm" | "edm"
 schedule="linear"        # "vp" | "ve" | "linear"
-scaling="none"         # "vp" | "none"
+scaling="none"           # "vp" | "none"
 
 # Sampler — VP / IDDPM coefficients
 epsilon_s=1e-3        # float > 0                 (VP / IDDPM small-time offset)
@@ -337,6 +326,11 @@ alpha=1.0             # float > 0                 (interpolation weight in Heun 
 
 # Add apply_filter parameter
 apply_filter=false
+
+# Add coarse input configuration
+already_coarse=false
+# false: derive coarse from fine using down/up sampling
+# true: external coarse dataset is already at coarse resolution
 
 # ======================
 # Generate Tag and Output Paths
@@ -352,7 +346,8 @@ base_parts+=("norm_${time_normalization}")
 base_parts+=("lat${batch_size_lat}")
 base_parts+=("lon${batch_size_lon}")
 base_parts+=("vars${#varnames_list[@]}")
-base_parts+=("coarse_reso${coarse_resolution_deg}")
+base_parts+=("${coarse_input_shape[0]}x${coarse_input_shape[1]}")
+#base_parts+=("coarse_reso${coarse_resolution_deg}")
 base_parts+=("dt${dtype}")
 base_parts+=("arch${arch}")
 base_parts+=("pre${precond}")
@@ -479,6 +474,9 @@ cat >> $sbatch_script <<EOF
 #SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_%j.err
 #SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_%j.out
 
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
+
 ulimit -s unlimited
 module purge
 
@@ -502,6 +500,7 @@ echo ""
 echo "=== Job Info ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "In shape: ${coarse_input_shape[@]}"
 echo "Coarse resolution: $coarse_resolution_deg degrees"
 echo "Inference type: $inference_type"
 echo "Node list: \${SLURM_NODELIST}"
@@ -543,6 +542,8 @@ ipsl-aid \\
     --in_channels "$in_channels" \\
     --out_channels "$out_channels" \\
     --apply_filter $apply_filter \\
+    --already_coarse $already_coarse \\
+    --in_shape ${coarse_input_shape[@]} \\
     --overlap_ratio "$overlap_ratio" \\
 EOF
 
@@ -571,6 +572,11 @@ fi
 [ -n "$constant_varnames_file" ] && echo "    --constant_varnames_file \"$constant_varnames_file\" \\" >> $sbatch_script
 [ ${#units_list[@]} -gt 0 ] && echo "    --units_list ${units_list[@]} \\" >> $sbatch_script
 [ ${#dynamic_covariates[@]} -gt 0 ] && echo "    --dynamic_covariates ${dynamic_covariates[@]} \\" >> $sbatch_script
+
+# Add per-variable fine/coarse data directories when provided
+if [ ${#per_var_datadir[@]} -gt 0 ]; then
+    echo "    --per_var_datadir ${per_var_datadir[@]} \\" >> $sbatch_script
+fi
 
 cat >> $sbatch_script <<EOF
     --year_start "$year_start" \\
@@ -632,6 +638,7 @@ chmod +x $sbatch_script
 echo "=== Setup Complete ==="
 echo "Debug mode: $debug"
 echo "Apply filter: $apply_filter"
+echo "In shape: ${coarse_input_shape[@]}"
 echo "Coarse resolution: $coarse_resolution_deg degrees"
 echo "Inference type: $inference_type"
 echo "Run type: $run_type"

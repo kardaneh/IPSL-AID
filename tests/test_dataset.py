@@ -113,6 +113,42 @@ def create_dummy_statistics_json(temp_dir):
     return stats_path
 
 
+def create_dummy_coarse_dataset(fine_ds, height=8, width=16):
+    """Create a dummy external coarse dataset for testing."""
+    lat = np.linspace(-90, 90, height)
+    lon = np.linspace(-180, 180, width)
+
+    data_vars = {
+        "VAR_2T": (
+            ("time", "latitude", "longitude"),
+            np.random.randn(fine_ds.sizes["time"], height, width) * 10 + 285,
+        ),
+        "VAR_10U": (
+            ("time", "latitude", "longitude"),
+            np.random.randn(fine_ds.sizes["time"], height, width) * 3 + 0.5,
+        ),
+        "VAR_10V": (
+            ("time", "latitude", "longitude"),
+            np.random.randn(fine_ds.sizes["time"], height, width) * 3 - 0.1,
+        ),
+        "VAR_TP": (
+            ("time", "latitude", "longitude"),
+            np.abs(
+                np.random.randn(fine_ds.sizes["time"], height, width) * 0.0002 + 0.00009
+            ),
+        ),
+    }
+
+    return xr.Dataset(
+        data_vars=data_vars,
+        coords={
+            "time": fine_ds.time.values,
+            "latitude": lat,
+            "longitude": lon,
+        },
+    )
+
+
 # ============================================================================
 # Unit Tests for DataPreprocessor
 # ============================================================================
@@ -271,6 +307,44 @@ class TestDataPreprocessor(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ Coarse_down_up with numpy arrays test passed")
+
+    def test_coarse_down_up_already_coarse(self):
+        """Test coarse_down_up with already_coarse=True."""
+        if self.logger:
+            self.logger.info("Testing coarse_down_up with already_coarse=True")
+
+        channels = 4
+        h_fine, w_fine = 36, 72
+        h_coarse, w_coarse = self.in_shape
+
+        coarse_input = torch.ones(channels, h_coarse, w_coarse)
+        fine_batch = torch.randn(channels, h_fine, w_fine)
+
+        coarse_up = coarse_down_up(
+            coarse_input,
+            fine_batch,
+            input_shape=self.in_shape,
+            already_coarse=True,
+        )
+
+        # Verify that the function returns a PyTorch tensor
+        self.assertIsInstance(coarse_up, torch.Tensor)
+
+        # Verify that an already-coarse input is only upsampled to match
+        # the spatial resolution of the fine-resolution reference field.
+        self.assertEqual(coarse_up.shape, (channels, h_fine, w_fine))
+
+        # Verify that upsampling preserves a spatially constant coarse field
+        torch.testing.assert_close(
+            coarse_up,
+            torch.ones_like(coarse_up),
+        )
+
+        if self.logger:
+            self.logger.info(
+                f"✅ Coarse_down_up already coarse test passed - "
+                f"output shape: {coarse_up.shape}"
+            )
 
     # ------------------------------------------------------------------------
     # GaussianFilter Function Tests
@@ -559,6 +633,48 @@ class TestDataPreprocessor(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ Batch size validation test passed")
+
+    def test_already_coarse_requires_external_coarse(self):
+        """Test that already_coarse=True requires an external coarse dataset."""
+        if self.logger:
+            self.logger.info(
+                "Testing already_coarse=True without external coarse dataset"
+            )
+
+        with self.assertRaises(ValueError):
+            DataPreprocessor(
+                years=self.years,
+                loaded_dfs=self.ds,
+                loaded_dfs_coarse=None,
+                constants_file_path=self.const_path,
+                varnames_list=self.varnames_list,
+                units_list=self.units_list,
+                in_shape=self.in_shape,
+                batch_size_lat=self.batch_size_lat,
+                batch_size_lon=self.batch_size_lon,
+                steps=self.steps,
+                tbatch=2,
+                sbatch=4,
+                debug=True,
+                mode="validation",
+                run_type="inference",
+                time_normalization="linear",
+                norm_mapping=self.norm_mapping,
+                index_mapping=self.index_mapping,
+                normalization_type=self.normalization_type,
+                constant_variables=self.constant_variables,
+                epsilon=0.02,
+                margin=8,
+                dtype=(torch.float32, np.float32),
+                apply_filter=False,
+                already_coarse=True,
+                logger=self.logger,
+            )
+
+        if self.logger:
+            self.logger.info(
+                "✅ already_coarse external coarse requirement test passed"
+            )
 
     def test_inference_generates_overlapping_slices(self):
         """Test that global inference generates overlapping evaluation slices."""
@@ -944,7 +1060,10 @@ class TestDataPreprocessor(unittest.TestCase):
         lon_center = preprocessor.W // 2
 
         fine, fine_filtered, coarse, indices = preprocessor.build_fine_coarse_blocks(
-            npfeatures_full, lat_center, lon_center
+            npfeatures_full,
+            None,
+            lat_center,
+            lon_center,
         )
 
         # Shapes
@@ -967,6 +1086,160 @@ class TestDataPreprocessor(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ build_fine_coarse_blocks test passed")
+
+    def test_build_fine_coarse_blocks_with_already_coarse_external_data(self):
+        """Test build_fine_coarse_blocks with already-coarse external data."""
+        if self.logger:
+            self.logger.info(
+                "Testing build_fine_coarse_blocks with already-coarse external data"
+            )
+
+        coarse_ds = create_dummy_coarse_dataset(
+            self.ds,
+            height=self.in_shape[0],
+            width=self.in_shape[1],
+        )
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            loaded_dfs_coarse=coarse_ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=1,
+            sbatch=1,
+            debug=True,
+            mode="validation",
+            run_type="inference",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            already_coarse=True,
+            logger=self.logger,
+        )
+
+        tindex = 0
+        full_data_org = self.ds.isel(time=tindex)
+
+        npfeatures_full, npfeatures_coarse_source = preprocessor.load_features(
+            tindex,
+            full_data_org,
+        )
+
+        lat_center = preprocessor.H // 2
+        lon_center = preprocessor.W // 2
+
+        fine, fine_filtered, coarse, indices = preprocessor.build_fine_coarse_blocks(
+            npfeatures_full,
+            npfeatures_coarse_source,
+            lat_center,
+            lon_center,
+        )
+
+        expected_shape = (
+            len(self.varnames_list),
+            self.batch_size_lat,
+            self.batch_size_lon,
+        )
+
+        self.assertEqual(fine.shape, expected_shape)
+        self.assertEqual(coarse.shape, expected_shape)
+        self.assertIsNone(fine_filtered)
+
+        lat_start, lat_end, lon_start, lon_end = indices
+        self.assertEqual(lat_end - lat_start, self.batch_size_lat)
+        self.assertEqual(lon_end - lon_start, self.batch_size_lon)
+
+        if self.logger:
+            self.logger.info(
+                "✅ build_fine_coarse_blocks with already-coarse external data "
+                "test passed"
+            )
+
+    def test_load_features_with_external_coarse(self):
+        """Test load_features with an external coarse dataset."""
+        if self.logger:
+            self.logger.info("Testing load_features with external coarse dataset")
+
+        coarse_ds = create_dummy_coarse_dataset(
+            self.ds,
+            height=self.in_shape[0],
+            width=self.in_shape[1],
+        )
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            loaded_dfs_coarse=coarse_ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=1,
+            sbatch=1,
+            debug=True,
+            mode="validation",
+            run_type="inference",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            already_coarse=True,
+            logger=self.logger,
+        )
+
+        tindex = 0
+        full_data_org = self.ds.isel(time=tindex)
+
+        npfeatures_fine, npfeatures_coarse_source = preprocessor.load_features(
+            tindex,
+            full_data_org,
+        )
+
+        n_vars = len(self.varnames_list)
+
+        self.assertEqual(
+            npfeatures_fine.shape,
+            (n_vars, self.steps.latitude, self.steps.longitude),
+        )
+        self.assertEqual(
+            npfeatures_coarse_source.shape,
+            (n_vars, self.in_shape[0], self.in_shape[1]),
+        )
+
+        # Verify that the external coarse values were actually loaded
+        for var in self.varnames_list:
+            iv = self.index_mapping[var]
+            np.testing.assert_allclose(
+                npfeatures_coarse_source[iv],
+                coarse_ds[var].isel(time=tindex).values,
+            )
+
+        if self.logger:
+            self.logger.info(
+                f"✅ load_features external coarse test passed - "
+                f"fine shape: {npfeatures_fine.shape}, "
+                f"coarse shape: {npfeatures_coarse_source.shape}"
+            )
 
     def test_generate_evaluation_slices(self):
         """Test evaluation slices generation."""
@@ -1783,6 +2056,87 @@ class TestDataPreprocessor(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ __getitem__ with filter enabled test passed")
+
+    def test_getitem_with_external_already_coarse_dataset(self):
+        """Test __getitem__ with an already-coarse external dataset."""
+        if self.logger:
+            self.logger.info("Testing __getitem__ with already-coarse external dataset")
+
+        coarse_ds = create_dummy_coarse_dataset(
+            self.ds,
+            height=self.in_shape[0],
+            width=self.in_shape[1],
+        )
+
+        preprocessor = DataPreprocessor(
+            years=self.years,
+            loaded_dfs=self.ds,
+            loaded_dfs_coarse=coarse_ds,
+            constants_file_path=self.const_path,
+            varnames_list=self.varnames_list,
+            units_list=self.units_list,
+            in_shape=self.in_shape,
+            batch_size_lat=self.batch_size_lat,
+            batch_size_lon=self.batch_size_lon,
+            steps=self.steps,
+            tbatch=2,
+            sbatch=4,
+            debug=True,
+            mode="validation",
+            run_type="inference",
+            time_normalization="linear",
+            norm_mapping=self.norm_mapping,
+            index_mapping=self.index_mapping,
+            normalization_type=self.normalization_type,
+            constant_variables=self.constant_variables,
+            epsilon=0.02,
+            margin=8,
+            dtype=(torch.float32, np.float32),
+            apply_filter=False,
+            already_coarse=True,
+            logger=self.logger,
+        )
+
+        sample = preprocessor[0]
+
+        # Verify sample structure
+        self.assertIn("inputs", sample)
+        self.assertIn("targets", sample)
+        self.assertIn("fine", sample)
+        self.assertIn("coarse", sample)
+        self.assertIn("corrdinates", sample)
+
+        # Verify shapes
+        n_vars = len(self.varnames_list)
+        n_const = len(self.constant_variables)
+        expected_input_channels = n_vars + 2 + n_const
+
+        self.assertEqual(
+            sample["inputs"].shape,
+            (expected_input_channels, self.batch_size_lat, self.batch_size_lon),
+        )
+        self.assertEqual(
+            sample["targets"].shape,
+            (n_vars, self.batch_size_lat, self.batch_size_lon),
+        )
+        self.assertEqual(
+            sample["fine"].shape,
+            (n_vars, self.batch_size_lat, self.batch_size_lon),
+        )
+        self.assertEqual(
+            sample["coarse"].shape,
+            (n_vars, self.batch_size_lat, self.batch_size_lon),
+        )
+
+        self.assertTrue(torch.isfinite(sample["inputs"]).all())
+        self.assertTrue(torch.isfinite(sample["targets"]).all())
+        self.assertTrue(torch.isfinite(sample["coarse"]).all())
+
+        if self.logger:
+            self.logger.info(
+                f"✅ __getitem__ with already-coarse external dataset test passed - "
+                f"inputs shape: {sample['inputs'].shape}"
+            )
 
     def test_invalid_coordinate_handling(self):
         """Test handling of invalid coordinate specifications."""

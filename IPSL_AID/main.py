@@ -260,7 +260,10 @@ def parse_args():
         type=str,
         nargs="+",
         default=None,
-        help="Per-variable data directories as VAR=path pairs",
+        help=(
+            "Per-variable data directories as "
+            "VAR.fine=PATH and optional VAR.coarse=PATH pairs."
+        ),
     )
     parser.add_argument(
         "--region_datadirs",
@@ -437,6 +440,16 @@ def parse_args():
         type=lambda x: x.lower() == "true",
         default=False,
         help="Apply fine filtering for coarse data generation (default: True)",
+    )
+
+    parser.add_argument(
+        "--already_coarse",
+        type=lambda x: x.lower() == "true",
+        default=False,
+        help=(
+            "Whether the external coarse dataset (loaded_dfs_coarse) is already "
+            "at the target coarse resolution (in_shape), ex: CMIP6 native grid."
+        ),
     )
 
     parser.add_argument(
@@ -847,6 +860,7 @@ def log_configuration(args, paths, logger):
     logger.info(f" └── Inference type: '{args.inference_type}'")
     logger.info(f" └── Region: '{args.region}'")
     logger.info(f" └── Apply filter: {args.apply_filter}")
+    logger.info(f" └── Already coarse: {args.already_coarse}")
 
     # Checkpoint configuration
     logger.info("\nCheckpoint Configuration:")
@@ -1028,11 +1042,14 @@ def setup_data_paths(args, paths, logger):
         Training dataset, or None if run_type is ``inference``.
     valid_ds : xarray.Dataset
         Validation dataset.
+    valid_ds_coarse : xarray.Dataset or None
+        External coarse validation dataset, or None if no ``VAR.coarse`` paths are provided.
 
     Notes
     -----
-    - Per-variable data directories may be provided using ``VAR=path`` syntax.
-    - Training data is only loaded when ``run_type`` is not ``inference``.
+    - Per-variable data directories may be provided using
+      ``VAR.fine=path`` and optional ``VAR.coarse=path`` syntax.
+    - Training data is only loaded when ``run_type`` is not ``inference`` or ``inference_regional``.
     - Normalization statistics are computed on the validation dataset.
     - Variables from different files and years are merged into a single dataset.
     """
@@ -1055,6 +1072,8 @@ def setup_data_paths(args, paths, logger):
             regional_paths = EasyDict(paths)
             regional_paths.datadir = region_datadir
 
+            # External coarse datasets are not yet supported for multi-regional runs,
+            # so the returned regional coarse dataset is intentionally ignored here.
             (
                 region_norm_mapping,
                 region_steps,
@@ -1062,6 +1081,7 @@ def setup_data_paths(args, paths, logger):
                 region_index_mapping,
                 region_train_ds,
                 region_valid_ds,
+                _,
             ) = setup_data_paths(regional_args, regional_paths, logger)
 
             if train_region_datasets is not None:
@@ -1081,6 +1101,7 @@ def setup_data_paths(args, paths, logger):
             index_mapping,
             train_region_datasets,
             valid_region_datasets,
+            None,  # No external coarse dataset is returned for multi-regional runs yet.
         )
 
     # ------------------------------------------------------------------
@@ -1089,17 +1110,34 @@ def setup_data_paths(args, paths, logger):
     # Default path is used as a fallback when a variable-specific path
     # is not provided via the command line.
     per_var_paths = EasyDict()
-    per_var_paths.default = paths.datadir
-    # logger.info(f"[DEBUG] args.per_var_datadir = {args.per_var_datadir}")
 
-    # Per-variable data directories passed as VAR=path
     if args.per_var_datadir is not None:
         for item in args.per_var_datadir:
-            var, path = item.split("=")
-            per_var_paths[var] = path
-            # logger.info(f"Per-variable path: {var} → {path}")
+            key, path = item.split("=", 1)
 
-    logger.info(f"[Data paths] default → {per_var_paths.default}")
+            if "." not in key:
+                raise ValueError(
+                    f"Invalid per-variable path '{item}'. "
+                    "Expected VAR.fine=PATH or VAR.coarse=PATH."
+                )
+
+            var, data_type = key.rsplit(".", 1)
+
+            if data_type not in ["fine", "coarse"]:
+                raise ValueError(
+                    f"Invalid data type '{data_type}' for variable '{var}'. "
+                    "Expected 'fine' or 'coarse'."
+                )
+
+            if var not in per_var_paths:
+                per_var_paths[var] = EasyDict()
+
+            if data_type in per_var_paths[var]:
+                raise ValueError(f"Duplicate {data_type} path for variable '{var}'.")
+
+            per_var_paths[var][data_type] = path
+
+    logger.info(f"[Data paths] default fine → {paths.datadir}")
 
     # --------------------------
     # Training datasets
@@ -1114,7 +1152,10 @@ def setup_data_paths(args, paths, logger):
 
         # Load each variable independently, then concatenate along time
         for var in args.varnames_list:
-            base_path = per_var_paths.get(var, per_var_paths.default)
+            base_path = per_var_paths.get(var, {}).get(
+                "fine",
+                paths.datadir,
+            )
 
             train_filenames = [f"{base_path}/samples_{year}.nc" for year in train_years]
 
@@ -1151,7 +1192,10 @@ def setup_data_paths(args, paths, logger):
 
     # Load each variable independently, then concatenate along time
     for var in args.varnames_list:
-        base_path = per_var_paths.get(var, per_var_paths.default)
+        base_path = per_var_paths.get(var, {}).get(
+            "fine",
+            paths.datadir,
+        )
 
         valid_filenames = [f"{base_path}/samples_{year}.nc" for year in test_years]
 
@@ -1175,6 +1219,72 @@ def setup_data_paths(args, paths, logger):
     # Merge all variables into a single validation dataset
     valid_ds = xr.merge(valid_var_datasets).load()
     logger.info(f"Validation dataset concatenated: {valid_ds.sizes}")
+
+    # Load external coarse validation data when provided
+    valid_ds_coarse = None
+
+    # Check which variables provide an external coarse dataset
+    coarse_vars = [
+        var for var in args.varnames_list if "coarse" in per_var_paths.get(var, {})
+    ]
+
+    # Require coarse data for all variables if external coarse is used
+    if coarse_vars and len(coarse_vars) != len(args.varnames_list):
+        missing = [var for var in args.varnames_list if var not in coarse_vars]
+        raise ValueError(f"Missing external coarse data for variables: {missing}")
+
+    if coarse_vars:
+        logger.info("Pre-loading external coarse validation datasets...")
+
+        coarse_var_datasets = []
+
+        for var in args.varnames_list:
+            base_path = per_var_paths[var]["coarse"]
+
+            coarse_filenames = [f"{base_path}/samples_{year}.nc" for year in test_years]
+
+            logger.info(
+                f"{var} external coarse validation files:\n[\n"
+                + "\n".join(f"  {f}" for f in coarse_filenames)
+                + "\n]"
+            )
+
+            ds_var = xr.open_dataset(coarse_filenames[0]).sortby("time")
+
+            for fname in coarse_filenames[1:]:
+                ds_next = xr.open_dataset(fname).sortby("time")
+                ds_var = xr.concat([ds_var, ds_next], dim="time")
+
+            # Keep only the current variable and remove metadata variables
+            coarse_var_datasets.append(
+                ds_var[[var]].drop_vars(["height", "number", "expver"], errors="ignore")
+            )
+
+        valid_ds_coarse = xr.merge(coarse_var_datasets).load()
+
+        assert len(valid_ds_coarse.time) == len(valid_ds.time), (
+            f"Time mismatch: valid_ds has {len(valid_ds.time)} steps, "
+            f"but valid_ds_coarse has {len(valid_ds_coarse.time)} steps"
+        )
+
+        if not args.already_coarse:
+            # Require the external data to match the fine grid before down/up sampling
+            for var in args.varnames_list:
+                assert valid_ds_coarse[var].shape == valid_ds[var].shape, (
+                    f"Shape mismatch for {var}: "
+                    f"fine={valid_ds[var].shape}, coarse={valid_ds_coarse[var].shape}. "
+                    "External coarse dataset must be regridded/aligned to the fine grid."
+                )
+        else:
+            # Native coarse data can keep its original spatial resolution (CMIP6)
+            logger.info(
+                "already_coarse=True: skipping fine/coarse shape equality check "
+                "(external dataset is expected to be at native coarse resolution)."
+            )
+
+        logger.info(
+            f"External coarse validation dataset concatenated: {valid_ds_coarse.sizes}"
+        )
 
     # norm_mapping, steps = stats(train_ds, logger, paths.stats)
     norm_mapping, steps = stats(valid_ds, logger, paths.stats_dir)
@@ -1222,7 +1332,15 @@ def setup_data_paths(args, paths, logger):
         )
     logger.info("------------------------------------------------------")
 
-    return norm_mapping, steps, normalization_type, index_mapping, train_ds, valid_ds
+    return (
+        norm_mapping,
+        steps,
+        normalization_type,
+        index_mapping,
+        train_ds,
+        valid_ds,
+        valid_ds_coarse,
+    )
 
 
 def setup_training_environment(args, logger):
@@ -1296,6 +1414,7 @@ def create_data_loaders(
     run_type="train",
     train_loaded_dfs=None,
     valid_loaded_dfs=None,
+    valid_loaded_dfs_coarse=None,
 ):
     """
     Create data loaders for training, validation, or inference.
@@ -1328,6 +1447,8 @@ def create_data_loaders(
         Pre-loaded training datasets.
     valid_loaded_dfs : dict, optional
         Pre-loaded validation datasets.
+    valid_loaded_dfs_coarse : xarray.Dataset or None, optional
+        Pre-loaded external coarse validation dataset; if None, coarse input is derived from the fine dataset.
 
     Returns
     -------
@@ -1398,6 +1519,11 @@ def create_data_loaders(
         tbatch = args.batch_size  # same as torch batch size
         sbatch = args.sbatch  # Half the spatial batches
 
+    loaded_dfs_coarse = None
+
+    if mode == "validation":
+        loaded_dfs_coarse = valid_loaded_dfs_coarse
+
     logger.info(f" └── {mode} years: {years}")
     logger.info(
         f" └── {mode} parameters - tbatch: {tbatch}, sbatch: {sbatch}, shuffle: {shuffle}"
@@ -1408,6 +1534,7 @@ def create_data_loaders(
     dataset = DataPreprocessor(
         years=years,  # List of years
         loaded_dfs=loaded_dfs,  # Pre-loaded datasets dictionary
+        loaded_dfs_coarse=loaded_dfs_coarse,
         constants_file_path=paths.constants,
         varnames_list=args.varnames_list,
         units_list=args.units_list,
@@ -1431,6 +1558,7 @@ def create_data_loaders(
         margin=args.margin,
         dtype=(torch_dtype, np_dtype),  # Same dtype for consistency
         apply_filter=args.apply_filter,
+        already_coarse=args.already_coarse,  # External coarse data configuration
         region_center=args.region_center,
         region_size=args.region_size,
         region_constants_files=args.region_constants_files,
@@ -1691,6 +1819,24 @@ def main():
 
     args.region_center = resolve_region_center(args)
 
+    has_external_coarse = args.per_var_datadir is not None and any(
+        item.split("=", 1)[0].endswith(".coarse") for item in args.per_var_datadir
+    )
+
+    if has_external_coarse:
+        if args.run_type not in ["inference", "inference_regional"]:
+            raise ValueError(
+                "External coarse data are only supported for inference run types."
+            )
+
+        if args.apply_filter:
+            raise ValueError(
+                "--apply_filter is not supported with external coarse data."
+            )
+
+    elif args.already_coarse:
+        raise ValueError("--already_coarse requires external coarse data.")
+
     # Setup directories and logging
     paths, logger = setup_directories_and_logging(args)
 
@@ -1705,6 +1851,7 @@ def main():
         index_mapping,
         train_loaded_dfs,
         valid_loaded_dfs,
+        valid_loaded_dfs_coarse,
     ) = setup_data_paths(args, paths, logger)
 
     # Setup training environment (device, data types, random seeds)
@@ -1757,6 +1904,7 @@ def main():
             mode="validation",
             run_type=args.run_type,
             valid_loaded_dfs=valid_loaded_dfs,
+            valid_loaded_dfs_coarse=valid_loaded_dfs_coarse,
         )
         logger.info(f"Validation dataset loaded with image resolution: {valid_img_res}")
         # if args.run_type == "inference":

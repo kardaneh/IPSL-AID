@@ -156,7 +156,9 @@ def stats(ds, logger, input_dir, norm_mapping=dict()):
     return norm_mapping, steps
 
 
-def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
+def coarse_down_up(
+    fine_filtered, fine_batch, input_shape=(16, 32), axis=0, already_coarse=False
+):
     """
     Downscale and then upscale fine-resolution data to compute coarse approximation.
 
@@ -167,18 +169,23 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
     Parameters
     ----------
     fine_filtered : torch.Tensor or np.ndarray
-        Fine-resolution filtered data. Can be of shape (C, Hf, Wf) for multi-channel
-        data or (Hf, Wf) for single-channel data. Where C is number of channels,
-        Hf is fine height, and Wf is fine width.
+        Fine-resolution filtered data with shape (C, Hf, Wf) or (Hf, Wf).
+        When `already_coarse=True`, it may instead contain native coarse data,
+        such as CMIP6, which is directly upscaled to the fine resolution.
     fine_batch : torch.Tensor or np.ndarray
-        Fine-resolution target data. Must have same spatial dimensions as
-        `fine_filtered`. Shape: (C, Hf, Wf) or (Hf, Wf).
+        Fine-resolution target data used to define the output spatial shape.
+        Its spatial dimensions may differ from `fine_filtered` when
+        `already_coarse=True`.
     input_shape : tuple of int, optional
         Target shape (Hc, Wc) for the coarse-resolution data after downscaling.
         Default is (16, 32).
     axis : int, optional
         Axis along which to insert batch dimension if the input lacks one.
         Default is 0.
+    already_coarse : bool, optional
+        If True, skip the downscaling step (the input is assumed to already be
+        at the target coarse resolution `input_shape`) and only perform the
+        upscaling back to the original fine resolution. Default is False.
 
     Returns
     -------
@@ -212,14 +219,23 @@ def coarse_down_up(fine_filtered, fine_batch, input_shape=(16, 32), axis=0):
         interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
         antialias=True,
     )
-    out_shape = (fine_filtered.shape[-2], fine_filtered.shape[-1])
+    # out_shape = (fine_filtered.shape[-2], fine_filtered.shape[-1])
+    # Final output must match the fine-grid resolution
+    out_shape = (fine_batch.shape[-2], fine_batch.shape[-1])
+
     interp_transform = torchvision.transforms.Resize(
         out_shape,
         interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
         antialias=True,
     )
 
-    coarse_up = interp_transform(coarsen_transform(fine_filtered))
+    if already_coarse:
+        # External data such as CMIP6 are already coarse: only upscale
+        coarse_up = interp_transform(fine_filtered)
+    else:
+        # Standard case: downscale first, then upscale to the fine grid
+        coarse_up = interp_transform(coarsen_transform(fine_filtered))
+
     # Remove batch dimension
     coarse_up = coarse_up.squeeze(0)
 
@@ -528,6 +544,7 @@ class DataPreprocessor(Dataset):
         constants_file_path,
         varnames_list,
         units_list,
+        loaded_dfs_coarse=None,  # coarse input (CMIP6)
         in_shape=(80, 128),
         batch_size_lat=144,
         batch_size_lon=144,
@@ -548,6 +565,7 @@ class DataPreprocessor(Dataset):
         margin=8,
         dtype=(torch.float32, np.float32),
         apply_filter=False,
+        already_coarse=False,
         region_center=None,  # (lat_value, lon_value)
         region_size=None,
         region_constants_files=None,
@@ -565,6 +583,8 @@ class DataPreprocessor(Dataset):
             Years of data to include.
         loaded_dfs : xarray.Dataset
             Pre-loaded dataset containing the weather variables.
+        loaded_dfs_coarse : xarray.Dataset, optional
+            External coarse dataset (CMIP6) used as coarse input.
         constants_file_path : str
             Path to NetCDF file containing constant variables.
         varnames_list : list of str
@@ -611,6 +631,8 @@ class DataPreprocessor(Dataset):
             Data types for torch and numpy.
         apply_filter : bool, optional
             Apply Gaussian filtering.
+        already_coarse : bool, optional
+            Whether the external coarse dataset is already at in_shape. Default is False.
         region_center : tuple of float or None
             Fixed geographic center (lat, lon) for spatial sampling.
         region_size : tuple of int or None, optional
@@ -700,6 +722,30 @@ class DataPreprocessor(Dataset):
         self.np_dtype = dtype[1]
         self.apply_filter = apply_filter
         self.logger = logger
+
+        self.already_coarse = already_coarse
+        if self.already_coarse and loaded_dfs_coarse is None:
+            raise ValueError(
+                "already_coarse=True requires an external coarse dataset "
+                "(loaded_dfs_coarse), e.g. CMIP6 already at coarse resolution."
+            )
+
+        if loaded_dfs_coarse is not None:
+            if self.already_coarse:
+                self.logger.info(
+                    "External dataset will be used as source for coarse input. "
+                    "It is already at coarse resolution, so only up-sampling will be applied."
+                )
+            else:
+                self.logger.info(
+                    "External dataset will be used as source for coarse input, "
+                    "then down/up-sampled."
+                )
+        else:
+            self.logger.info(
+                "Fine dataset will be used as source for coarse input, "
+                "then down/up-sampled."
+            )
 
         if self.apply_filter:
             self.logger.info(f"Fine filtering enabled: {self.apply_filter}")
@@ -837,6 +883,7 @@ class DataPreprocessor(Dataset):
         """
         # Cache for loaded data
         self.loaded_dfs = loaded_dfs
+        self.loaded_dfs_coarse = loaded_dfs_coarse
         self.multi_region = isinstance(loaded_dfs, dict)
 
         if self.multi_region:
@@ -1668,7 +1715,12 @@ class DataPreprocessor(Dataset):
             raise
 
     def build_fine_coarse_blocks(
-        self, npfeatures_full, lat_center, lon_center, input_shape=None
+        self,
+        npfeatures_full,
+        npfeatures_coarse_source,
+        lat_center,
+        lon_center,
+        input_shape=None,
     ):
         """
         Build fine, optionally filtered, and coarse-resolution spatial blocks
@@ -1678,6 +1730,9 @@ class DataPreprocessor(Dataset):
         ----------
         npfeatures_full : np.ndarray
             Full-domain input features with shape (C, H, W).
+        npfeatures_coarse_source : np.ndarray or None
+            Optional external coarse-resolution features with shape (C, Hc, Wc).
+            If None, the coarse input is derived from the fine-resolution data.
         lat_center : int
             Latitude center index.
         lon_center : int
@@ -1709,6 +1764,7 @@ class DataPreprocessor(Dataset):
         -----
         - Spatial extraction, ensuring consistent handling of cyclic longitude
           and non-cyclic latitude.
+        - External coarse data can be used directly as the coarse source.
         - The coarse block is generated from the full domain (not locally),
           ensuring global consistency of the low-resolution representation.
         - All returned blocks share identical spatial indices and shapes,
@@ -1721,30 +1777,45 @@ class DataPreprocessor(Dataset):
         active_in_shape = self.in_shape if input_shape is None else input_shape
         # Keep the historical fixed shape unless an active regional shape is supplied.
 
-        if self.apply_filter:
-            fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
-            fine_filtered_block, filtered_indices = self.extract_batch(
-                fine_filtered_full, lat_center, lon_center
-            )
-            assert filtered_indices == fine_indices, (
-                f"Indices mismatch after filtering:\n"
-                f"  original indices: {fine_indices}\n"
-                f"  filtered indices: {filtered_indices}"
-            )
+        fine_filtered_block = None
 
-            # Apply coarsening to the full domain of the filtered HR field
-            coarse_full = coarse_down_up(
-                fine_filtered_full, npfeatures_full, input_shape=active_in_shape
-            )
+        # Use external coarse data when available
+        if npfeatures_coarse_source is not None:
+            coarse_source_full = npfeatures_coarse_source
+
         else:
-            fine_filtered_block = None
-            # Apply coarsening directly to the full domain of the raw HR field
-            coarse_full = coarse_down_up(
-                npfeatures_full, npfeatures_full, input_shape=active_in_shape
-            )
+            # Otherwise derive the coarse source from the fine-resolution field
+            if self.apply_filter:
+                fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
+
+                fine_filtered_block, filtered_indices = self.extract_batch(
+                    fine_filtered_full,
+                    lat_center,
+                    lon_center,
+                )
+
+                assert filtered_indices == fine_indices, (
+                    f"Indices mismatch after filtering:\n"
+                    f"  fine indices: {fine_indices}\n"
+                    f"  filtered indices: {filtered_indices}"
+                )
+
+                coarse_source_full = fine_filtered_full
+            else:
+                coarse_source_full = npfeatures_full
+
+        # Build the full coarse field and resize it to the fine-grid resolution
+        coarse_full = coarse_down_up(
+            coarse_source_full,
+            npfeatures_full,
+            input_shape=active_in_shape,
+            already_coarse=self.already_coarse,
+        )
 
         coarse_block, coarse_indices = self.extract_batch(
-            coarse_full, lat_center, lon_center
+            coarse_full,
+            lat_center,
+            lon_center,
         )
 
         assert coarse_indices == fine_indices, (
@@ -1760,6 +1831,73 @@ class DataPreprocessor(Dataset):
         )
 
         return fine_block, fine_filtered_block, coarse_block, fine_indices
+
+    def load_features(self, tindex, full_data_org):
+        """
+        Load fine features and, when available, external coarse features.
+        External coarse data are currently supported only outside multi-regional mode.
+
+        Parameters
+        ----------
+        tindex : int
+            Time index to load.
+        full_data_org : xarray.Dataset
+            Fine dataset at the given time step (used for coordinates).
+
+        Returns
+        -------
+        npfeatures_fine : np.ndarray
+            Fine-resolution features of shape (C, H, W). Always ERA5.
+        npfeatures_coarse_source : np.ndarray or None
+            External coarse-resolution features of shape (C, Hc, Wc),
+            or None when no external coarse dataset is used.
+        """
+        # Detect spatial dimension names from the fine dataset
+        lat_dim = "latitude" if "latitude" in full_data_org.dims else "lat"
+        lon_dim = "longitude" if "longitude" in full_data_org.dims else "lon"
+
+        # Fine-grid spatial dimensions
+        H = full_data_org.sizes[lat_dim]
+        W = full_data_org.sizes[lon_dim]
+
+        npfeatures_fine = np.zeros(
+            [len(self.varnames_list), H, W],
+            dtype=self.np_dtype,
+        )
+        # Fill each channel with the corresponding fine-resolution variable
+        # The channel position is defined by index_mapping
+        for var_name in self.varnames_list:
+            iv = self.index_mapping[var_name]
+            npfeatures_fine[iv] = full_data_org[var_name].values
+
+        npfeatures_coarse_source = None
+
+        # If an external coarse source is requested, load the matching time step
+        # from the preloaded coarse dataset and store it using the same channel order
+        if self.loaded_dfs_coarse is not None and not self.multi_region:
+            full_data_coarse = self.loaded_dfs_coarse.isel(time=tindex)
+
+            # Detect spatial dimension names from the external coarse dataset
+            coarse_lat_dim = (
+                "latitude" if "latitude" in full_data_coarse.dims else "lat"
+            )
+            coarse_lon_dim = (
+                "longitude" if "longitude" in full_data_coarse.dims else "lon"
+            )
+
+            # External coarse-grid spatial dimensions
+            Hc = full_data_coarse.sizes[coarse_lat_dim]
+            Wc = full_data_coarse.sizes[coarse_lon_dim]
+
+            npfeatures_coarse_source = np.zeros(
+                [len(self.varnames_list), Hc, Wc], dtype=self.np_dtype
+            )
+            # Fill each channel with the corresponding extrenal coarse-resolution variable
+            for var_name in self.varnames_list:
+                iv = self.index_mapping[var_name]
+                npfeatures_coarse_source[iv] = full_data_coarse[var_name].values
+
+        return npfeatures_fine, npfeatures_coarse_source
 
     def filter_batch(self, fine_patch, fine_block):
         """
@@ -2240,14 +2378,14 @@ class DataPreprocessor(Dataset):
 
                 lat_start, lat_end, lon_start, lon_end = lat_indices
 
-                npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
-                for var_name in self.varnames_list:
-                    iv = self.index_mapping[var_name]
-                    npfeatures_full[iv, :, :] = full_data_org[var_name].values
+                npfeatures_full, npfeatures_coarse_source = self.load_features(
+                    tindex, full_data_org
+                )
 
                 fine_block, fine_filtered_block, coarse, fine_indices = (
                     self.build_fine_coarse_blocks(
                         npfeatures_full,
+                        npfeatures_coarse_source,
                         lat_center,
                         lon_center,
                         input_shape=active_in_shape,
@@ -2260,48 +2398,52 @@ class DataPreprocessor(Dataset):
                 lon_batch = lon_grid[lat_start:lat_end, lon_start:lon_end]
 
                 # Extract data for all variables into the WHOLE spatial domain first (same as training)
-                npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
-                for i, var_name in enumerate(self.varnames_list):
-                    npfeatures_full[i, :, :] = full_data_org[var_name].values
+                npfeatures_full, npfeatures_coarse_source = self.load_features(
+                    tindex, full_data_org
+                )
 
                 # Extract the target batch for scaling determination
                 fine_block = npfeatures_full[:, lat_start:lat_end, lon_start:lon_end]
 
-                if self.apply_filter:
-                    # Spatial filtering on the full domain before coarsening
-                    fine_filtered_full = self.filter_batch(npfeatures_full, fine_block)
+                fine_filtered_block = None
 
-                    assert fine_filtered_full.shape == npfeatures_full.shape, (
-                        f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
-                        f"but npfeatures has shape {npfeatures_full.shape}."
-                    )
-
-                    # Now extract the batch from filtered data
-                    fine_filtered_block = fine_filtered_full[
-                        :, lat_start:lat_end, lon_start:lon_end
-                    ]
-                    assert fine_filtered_block.shape == fine_block.shape, (
-                        f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
-                        f"but fine_block has shape {fine_block.shape}."
-                    )
-
-                    # Apply coarsening to the full domain of the filtered HR field
-                    coarse_full = coarse_down_up(
-                        fine_filtered_full,
-                        npfeatures_full,
-                        input_shape=active_in_shape,
-                    )
+                if npfeatures_coarse_source is not None:
+                    coarse_source_full = npfeatures_coarse_source
                 else:
-                    # Apply coarsening directly to the full domain of the raw HR field
-                    coarse_full = coarse_down_up(
-                        npfeatures_full,
-                        npfeatures_full,
-                        input_shape=active_in_shape,
-                    )
+                    if self.apply_filter:
+                        fine_filtered_full = self.filter_batch(
+                            npfeatures_full, fine_block
+                        )
 
-                coarse_block = coarse_full[:, lat_start:lat_end, lon_start:lon_end]
+                        assert fine_filtered_full.shape == npfeatures_full.shape, (
+                            f"Mismatch in shapes: fine_filtered has shape {fine_filtered_full.shape} "
+                            f"but npfeatures_full has shape {npfeatures_full.shape}."
+                        )
 
-                coarse = coarse_block
+                        fine_filtered_block = fine_filtered_full[
+                            :,
+                            lat_start:lat_end,
+                            lon_start:lon_end,
+                        ]
+
+                        assert fine_filtered_block.shape == fine_block.shape, (
+                            f"Mismatch in shapes: fine_filtered_block has shape {fine_filtered_block.shape} "
+                            f"but fine_block has shape {fine_block.shape}."
+                        )
+
+                        coarse_source_full = fine_filtered_full
+
+                    else:
+                        coarse_source_full = npfeatures_full
+
+                coarse_full = coarse_down_up(
+                    coarse_source_full,
+                    npfeatures_full,
+                    input_shape=active_in_shape,
+                    already_coarse=self.already_coarse,
+                )
+
+                coarse = coarse_full[:, lat_start:lat_end, lon_start:lon_end]
 
                 if self.debug:
                     self.logger.info(
@@ -2344,14 +2486,14 @@ class DataPreprocessor(Dataset):
 
             lat_start, lat_end, lon_start, lon_end = lat_indices
 
-            npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
-            for var_name in self.varnames_list:
-                iv = self.index_mapping[var_name]
-                npfeatures_full[iv, :, :] = full_data_org[var_name].values
+            npfeatures_full, npfeatures_coarse_source = self.load_features(
+                tindex, full_data_org
+            )
 
             fine_block, fine_filtered_block, coarse, fine_indices = (
                 self.build_fine_coarse_blocks(
                     npfeatures_full,
+                    npfeatures_coarse_source,
                     lat_center,
                     lon_center,
                     input_shape=active_in_shape,
@@ -2401,14 +2543,14 @@ class DataPreprocessor(Dataset):
             )
 
             # Extract data for all variables into a NumPy array (full domain)
-            npfeatures_full = np.zeros([len(self.varnames_list), local_H, local_W])
-            for var_name in self.varnames_list:
-                iv = self.index_mapping[var_name]
-                npfeatures_full[iv, :, :] = full_data_org[var_name].values
+            npfeatures_full, npfeatures_coarse_source = self.load_features(
+                tindex, full_data_org
+            )
 
             fine_block, fine_filtered_block, coarse, fine_indices = (
                 self.build_fine_coarse_blocks(
                     npfeatures_full,
+                    npfeatures_coarse_source,
                     lat_center,
                     lon_center,
                     input_shape=active_in_shape,

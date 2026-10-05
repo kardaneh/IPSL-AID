@@ -101,13 +101,6 @@ class VPLoss:
     epsilon_t : float
         Minimum time threshold.
 
-    Methods
-    -------
-    __call__(net, images, conditional_img=None, labels=None, augment_pipe=None)
-        Compute the VP loss for a batch of images.
-    sigma(t)
-        Compute noise level sigma for given timestep t.
-
     Notes
     -----
     - The loss is based on denoising score matching: E[λ(t) * ||D_θ(x_t, t) - x_0||²]

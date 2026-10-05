@@ -490,42 +490,6 @@ class DataPreprocessor(Dataset):
     tindex_tracker : list
         Tracks temporal indices for debugging.
 
-    Methods
-    -------
-    new_epoch()
-        Reset time batches and random centers for new training epoch.
-    sample_time_steps_by_doy()
-        Sample time steps based on day-of-year (DOY) for multi-year continuity.
-    sample_random_time_indices()
-        Randomly sample time indices for training.
-    load_dynamic_covariates()
-        Load dynamic covariate data (not fully implemented).
-    get_center_indices_from_latlon(lat_value, lon_value)
-        Map geographic coordinates to the nearest latitude and longitude
-        grid indices.
-    generate_random_batch_centers(n_batches)
-        Generate random spatial centers for batch sampling.
-    generate_evaluation_slices(use_hann_blending=False, overlap_ratio=0.0)
-        Generate deterministic global evaluation or inference slices, with
-        optional overlap and full-boundary coverage during blended inference.
-    generate_region_slices(lat_center, lon_center, region_size_lat, region_size_lon)
-        Divide a regional domain into non-overlapping spatial blocks.
-    extract_batch(data, ilat, ilon)
-        Extract spatial batch centered at (ilat, ilon) with cyclic longitude.
-    build_fine_coarse_blocks(npfeatures_full, lat_center, lon_center)
-        Construct aligned fine-resolution, optionally filtered, and
-        coarse-resolution spatial blocks.
-    filter_batch(fine_patch, fine_block)
-        Apply Gaussian low-pass filtering for multi-scale processing.
-    normalize(data, stats, norm_type, var_name=None, data_type=None)
-        Normalize data using specified statistics and method.
-    normalize_time(tindex)
-        Return normalized time features for given time index.
-    __len__()
-        Return total number of samples.
-    __getitem__(index)
-        Get a single sample with appropriate spatial-temporal sampling.
-
     Notes
     -----
     - Supports both random (training) and deterministic (validation) sampling.

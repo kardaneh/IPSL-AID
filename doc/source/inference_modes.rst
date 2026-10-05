@@ -17,9 +17,11 @@ Global Inference
 Global inference enables the generation of high-resolution predictions over
 the entire globe using a block-based approach.
 
-For global coverage, the ERA5 spatial domain of :math:`1440 \times 721`
-grid points is divided into spatial blocks, which are processed independently
-by the trained model.
+For global coverage, the fine-resolution reference domain is divided into
+spatial blocks, which are processed independently by the trained model.
+The fine-resolution reference is typically ERA5, while the coarse conditioning
+input may either be derived from the fine field or provided externally, for
+example from CMIP6 or HighResMIP.
 
 To reduce discontinuities at block boundaries, IPSL-AID supports spatial
 overlap between adjacent blocks. Overlapping predictions are combined using
@@ -52,6 +54,86 @@ Configuration:
    inference:
      run_type: inference
      overlap_ratio: 0.02
+
+External Coarse Inputs
+----------------------
+
+IPSL-AID can also perform inference using an external coarse-resolution dataset,
+such as CMIP6 or HighResMIP, instead of deriving the coarse input directly from
+the fine-resolution reference field.
+
+Per-variable input paths are configured with ``--per_var_datadir`` using:
+
+- ``VAR.fine=PATH``: path to the fine-resolution reference dataset.
+- ``VAR.coarse=PATH``: optional path to an external coarse-resolution dataset.
+
+If no external coarse dataset is provided, the coarse input is derived from the
+fine-resolution field using the standard downscale-upscale procedure.
+
+The ``--already_coarse`` option controls how the external coarse field is
+processed:
+
+- ``--already_coarse false``:
+  the coarse source is first downscaled to the configured coarse shape and then
+  upscaled to the fine-grid resolution.
+- ``--already_coarse true``:
+  the downscaling step is skipped and the external coarse field is directly
+  upscaled to the fine-grid resolution.
+
+This allows several inference configurations.
+
+ERA5-derived coarse input
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The standard configuration uses ERA5 as the fine-resolution reference and
+derives the coarse input internally:
+
+.. code-block:: bash
+
+   --per_var_datadir VAR.fine=ERA5_PATH
+   --already_coarse false
+
+CMIP6 external coarse input
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CMIP6 can be used as an external native coarse-resolution input while ERA5
+remains the fine-resolution reference:
+
+.. code-block:: bash
+
+   --per_var_datadir VAR.fine=ERA5_PATH VAR.coarse=CMIP6_PATH
+   --already_coarse true
+
+In this case, the CMIP6 field is not downscaled again. It is directly upscaled
+to the ERA5 fine-grid resolution before being used as the coarse conditioning
+input.
+
+HighResMIP external coarse input
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+HighResMIP data can also be provided as an external coarse source:
+
+.. code-block:: bash
+
+   --per_var_datadir VAR.fine=ERA5_PATH VAR.coarse=HiMIP_PATH
+   --already_coarse false
+
+The HighResMIP field is first downscaled to the configured coarse shape and
+then upscaled to the fine-grid resolution before inference.
+
+HighResMIP as fine-resolution input
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+HighResMIP may also be used as the fine-resolution reference dataset without an
+external coarse source:
+
+.. code-block:: bash
+
+   --per_var_datadir VAR.fine=HiMIP_PATH
+   --already_coarse false
+
+In this configuration, the coarse input is derived directly from the HighResMIP
+fine-resolution field.
 
 Regional Inference
 ------------------

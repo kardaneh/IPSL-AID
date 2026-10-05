@@ -111,7 +111,7 @@ and are passed to the Python training script.
      - Main dataset directory path (**required**)
    * - ``--per_var_datadir``
      - list
-     - Per-variable data directories as ``VAR=path`` pairs
+     - Per-variable dataset paths using ``VAR.fine=PATH`` and optional ``VAR.coarse=PATH`` pairs
    * - ``--varnames_list``
      - list
      - Variable names to train on (default: VAR_2T VAR_10U VAR_10V)
@@ -335,7 +335,7 @@ Here is an example setup script snippet with commonly used parameters:
 
    datadir="/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
    per_var_datadir=(
-     "VAR_2T=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
+     "VAR_2T.fine=/leonardo_work/EUHPC_D27_095/kkingston/AI-Downscaling/data/data_FOURxDaily"
      )
 
    time_normalization="cos_sin"

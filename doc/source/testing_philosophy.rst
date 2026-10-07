@@ -37,27 +37,27 @@ Recommended Workflow
 
    .. code-block:: bash
 
-      python -m tests.test_all
+      python -m tests.IPSL_AID.test_all
 
 2. **Targeted Tests**: Run specific modules, classes, or test methods
 
    .. code-block:: bash
 
       # Module
-      python -m unittest tests.test_utils
-      python -m unittest tests.test_model_utils
+      python -m unittest tests.IPSL_AID.test_utils
+      python -m unittest tests.IPSL_AID.test_model_utils
 
       # Class
-      python -m unittest tests.test_utils.TestEasyDict
+      python -m unittest tests.IPSL_AID.test_utils.TestEasyDict
 
       # Single test
-      python -m unittest tests.test_utils.TestEasyDict.test_empty_initialization
+      python -m unittest tests.IPSL_AID.test_utils.TestEasyDict.test_empty_initialization
 
 3. **Integration Tests**: Test data loading and model initialization
 
    .. code-block:: bash
 
-      python tests/test_integration.py
+      python tests/IPSL_AID/test_integration.py
 
 4. **Small-scale Debug Runs**: Train on a small subset
 

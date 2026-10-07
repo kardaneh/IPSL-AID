@@ -68,12 +68,12 @@ Issues = "https://github.com/kardaneh/IPSL-AID/issues"
 
 # ADD THIS SECTION - Tell hatchling where your package is
 [tool.hatch.build.targets.wheel]
-packages = ["IPSL_AID"]
+packages = ["src/IPSL_AID"]
 
 # Optional: If you want to include specific files
 [tool.hatch.build]
 include = [
-    "IPSL_AID/**/*",
+    "src/IPSL_AID/**/*",
     "LICENSE",
     "README.rst",
 ]

@@ -10,7 +10,7 @@ import os
 
 os.environ.setdefault(
     "CARTOPY_DATA_DIR",
-    "/leonardo_work/EUHPC_D27_095/cartopy_data",
+    "/leonardo_work/EUHPC_D36_053/cartopy_data",
 )
 import numpy as np
 import torch

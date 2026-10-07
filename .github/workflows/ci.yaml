@@ -31,12 +31,12 @@ jobs:
 
       - name: Run unit tests
         run: |
-          uv run python -m unittest tests.test_utils
-          uv run python -m unittest tests.test_logger
-          uv run python -m unittest tests.test_model_utils
-          uv run python -m unittest tests.test_dataset
-          uv run python -m unittest tests.test_networks
-          uv run python -m unittest tests.test_loss
+          uv run python -m unittest tests.IPSL_AID.test_utils
+          uv run python -m unittest tests.IPSL_AID.test_logger
+          uv run python -m unittest tests.IPSL_AID.test_model_utils
+          uv run python -m unittest tests.IPSL_AID.test_dataset
+          uv run python -m unittest tests.IPSL_AID.test_networks
+          uv run python -m unittest tests.IPSL_AID.test_loss
 
 
       - name: Check package builds

@@ -2,8 +2,8 @@ import os
 import sys
 from datetime import datetime
 
-PROJECT_ROOT = os.path.abspath(os.path.join(__file__, "../../.."))
-sys.path.insert(0, PROJECT_ROOT)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "src"))
 
 project = "IPSL-AID"
 copyright = f"{datetime.now().year}, IPSL / CNRS / Sorbonne University"

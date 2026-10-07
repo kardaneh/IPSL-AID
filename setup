@@ -423,10 +423,14 @@ prefix="run_${TODAY}"
 # ======================
 # Generate SBATCH Script Only (removed run script)
 # ======================
-sbatch_script="$PROJECT_ROOT/slurm/sbatch_${save_checkpoint_name}_${main_folder}_${sub_folder}.sh"
+SLURM_DIR="$PROJECT_ROOT/slurm/IPSL_AID"
+SLURM_IO_DIR="$PROJECT_ROOT/slurm_io/IPSL_AID/$main_folder"
 
 # Create slurm_io directory if it doesn't exist
-mkdir -p "$PROJECT_ROOT/slurm_io"
+mkdir -p "$SLURM_DIR"
+mkdir -p "$SLURM_IO_DIR"
+
+sbatch_script="$SLURM_DIR/sbatch_${save_checkpoint_name}_${main_folder}_${sub_folder}.sh"
 
 # ======================
 # Generate SBATCH Script
@@ -471,11 +475,11 @@ if [ "$MACHINE" != "DALIA" ]; then
 fi
 
 cat >> $sbatch_script <<EOF
-#SBATCH --error=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_%j.err
-#SBATCH --output=$PROJECT_ROOT/slurm_io/${save_checkpoint_name}_%j.out
+#SBATCH --error=$SLURM_IO_DIR/${save_checkpoint_name}_%j.err
+#SBATCH --output=$SLURM_IO_DIR/${save_checkpoint_name}_%j.out
 
-#SBATCH --mail-user=kkingston@ipsl.fr
-#SBATCH --mail-type=END,FAIL
+# #SBATCH --mail-user=kkingston@ipsl.fr
+# #SBATCH --mail-type=END,FAIL
 
 ulimit -s unlimited
 module purge

@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import argparse
+from pathlib import Path
 from IPSL_AID.logger import Logger
 from IPSL_AID.utils import FileUtils, EasyDict
 import numpy as np
@@ -791,9 +792,7 @@ def setup_directories_and_logging(args):
     """
     # now = datetime.datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    current_dir = os.path.abspath(__file__)
-    parent_dir = os.path.dirname(current_dir)
-    project_root = os.path.dirname(parent_dir)
+    project_root = Path(__file__).resolve().parents[2]
 
     paths = EasyDict()
     paths.logs = os.path.join(project_root, "logs", args.main_folder, args.sub_folder)

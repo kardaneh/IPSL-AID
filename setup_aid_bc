@@ -1,0 +1,345 @@
+#!/usr/bin/env bash
+
+# ======================
+# 0. Machine and runtime
+# ======================
+
+Machine="LEONARDO"  # HAL, LEONARDO or AUSTRAL
+debug="False"  # True or False, Used only on LEONARDO
+
+current_ntasks=1
+current_cpus=4
+current_gpus=1
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# ======================
+# 1. Bias-correction setup
+# ======================
+
+method="ot" # "ot" or "qm"
+split="month"
+
+train_start=1980 # 1980
+train_end=2014
+
+apply_start=2021
+apply_end=2021
+
+variables=(
+    "VAR_2T"
+    "VAR_10U"
+    "VAR_10V"
+    "VAR_TP"
+)
+
+# ======================
+# 2. Optimal Transport setup
+# ======================
+
+ot_epsilon=1 #250
+ot_num_iterations=1000000 #50000
+ot_threshold=0.1 #0.01
+ot_batch_size=16
+ot_dtype="float64"
+ot_normalization="True"
+
+# ======================
+# 3. Input paths
+# ======================
+
+era5_on_cmip6_root=(
+    "VAR_2T=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/ERA5_on_CMIP6/data_6hourly_t2m"
+    "VAR_10U=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/ERA5_on_CMIP6/data_6hourly_u10"
+    "VAR_10V=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/ERA5_on_CMIP6/data_6hourly_v10"
+    "VAR_TP=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/ERA5_on_CMIP6/data_6hourly_tp_3hmean"
+)
+
+cmip6_train_root=(
+    "VAR_2T=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_historical/data_6hourly_tas"
+    "VAR_10U=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_historical/data_6hourly_uas"
+    "VAR_10V=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_historical/data_6hourly_vas"
+    "VAR_TP=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_historical/data_6hourly_pr"
+)
+
+cmip6_apply_root=(
+    "VAR_2T=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_futur/data_6hourly_tas"
+    "VAR_10U=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_futur/data_6hourly_uas"
+    "VAR_10V=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_futur/data_6hourly_vas"
+    "VAR_TP=/leonardo_work/EUHPC_D36_053/kkingston/data/data_bias_correction/CMIP6_futur/data_6hourly_pr"
+)
+
+# ======================
+# 4. Job naming
+# ======================
+
+variable_tag=$(IFS=_; echo "${variables[*]}")
+
+job_tag="${method}_${split}_${variable_tag}"
+job_tag+="_train_${train_start}_${train_end}"
+job_tag+="_apply_${apply_start}_${apply_end}"
+
+if [ "$method" == "ot" ]; then
+    threshold_tag="${ot_threshold//./d}"
+    epsilon_tag="${ot_epsilon//./d}"
+
+    job_tag+="_eps_${epsilon_tag}"
+    job_tag+="_thr_${threshold_tag}"
+    job_tag+="_bs_${ot_batch_size}"
+    job_tag+="_${ot_dtype}"
+fi
+
+# ======================
+# 5. Output paths
+# ======================
+
+OUTPUT_ROOT="$PROJECT_ROOT/data/CMIP6_${job_tag}"
+
+output_dir=(
+    "VAR_2T=$OUTPUT_ROOT/data_6hourly_tas_corrected"
+    "VAR_10U=$OUTPUT_ROOT/data_6hourly_uas_corrected"
+    "VAR_10V=$OUTPUT_ROOT/data_6hourly_vas_corrected"
+    "VAR_TP=$OUTPUT_ROOT/data_6hourly_pr_corrected"
+)
+
+# ======================
+# 6. Slurm paths
+# ======================
+
+JOB_DIR="$PROJECT_ROOT/slurm/AID_BC/$job_tag"
+SLURM_IO_DIR="$PROJECT_ROOT/slurm_io/AID_BC/$job_tag"
+
+mkdir -p "$JOB_DIR"
+mkdir -p "$SLURM_IO_DIR"
+mkdir -p "$OUTPUT_ROOT"
+
+sbatch_script="$JOB_DIR/sbatch_${job_tag}.sh"
+
+# ======================
+# 7. Create SBATCH header
+# ======================
+
+cat > "$sbatch_script" <<EOF
+#!/bin/bash
+
+#SBATCH --job-name=AIDBC_${method}_${split}
+#SBATCH --error=$SLURM_IO_DIR/AIDBC_${job_tag}_%j.err
+#SBATCH --output=$SLURM_IO_DIR/AIDBC_${job_tag}_%j.out
+#SBATCH --chdir=$PROJECT_ROOT
+EOF
+
+# ======================
+# 8. Machine-specific SBATCH config
+# ======================
+
+if [ "$Machine" == "LEONARDO" ]; then
+
+cat >> "$sbatch_script" <<EOF
+#SBATCH -A EUHPC_D36_053
+#SBATCH -p boost_usr_prod
+#SBATCH --time=$([ "$debug" == "True" ] && echo "00:30:00" || echo "10:00:00")
+#SBATCH -N 1
+#SBATCH --gpus-per-node=$current_gpus
+#SBATCH --mem-per-gpu=64G
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
+EOF
+
+# Only add ntasks-per-node if not empty.
+if [ -n "$current_ntasks" ]; then
+    echo "#SBATCH --ntasks-per-node=$current_ntasks" >> "$sbatch_script"
+fi
+
+# Only add cpus-per-task if not empty.
+if [ -n "$current_cpus" ]; then
+    echo "#SBATCH --cpus-per-task=$current_cpus" >> "$sbatch_script"
+fi
+
+# Debug mode is available only on Leonardo.
+if [ "$debug" == "True" ]; then
+    echo "#SBATCH --qos=boost_qos_dbg" >> "$sbatch_script"
+fi
+
+elif [ "$Machine" == "HAL" ]; then
+
+cat >> "$sbatch_script" <<EOF
+#SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:$current_gpus
+#SBATCH --mem=0 #55G, 110G
+#SBATCH --time=10:00:00 #1-00:00:00
+#SBATCH --nodelist=hal10
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
+EOF
+
+# Only add ntasks if not empty.
+if [ -n "$current_ntasks" ]; then
+    echo "#SBATCH --ntasks=$current_ntasks" >> "$sbatch_script"
+fi
+
+# Only add cpus-per-task if not empty.
+if [ -n "$current_cpus" ]; then
+    echo "#SBATCH --cpus-per-task=$current_cpus" >> "$sbatch_script"
+fi
+
+elif [ "$Machine" == "AUSTRAL" ]; then
+
+cat >> "$sbatch_script" <<EOF
+#SBATCH -A 2026044
+#SBATCH -p gpu_h200
+#SBATCH --time=1-00:00:00
+#SBATCH -N 1
+#SBATCH --gpus-per-node=$current_gpus
+#SBATCH --mem-per-gpu=64G
+#SBATCH --mail-user=kkingston@ipsl.fr
+#SBATCH --mail-type=END,FAIL
+EOF
+
+
+# Only add ntasks if not empty.
+if [ -n "$current_ntasks" ]; then
+    echo "#SBATCH --ntasks-per-node=$current_ntasks" >> "$sbatch_script"
+fi
+
+# Only add cpus-per-task if not empty.
+if [ -n "$current_cpus" ]; then
+    echo "#SBATCH --cpus-per-task=$current_cpus" >> "$sbatch_script"
+fi
+
+else
+    echo "Unknown machine: $Machine" >&2
+    exit 1
+fi
+
+# ======================
+# 9. Environment setup
+# ======================
+
+cat >> "$sbatch_script" <<EOF
+
+ulimit -s unlimited
+export PYTHONUNBUFFERED=1
+
+echo "=========================================="
+echo "AID-BC JOB INFORMATION"
+echo "=========================================="
+echo "Job ID: \${SLURM_JOB_ID:-unknown}"
+echo "Job name: \${SLURM_JOB_NAME:-unknown}"
+echo "Node list: \${SLURM_NODELIST:-unknown}"
+echo "Current directory: \$(pwd)"
+echo "Start time: \$(date)"
+echo "=========================================="
+EOF
+
+if [ "$Machine" = "LEONARDO" ]; then
+
+    cat >> "$sbatch_script" <<EOF
+
+module purge
+module load profile/deeplrn
+
+source "$PROJECT_ROOT/.venv/bin/activate"
+EOF
+
+elif [ "$Machine" = "HAL" ]; then
+
+    cat >> "$sbatch_script" <<EOF
+
+module purge
+source "$PROJECT_ROOT/.venv/bin/activate"
+EOF
+
+elif [ "$Machine" = "AUSTRAL" ]; then
+
+    cat >> "$sbatch_script" <<EOF
+
+module purge
+source "$PROJECT_ROOT/.venv/bin/activate"
+EOF
+
+fi
+
+# ======================
+# 10. Runtime diagnostics
+# ======================
+
+cat >> "$sbatch_script" <<EOF
+
+echo ""
+echo "=== Python environment ==="
+echo "Python: \$(which python)"
+echo "Python version: \$(python --version)"
+echo "AID-BC version: \$(python -c 'import AID_BC; print(getattr(AID_BC, "__version__", "unknown"))')"
+
+echo ""
+echo "=== JAX environment ==="
+python - <<'PYTHON'
+import jax
+
+print("JAX version:", jax.__version__)
+print("Backend:", jax.default_backend())
+print("Devices:", jax.devices())
+PYTHON
+
+echo ""
+echo "=== NVIDIA information ==="
+nvidia-smi || true
+
+echo ""
+echo "=== AID-BC configuration ==="
+echo "Method: $method"
+echo "Split: $split"
+echo "Variables: ${variables[*]}"
+echo "Training years: $train_start-$train_end"
+echo "Application years: $apply_start-$apply_end"
+echo "Output root: $OUTPUT_ROOT"
+EOF
+
+if [ "$method" == "ot" ]; then
+cat >> "$sbatch_script" <<EOF
+echo "OT epsilon: $ot_epsilon"
+echo "OT iterations: $ot_num_iterations"
+echo "OT threshold: $ot_threshold"
+echo "OT batch size: $ot_batch_size"
+echo "OT dtype: $ot_dtype"
+echo "OT normalization: $ot_normalization"
+EOF
+fi
+
+cat >> "$sbatch_script" <<EOF
+
+echo ""
+
+python -m AID_BC.main \\
+    --method "$method" \\
+    --split "$split" \\
+    --train_start "$train_start" \\
+    --train_end "$train_end" \\
+    --apply_start "$apply_start" \\
+    --apply_end "$apply_end" \\
+    --variables ${variables[@]} \\
+    --era5_on_cmip6_root ${era5_on_cmip6_root[@]} \\
+    --cmip6_train_root ${cmip6_train_root[@]} \\
+    --cmip6_apply_root ${cmip6_apply_root[@]} \\
+    --output_dir ${output_dir[@]} \\
+    --ot_epsilon "$ot_epsilon" \\
+    --ot_num_iterations "$ot_num_iterations" \\
+    --ot_threshold "$ot_threshold" \\
+    --ot_batch_size "$ot_batch_size" \\
+    --ot_dtype "$ot_dtype"
+
+return_code=\$?
+
+echo ""
+echo "End time: \$(date)"
+echo "Job finished with exit code \$return_code"
+
+exit "\$return_code"
+EOF
+
+chmod +x "$sbatch_script"
+
+echo "Created: $sbatch_script"
+echo "Submit with:"
+echo "sbatch $sbatch_script"

@@ -44,6 +44,7 @@ autodoc_mock_imports = [
     "markupsafe",
     "seaborn",
     "cdsapi",
+    "jax",
 ]
 
 autodoc_default_options = {
@@ -61,8 +62,8 @@ napoleon_numpy_docstring = True
 
 templates_path = ["_templates"]
 exclude_patterns = [
-    ".ipynb_checkpoints",
-    ".ipynb_checkpoints/*",
+    "**/.ipynb_checkpoints",
+    "**/.ipynb_checkpoints/*",
 ]
 
 # MathJax 3 configuration

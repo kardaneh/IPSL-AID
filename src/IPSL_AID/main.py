@@ -773,7 +773,7 @@ def setup_directories_and_logging(args):
         - constants : str
             Full path to constant variables file.
 
-    logger : Logger
+    logger : IPSL_AID.logger.Logger
         Configured logger instance with console and file output.
 
     Notes
@@ -837,7 +837,7 @@ def log_configuration(args, paths, logger):
         Configuration object containing all experiment parameters.
     paths : EasyDict
         Dictionary containing paths to various experiment directories.
-    logger : Logger
+    logger : IPSL_AID.logger.Logger
         Logger instance for outputting configuration information.
 
     Notes

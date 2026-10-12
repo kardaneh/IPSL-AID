@@ -91,7 +91,7 @@ class ClimateDataset:
         era5_path : str, optional
             Path to the ERA5 NetCDF file. If None, only CMIP6 is prepared.
 
-        logger : Logger, optional
+        logger : AID_BC.logger.Logger, optional
             Custom logger instance.
         """
         self.era5_path = era5_path

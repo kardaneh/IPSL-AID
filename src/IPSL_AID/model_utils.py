@@ -39,7 +39,7 @@ class ModelUtils:
         ----------
         model : torch.nn.Module
             PyTorch model to inspect
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output, by default None
 
         Returns
@@ -73,7 +73,7 @@ class ModelUtils:
         ----------
         model : torch.nn.Module
             PyTorch model to inspect
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output, by default None
 
         Examples
@@ -109,7 +109,7 @@ class ModelUtils:
             - 'loss': Current loss value
         filename : str, optional
             File path to save the checkpoint, by default "checkpoint.pth.tar"
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output, by default None
 
         Examples
@@ -141,7 +141,7 @@ class ModelUtils:
             Model to load weights into
         optimizer : torch.optim.Optimizer, optional
             Optimizer to restore state, by default None
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output, by default None
 
         Examples
@@ -181,7 +181,7 @@ class ModelUtils:
             Optimizer to restore state
         device : torch.device
             Device to load checkpoint to
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output
 
         Returns
@@ -255,7 +255,7 @@ class ModelUtils:
         ----------
         model : torch.nn.Module
             PyTorch model to analyze
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output, by default None
 
         Returns
@@ -289,7 +289,7 @@ class ModelUtils:
             PyTorch model to summarize
         input_shape : tuple, optional
             Input shape for memory analysis, by default None
-        logger : Logger, optional
+        logger : IPSL_AID.logger.Logger, optional
             Logger instance for output, by default None
         """
         if logger:
@@ -361,7 +361,7 @@ class ModelUtils:
             Command line arguments
         paths : EasyDict
             Directory paths
-        logger : Logger
+        logger : IPSL_AID.logger.Logger
             Logger instance
         checkpoint_type : str
             Type of checkpoint: "samples", "epoch", "best", "final"

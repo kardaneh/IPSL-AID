@@ -544,7 +544,7 @@ def load_precomputed_metadata(
         Common root or parent directory of precomputed ERA5 data.
     variable_name : str
         Requested climate variable.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report the loaded metadata.
 
     Returns
@@ -648,7 +648,7 @@ def load_training_variable(
         Directory containing historical CMIP6 yearly files.
     variable_name : str
         Climate variable to load.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report progress.
     era5_root : str or pathlib.Path or None, optional
         Directory containing raw ERA5 yearly files.
@@ -955,7 +955,7 @@ def load_training_data(
         Historical CMIP6 directory for each variable.
     variable_names : sequence of str
         Ordered climate variables to load.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report progress.
 
     Returns
@@ -1075,7 +1075,7 @@ def load_application_data(
         Ordered climate variables to load.
     latitude_descending : bool
         Latitude orientation established during training.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report progress.
 
     Returns
@@ -1384,7 +1384,7 @@ def fit_bias_corrector(
         Ordered variables used to construct the feature matrices.
     corrector : BiasCorrector
         Initialized bias-correction object.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report fitting diagnostics.
 
     Returns
@@ -1473,7 +1473,7 @@ def fit_bias_correctors_by_month(
         Bias-correction method.
     ot_kwargs : dict
         Keyword arguments passed to create_bias_corrector.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report monthly fitting progress.
 
     Returns
@@ -1546,7 +1546,7 @@ def apply_bias_corrector(
         Ordered variables used during fitting and application.
     corrector : BiasCorrector
         Fitted bias corrector.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report application diagnostics.
 
     Returns
@@ -1605,7 +1605,7 @@ def apply_bias_corrector_by_month(
         Ordered variables used during fitting and application.
     correctors_by_month : dict of int to BiasCorrector
         Fitted corrector for each calendar month.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report application progress.
 
     Returns
@@ -1683,7 +1683,7 @@ def save_corrected_year(
         Year written to the samples_<year>.nc filename.
     variable_names : sequence of str
         Variables to save.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report output paths.
 
     Raises

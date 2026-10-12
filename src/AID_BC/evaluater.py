@@ -147,7 +147,7 @@ def print_metrics(variable_name, summaries, logger):
         Climate variable name.
     summaries : list of dict
         Summary statistics.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report metrics.
     """
     lines = [
@@ -208,7 +208,7 @@ def evaluate(
         Bias-correction method name.
     year : int
         Evaluated application year.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report evaluation progress.
     run_name : str
         Name of the bias-correction run used to create the corresponding

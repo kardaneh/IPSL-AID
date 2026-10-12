@@ -151,7 +151,7 @@ def process_year(
         Name of the climate variable to preprocess.
     output_dir : str or pathlib.Path
         Directory in which the precomputed ERA5-on-CMIP6 file is written.
-    logger : Logger
+    logger : AID_BC.logger.Logger
         Logger used to report progress, retries, and output paths.
 
     Returns

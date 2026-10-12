@@ -50,6 +50,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
    neural_architectures
    training_strategy
    inference_modes
+   bias_correction
 
 .. toctree::
    :maxdepth: 2
@@ -82,6 +83,7 @@ Core Components
 * :doc:`neural_architectures` - UNet-based architectures for climate data
 * :doc:`training_strategy` - Global training with random block strategy
 * :doc:`inference_modes` - Global, regional, and sampler-based inference
+* :doc:`bias_correction` - Quantile Mapping and Optimal Transport bias correction
 
 Project Information
 -------------------

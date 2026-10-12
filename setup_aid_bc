@@ -140,7 +140,7 @@ cat >> "$sbatch_script" <<EOF
 #SBATCH --time=$([ "$debug" == "True" ] && echo "00:30:00" || echo "10:00:00")
 #SBATCH -N 1
 #SBATCH --gpus-per-node=$current_gpus
-#SBATCH --mem-per-gpu=64G
+#SBATCH --mem=128G
 #SBATCH --mail-user=kkingston@ipsl.fr
 #SBATCH --mail-type=END,FAIL
 EOF

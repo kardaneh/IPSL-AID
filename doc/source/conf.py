@@ -60,7 +60,10 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns = [
+    ".ipynb_checkpoints",
+    ".ipynb_checkpoints/*",
+]
 
 # MathJax 3 configuration
 mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"

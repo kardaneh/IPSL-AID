@@ -115,7 +115,7 @@ HighResMIP data can also be provided as an external coarse source:
 
 .. code-block:: bash
 
-   --per_var_datadir VAR.fine=ERA5_PATH VAR.coarse=HiMIP_PATH
+   --per_var_datadir VAR.fine=ERA5_PATH VAR.coarse=HiResMIP_PATH
    --already_coarse false
 
 The HighResMIP field is first downscaled to the configured coarse shape and
@@ -129,7 +129,7 @@ external coarse source:
 
 .. code-block:: bash
 
-   --per_var_datadir VAR.fine=HiMIP_PATH
+   --per_var_datadir VAR.fine=HiResMIP_PATH
    --already_coarse false
 
 In this configuration, the coarse input is derived directly from the HighResMIP

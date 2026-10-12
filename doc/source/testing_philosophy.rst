@@ -3,7 +3,12 @@ Testing Philosophy (Read This First)
 
 Each module in IPSL-AID comes with its **own dedicated tests**.
 
-Before running large-scale training, users are **strongly encouraged** to:
+The repository currently includes test suites for:
+
+- ``IPSL_AID``, covering diffusion-based climate downscaling;
+- ``AID_BC``, covering bias correction using Quantile Mapping and Optimal Transport.
+
+Before running large-scale training or bias-correction experiments, users are **strongly encouraged** to:
 
 1. Explore the test suite
 2. Understand data handling and normalization
@@ -15,13 +20,14 @@ This approach minimizes wasted compute time and ensures correct scientific usage
 Why Testing is Essential
 ------------------------
 
-Climate downscaling models involve:
+Climate downscaling and bias-correction workflows involve:
 
 - Complex neural architectures
 - Sophisticated diffusion formulations
 - Large-scale data processing
 - Multi-GPU parallelization
 - Numerical precision requirements
+- Statistical bias-correction methods
 
 Without proper testing, errors can:
 
@@ -33,33 +39,51 @@ Without proper testing, errors can:
 Recommended Workflow
 --------------------
 
-1. **Unit Tests**: Run all tests
+1. **Run the complete test suite**
+
+   The global test runner executes both the ``IPSL_AID`` and ``AID_BC`` test
+   suites:
 
    .. code-block:: bash
 
-      python -m tests.IPSL_AID.test_all
+      python -m tests.test_all
 
-2. **Targeted Tests**: Run specific modules, classes, or test methods
+2. **Run one test suite independently**
 
    .. code-block:: bash
 
-      # Module
+      # IPSL_AID
+      python -m tests.IPSL_AID.test_runner
+
+      # AID_BC
+      python -m tests.AID_BC.test_runner
+
+3. **Run targeted tests**
+
+   Individual modules, classes, or test methods can be executed directly.
+
+   .. code-block:: bash
+
+      # IPSL_AID module
       python -m unittest tests.IPSL_AID.test_utils
-      python -m unittest tests.IPSL_AID.test_model_utils
 
-      # Class
+      # IPSL_AID class
       python -m unittest tests.IPSL_AID.test_utils.TestEasyDict
 
-      # Single test
-      python -m unittest tests.IPSL_AID.test_utils.TestEasyDict.test_empty_initialization
+      # IPSL_AID single test
+      python -m unittest \
+        tests.IPSL_AID.test_utils.TestEasyDict.test_empty_initialization
 
-3. **Integration Tests**: Test data loading and model initialization
+      # AID_BC module
+      python -m unittest tests.AID_BC.test_quantile_mapping
+
+4. **Integration Tests**: Test data loading and model initialization
 
    .. code-block:: bash
 
       python tests/IPSL_AID/test_integration.py
 
-4. **Small-scale Debug Runs**: Train on a small subset
+5. **Small-scale Debug Runs**: Train on a small subset
 
    .. code-block:: bash
 
@@ -68,18 +92,27 @@ Recommended Workflow
       num_epochs=1
       batch_size=4
 
-5. **Validation**: Check against known baselines
+6. **Validation**: Check against known baselines
 
 Test Coverage
 -------------
 
-IPSL-AID includes tests for:
+The ``IPSL_AID`` test suite covers:
 
 - Data loading and preprocessing
 - Diffusion model implementations (VE, VP, EDM, iDDPM)
 - UNet architectures and variants
 - Loss functions and training loops
 - Inference and sampling procedures
+- Evaluation metrics and diagnostics
+
+The ``AID_BC`` test suite covers:
+
+- ERA5 and CMIP6 data loading
+- ERA5-on-CMIP6 preprocessing
+- Quantile Mapping
+- Optimal Transport
+- Bias-correction workflows
 - Evaluation metrics and diagnostics
 
 Debugging Tips

@@ -12,21 +12,7 @@ IPSL-AID: AI Diffusion Models for Climate and Weather Data
 
 from IPSL_AID.version import __version__, __version_info__, get_version
 from IPSL_AID.logger import Logger
-
-# Import main components for easy access
 from IPSL_AID.utils import EasyDict, FileUtils
-from IPSL_AID.dataset import DataPreprocessor
-from IPSL_AID.evaluater import run_validation, sampler
-from IPSL_AID.loss import EDMLoss, UnetLoss, VELoss, VPLoss
-from IPSL_AID.model import load_model_and_loss
-from IPSL_AID.networks import (
-    DhariwalUNet,
-    EDMPrecond,
-    SongUNet,
-    VEPrecond,
-    VPPrecond,
-    iDDPMPrecond,
-)
 
 __author__ = "CNRS / IPSL / Sorbonne University"
 __license__ = "Creative Commons Attribution-NonCommercial-ShareAlike 4.0"
@@ -59,3 +45,63 @@ __all__ = [
     "iDDPMPrecond",
     "EDMPrecond",
 ]
+
+
+def __getattr__(name):
+    """Lazily import components requiring heavier dependencies."""
+
+    if name == "DataPreprocessor":
+        from IPSL_AID.dataset import DataPreprocessor
+
+        return DataPreprocessor
+
+    if name in {"run_validation", "sampler"}:
+        from IPSL_AID.evaluater import run_validation, sampler
+
+        return {
+            "run_validation": run_validation,
+            "sampler": sampler,
+        }[name]
+
+    if name in {"VPLoss", "VELoss", "EDMLoss", "UnetLoss"}:
+        from IPSL_AID.loss import EDMLoss, UnetLoss, VELoss, VPLoss
+
+        return {
+            "VPLoss": VPLoss,
+            "VELoss": VELoss,
+            "EDMLoss": EDMLoss,
+            "UnetLoss": UnetLoss,
+        }[name]
+
+    if name == "load_model_and_loss":
+        from IPSL_AID.model import load_model_and_loss
+
+        return load_model_and_loss
+
+    if name in {
+        "SongUNet",
+        "DhariwalUNet",
+        "VPPrecond",
+        "VEPrecond",
+        "iDDPMPrecond",
+        "EDMPrecond",
+    }:
+        from IPSL_AID.networks import (
+            DhariwalUNet,
+            EDMPrecond,
+            SongUNet,
+            VEPrecond,
+            VPPrecond,
+            iDDPMPrecond,
+        )
+
+        return {
+            "SongUNet": SongUNet,
+            "DhariwalUNet": DhariwalUNet,
+            "VPPrecond": VPPrecond,
+            "VEPrecond": VEPrecond,
+            "iDDPMPrecond": iDDPMPrecond,
+            "EDMPrecond": EDMPrecond,
+        }[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

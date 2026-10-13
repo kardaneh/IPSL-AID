@@ -21,12 +21,6 @@ from AID_BC.version import __version__, __version_info__, get_version
 # Import logger
 from AID_BC.logger import Logger
 
-# Import main components for easy access
-from AID_BC.dataset import ClimateDataset
-from AID_BC.quantile_mapping import QM
-from AID_BC.optimal_transport import OptimalTransport
-from AID_BC.evaluater import evaluate
-
 __all__ = [
     "__version__",
     "__version_info__",
@@ -41,3 +35,29 @@ __all__ = [
     "OptimalTransport",
     "evaluate",
 ]
+
+
+def __getattr__(name):
+    """Lazily import components requiring heavier dependencies."""
+
+    if name == "ClimateDataset":
+        from AID_BC.dataset import ClimateDataset
+
+        return ClimateDataset
+
+    if name == "QM":
+        from AID_BC.quantile_mapping import QM
+
+        return QM
+
+    if name == "OptimalTransport":
+        from AID_BC.optimal_transport import OptimalTransport
+
+        return OptimalTransport
+
+    if name == "evaluate":
+        from AID_BC.evaluater import evaluate
+
+        return evaluate
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

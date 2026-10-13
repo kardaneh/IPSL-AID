@@ -38,6 +38,11 @@ jobs:
           uv run python -m unittest tests.IPSL_AID.test_networks
           uv run python -m unittest tests.IPSL_AID.test_loss
 
+          uv run python -m unittest tests.AID_BC.test_dataset
+          uv run python -m unittest tests.AID_BC.test_logger
+          uv run python -m unittest tests.AID_BC.test_preprocess
+          uv run python -m unittest tests.AID_BC.test_quantile_mapping
+
 
       - name: Check package builds
         run: uv build

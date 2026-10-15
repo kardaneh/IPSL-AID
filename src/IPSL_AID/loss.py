@@ -1,4 +1,4 @@
-# Copyright 2026 IPSL / CNRS / Sorbonne University
+# Copyright 2026 CNRS
 # Authors: Kazem Ardaneh
 #
 # ============================================================================

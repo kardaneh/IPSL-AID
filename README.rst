@@ -34,7 +34,7 @@ Authors
 - **Kishanthan Kingston**
 - **Pierre Chapel**
 
-Developed at **IPSL / CNRS / Sorbonne University** (2026)
+Developed at **CNRS** (2026)
 
 Documentation
 -------------

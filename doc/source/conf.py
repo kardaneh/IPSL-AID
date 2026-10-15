@@ -6,7 +6,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "src"))
 
 project = "IPSL-AID"
-copyright = f"{datetime.now().year}, IPSL / CNRS / Sorbonne University"
+copyright = f"{datetime.now().year}, CNRS"
 author = "Kazem Ardaneh and AID Team"
 release = "0.1.0"
 version = "0.1"

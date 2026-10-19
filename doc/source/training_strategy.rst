@@ -90,14 +90,24 @@ mapping the global center back to the regional grid using
 Coarse-Down-Up Procedure
 ------------------------
 
-A coarse-down-up procedure based on bilinear interpolation is used to separate
-large-scale and fine-scale components:
+A coarse-down-up procedure based on bilinear interpolation is applied to the
+full global field before spatial block extraction:
 
-1. **Coarsen**: High-resolution field :math:`\mathbf{y}^{\mathrm{HR}}` is reduced
-   to :math:`16\times32` resolution
-2. **Upscale**: Coarse field is scaled back to original resolution, yielding
-   :math:`\mathbf{y}^{\mathrm{CU}}`
-3. **Residual**: Fine-scale information :math:`\mathbf{R} = \mathbf{y}^{\mathrm{HR}} - \mathbf{y}^{\mathrm{CU}}`
+1. **Coarsen**: The global high-resolution field
+   :math:`\mathbf{y}^{\mathrm{HR}}_{\mathrm{global}}` is reduced to
+   :math:`143\times144`, corresponding to the native spatial resolution of
+   the IPSL CMIP6 fields.
+
+2. **Upscale**: The coarse global field is interpolated back to the ERA5 grid
+   resolution of :math:`721\times1440`, yielding
+   :math:`\mathbf{y}^{\mathrm{CU}}_{\mathrm{global}}`.
+
+3. **Split into blocks**: Matching spatial blocks are extracted from both
+   :math:`\mathbf{y}^{\mathrm{HR}}_{\mathrm{global}}` and
+   :math:`\mathbf{y}^{\mathrm{CU}}_{\mathrm{global}}` using the same spatial
+   indices.
+
+4. **Residual**: Fine-scale information :math:`\mathbf{R} = \mathbf{y}^{\mathrm{HR}} - \mathbf{y}^{\mathrm{CU}}`
    serves as training target
 
 Conditioning Inputs
@@ -109,7 +119,7 @@ The model is conditioned on:
 2. **Geographical variables**: Latitude, longitude, topography (:math:`z`), land-sea mask (LSM)
 3. **Temporal information**: Cosine-sine representations of day of year and hour of day
 
-.. figure:: ../../images/workflow.png
+.. figure:: ../../images/workflow_IPSL_AID.jpg
    :width: 100%
    :align: center
 
@@ -119,8 +129,8 @@ Training Schedule
 -----------------
 
 - **Dataset**: ERA5 2015-2019 (train), 2020 (validation), 2021 (test)
-- **Batch size**: 80 (optimized for 4× NVIDIA A100 64GB)
-- **Epochs**: 100
+- **Batch size**: 70 (optimized for 4× NVIDIA A100 64GB)
+- **Epochs**: 50
 - **Optimizer**: Adam with learning rate scheduling
 - **Validation**: Every epoch on held-out year
 

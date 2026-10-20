@@ -15,6 +15,26 @@ Bias correction is performed on the native CMIP6 grid. ERA5 data are therefore
 either projected onto the CMIP6 grid during preprocessing or loaded from
 previously prepared ERA5-on-CMIP6 files.
 
+Within the IPSL-AID workflow, AID-BC is used as a preprocessing step before
+the downscaling stage. It corrects the low-resolution CMIP6 fields using ERA5
+as reference data, and the resulting bias-corrected CMIP6 fields are then
+interpolated to the ERA5 grid and passed to IPSL-AID.
+
+The figure below summarizes the complete AID-BC/IPSL-AID workflow. AID-BC
+performs the bias correction on the native CMIP6 grid
+(:math:`143\times144`). The corrected CMIP6 fields are then upsampled to the
+ERA5 grid (:math:`721\times1440`), split into spatial blocks, and used as
+inputs to the trained IPSL-AID model. IPSL-AID predicts a high-resolution
+residual for each block, which is added to the corresponding upsampled CMIP6
+block before reconstructing the final global high-resolution field.
+
+.. figure:: ../../images/workflow_AID_BC_IPSL_AID.jpg
+   :width: 100%
+   :align: center
+
+   Integration of AID-BC within the IPSL-AID workflow, from low-resolution
+   bias correction to high-resolution CMIP6 reconstruction.
+
 Quantile Mapping
 ----------------
 

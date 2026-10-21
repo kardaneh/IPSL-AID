@@ -1,0 +1,736 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AID_BC.optimal_transport &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AID_BC.optimal_transport</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AID_BC.optimal_transport</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 CNRS</span>
+<span class="c1"># Authors: Kishanthan Kingston</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># REFERENCES</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Mathematical foundations:</span>
+<span class="c1">#</span>
+<span class="c1"># Cuturi, M. (2013). Sinkhorn Distances: Lightspeed Computation of</span>
+<span class="c1"># Optimal Transport.</span>
+<span class="c1">#</span>
+<span class="c1"># Pooladian, A.-A., and Niles-Weed, J. (2021).</span>
+<span class="c1"># Entropic Estimation of Optimal Transport Maps.</span>
+<span class="c1">#</span>
+<span class="c1"># Application to statistical downscaling:</span>
+<span class="c1">#</span>
+<span class="c1"># Wan, Z. Y., et al. (2023). Debias Coarsely, Sample Conditionally: Statistical</span>
+<span class="c1"># Downscaling through Optimal Transport and Probabilistic Diffusion Models.</span>
+<span class="c1">#</span>
+<span class="c1"># Sinkhorn implementation reference:</span>
+<span class="c1"># https://github.com/google-research/swirl-dynamics/blob/main/swirl_dynamics/projects/debiasing/optimal_transport/sinkhorn.py</span>
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># ACKNOWLEDGMENTS</span>
+<span class="c1"># ============================================================================</span>
+<span class="c1"># We thank the swirl_dynamics Authors for making their implementation</span>
+<span class="c1"># available for further research and development.</span>
+
+<span class="sd">"""</span>
+<span class="sd">Solve entropy-regularized optimal transport using the Sinkhorn algorithm.</span>
+
+<span class="sd">The solver computes a squared-Euclidean cost matrix, estimates dual</span>
+<span class="sd">potentials with Sinkhorn iterations, and constructs transport functions</span>
+<span class="sd">from the target dual potential.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">logsumexp</span>
+
+<span class="n">Array</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span>
+<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">"jax_enable_x64"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TransportSolution">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.optimal_transport.TransportSolution">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TransportSolution</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Store the output of the entropy-regularized transport solver.</span>
+
+<span class="sd">    The source and target dual potentials define the transport plan. The</span>
+<span class="sd">    remaining fields describe the transport problem and the solver's outcome.</span>
+<span class="sd">    """</span>
+
+    <span class="n">potentials</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]</span>
+    <span class="n">cost_matrix</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">reg_ot_cost</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">converged</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="n">num_iterations</span><span class="p">:</span> <span class="n">Array</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the source dual potential."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the target dual potential."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the pairwise cost matrix."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_matrix</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transport_plan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Compute the transport plan from the fitted dual potentials.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jax.Array</span>
+<span class="sd">            Transport plan with shape (n_source, n_target).</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">cost_matrix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fu</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gv</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_squared_euclidean_cost</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Compute pairwise squared-Euclidean distances between two point clouds.</span>
+
+<span class="sd">    The dot-product identity avoids constructing an intermediate array with</span>
+<span class="sd">    shape (n_x, n_y, n_features).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : jax.Array, shape (n_x, n_features)</span>
+<span class="sd">        Source samples.</span>
+<span class="sd">    y : jax.Array, shape (n_y, n_features)</span>
+<span class="sd">        Target samples.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    jax.Array, shape (n_x, n_y)</span>
+<span class="sd">        Pairwise squared-Euclidean distances, clipped below at zero to</span>
+<span class="sd">        remove small negative values caused by floating-point round-off.</span>
+<span class="sd">    """</span>
+    <span class="c1"># Compute the squared Euclidean norm of each source and target sample.</span>
+    <span class="n">x_norm</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># shape (n_x, 1)</span>
+    <span class="n">y_norm</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># shape (1, n_y)</span>
+    <span class="n">dot_products</span> <span class="o">=</span> <span class="n">x</span> <span class="o">@</span> <span class="n">y</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># shape (n_x, n_y)</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">x_norm</span> <span class="o">+</span> <span class="n">y_norm</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">dot_products</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_iterate_potentials</span><span class="p">(</span><span class="n">cost</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">num_iterations</span><span class="p">,</span> <span class="n">eps_marginal</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Update the source and target dual potentials with Sinkhorn iterations.</span>
+
+<span class="sd">    Both empirical distributions are assigned uniform masses. Updates are</span>
+<span class="sd">    performed in log space, and the iterations stop when the sum of the</span>
+<span class="sd">    Euclidean norms of successive potential changes reaches the threshold.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cost : jax.Array, shape (n_source, n_target)</span>
+<span class="sd">        Pairwise squared-Euclidean cost matrix.</span>
+<span class="sd">    epsilon : float</span>
+<span class="sd">        Entropic regularization parameter.</span>
+<span class="sd">    threshold : float</span>
+<span class="sd">        Convergence threshold for the sum of potential-change norms.</span>
+<span class="sd">    num_iterations : int</span>
+<span class="sd">        Maximum number of Sinkhorn iterations.</span>
+<span class="sd">    eps_marginal : float</span>
+<span class="sd">        Small value added to each marginal mass before taking its logarithm.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    source_potential : jax.Array, shape (n_source,)</span>
+<span class="sd">        Fitted source dual potential.</span>
+<span class="sd">    target_potential : jax.Array, shape (n_target,)</span>
+<span class="sd">        Fitted target dual potential.</span>
+<span class="sd">    state : tuple</span>
+<span class="sd">        Number of iterations and final potential-change error.</span>
+<span class="sd">    """</span>
+    <span class="n">n_source</span><span class="p">,</span> <span class="n">n_target</span> <span class="o">=</span> <span class="n">cost</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># Represent both point clouds as empirical distributions with uniform masses.</span>
+    <span class="n">source_mass</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_source</span><span class="p">,))</span> <span class="o">/</span> <span class="n">n_source</span>
+    <span class="n">target_mass</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_target</span><span class="p">,))</span> <span class="o">/</span> <span class="n">n_target</span>
+    <span class="n">source_potential</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">source_mass</span><span class="p">)</span>
+    <span class="n">target_potential</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">target_mass</span><span class="p">)</span>
+
+    <span class="c1"># Precompute terms that do not change during Sinkhorn iterations.</span>
+    <span class="n">scaled_cost</span> <span class="o">=</span> <span class="o">-</span><span class="n">cost</span> <span class="o">/</span> <span class="n">epsilon</span>
+    <span class="n">scaled_cost_t</span> <span class="o">=</span> <span class="n">scaled_cost</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">source_log_mass</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">source_mass</span> <span class="o">+</span> <span class="n">eps_marginal</span><span class="p">)</span>
+    <span class="n">target_log_mass</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">target_mass</span> <span class="o">+</span> <span class="n">eps_marginal</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Perform one Sinkhorn iteration to update both dual potentials.</span>
+
+<span class="sd">        The source potential is updated first using the current target</span>
+<span class="sd">        potential. The target potential is then updated using the new source</span>
+<span class="sd">        potential. The convergence error measures the changes in both</span>
+<span class="sd">        potentials during this iteration.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : tuple</span>
+<span class="sd">            Current iteration state containing the iteration count, source</span>
+<span class="sd">            dual potential, target dual potential, and convergence error.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            Updated iteration state containing the incremented iteration</span>
+<span class="sd">            count, updated source and target dual potentials, and the sum</span>
+<span class="sd">            of the Euclidean norms of their changes.</span>
+<span class="sd">        """</span>
+        <span class="n">iteration</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">previous_source</span><span class="p">,</span> <span class="n">previous_target</span> <span class="o">=</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span>
+
+        <span class="c1"># Update the source dual potential using the current target potential.</span>
+        <span class="n">row_log_plan</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">scaled_cost</span> <span class="o">+</span> <span class="n">source</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="n">epsilon</span> <span class="o">+</span> <span class="n">target</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="n">epsilon</span>
+        <span class="p">)</span>
+        <span class="n">row_correction</span> <span class="o">=</span> <span class="n">source_log_mass</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">row_log_plan</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">row_correction</span> <span class="o">+</span> <span class="n">source</span>
+
+        <span class="c1"># Update the target dual potential using the new source potential.</span>
+        <span class="n">column_log_plan</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">scaled_cost_t</span> <span class="o">+</span> <span class="n">target</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="n">epsilon</span> <span class="o">+</span> <span class="n">source</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="n">epsilon</span>
+        <span class="p">)</span>
+        <span class="n">column_correction</span> <span class="o">=</span> <span class="n">target_log_mass</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">column_log_plan</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">column_correction</span> <span class="o">+</span> <span class="n">target</span>
+
+        <span class="c1"># Measure convergence using changes in both dual potentials.</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">previous_source</span> <span class="o">-</span> <span class="n">source</span><span class="p">)</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="n">previous_target</span> <span class="o">-</span> <span class="n">target</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">iteration</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">error</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">continue_iterating</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check whether Sinkhorn should perform another iteration.</span>
+
+<span class="sd">        Iterations continue while the convergence error exceeds the</span>
+<span class="sd">        configured threshold and the maximum iteration count has not</span>
+<span class="sd">        been reached.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : tuple</span>
+<span class="sd">            Current iteration state containing the iteration count, source</span>
+<span class="sd">            dual potential, target dual potential, and convergence error.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jax.Array</span>
+<span class="sd">            Boolean indicating whether another Sinkhorn iteration is required.</span>
+<span class="sd">        """</span>
+        <span class="n">iteration</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">error</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">num_iterations</span><span class="p">)</span>
+
+    <span class="c1"># An infinite initial error guarantees at least one iteration.</span>
+    <span class="n">initial_error</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">source_potential</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">count</span><span class="p">,</span> <span class="n">source_potential</span><span class="p">,</span> <span class="n">target_potential</span><span class="p">,</span> <span class="n">final_error</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">while_loop</span><span class="p">(</span>
+        <span class="n">continue_iterating</span><span class="p">,</span>
+        <span class="n">update</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">source_potential</span><span class="p">,</span> <span class="n">target_potential</span><span class="p">,</span> <span class="n">initial_error</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">source_potential</span><span class="p">,</span> <span class="n">target_potential</span><span class="p">,</span> <span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">final_error</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="OptimalTransport">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.optimal_transport.OptimalTransport">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OptimalTransport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Solve entropy-regularized optimal transport using Sinkhorn iterations.</span>
+
+<span class="sd">    The solver uses the squared-Euclidean cost and uniform empirical</span>
+<span class="sd">    marginals. The target dual potential can be used to construct a</span>
+<span class="sd">    transport function for new source samples.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    epsilon : float</span>
+<span class="sd">        Entropic regularization parameter. Must be strictly positive.</span>
+<span class="sd">    sharding : jax.sharding.Sharding or None, optional</span>
+<span class="sd">        Optional sharding constraint applied to the cost matrix.</span>
+<span class="sd">    num_iterations : int, default=100</span>
+<span class="sd">        Maximum number of Sinkhorn iterations.</span>
+<span class="sd">    threshold : float, default=1e-3</span>
+<span class="sd">        Convergence threshold based on changes in the dual potentials.</span>
+<span class="sd">    eps_marginal : float, default=1e-12</span>
+<span class="sd">        Small value added to marginal masses before taking their logarithms.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="OptimalTransport.__init__">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.optimal_transport.OptimalTransport.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="p">,</span>
+        <span class="n">sharding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">eps_marginal</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">epsilon</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"epsilon must be strictly positive, got </span><span class="si">{</span><span class="n">epsilon</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_iterations</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"num_iterations must be strictly positive."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"threshold must be non-negative."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">eps_marginal</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"eps_marginal must be non-negative."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharding</span> <span class="o">=</span> <span class="n">sharding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span> <span class="o">=</span> <span class="n">num_iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps_marginal</span> <span class="o">=</span> <span class="n">eps_marginal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_solve</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_solve</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransportSolution</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Solve the transport problem between source and target samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : jax.Array, shape (n_source, n_features)</span>
+<span class="sd">            Source samples.</span>
+<span class="sd">        y : jax.Array, shape (n_target, n_features)</span>
+<span class="sd">            Target samples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TransportSolution</span>
+<span class="sd">            Fitted dual potentials, cost matrix, transport cost, and</span>
+<span class="sd">            convergence diagnostics.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If either point cloud is not two-dimensional, the feature</span>
+<span class="sd">            dimensions do not match, or either point cloud is empty.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"x and y must both be two-dimensional arrays."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"x and y must have the same feature dimension."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Both point clouds must contain at least one sample."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_solve</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OptimalTransport.solve">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.optimal_transport.OptimalTransport.solve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Solve the transport problem using named source and target arguments.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source : jax.Array, shape (n_source, n_features)</span>
+<span class="sd">            Source samples.</span>
+<span class="sd">        target : jax.Array, shape (n_target, n_features)</span>
+<span class="sd">            Target samples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TransportSolution</span>
+<span class="sd">            Fitted transport solution.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Compute the transport solution and its convergence diagnostics.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : jax.Array, shape (n_source, n_features)</span>
+<span class="sd">            Source samples.</span>
+<span class="sd">        y : jax.Array, shape (n_target, n_features)</span>
+<span class="sd">            Target samples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TransportSolution</span>
+<span class="sd">            Dual potentials, cost matrix, transport cost, and convergence state.</span>
+<span class="sd">        """</span>
+        <span class="c1"># Compute the squared-Euclidean distance between each source</span>
+        <span class="c1"># sample and each target sample.</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">_squared_euclidean_cost</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">with_sharding_constraint</span><span class="p">(</span><span class="n">cost</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharding</span><span class="p">)</span>
+
+        <span class="c1"># Run Sinkhorn iterations to estimate the source and target</span>
+        <span class="c1"># dual potentials. Also retrieve the number of iterations</span>
+        <span class="c1"># performed and the final convergence error.</span>
+        <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="o">=</span> <span class="n">_iterate_potentials</span><span class="p">(</span>
+            <span class="n">cost</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eps_marginal</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Scale the transport costs by the entropic regularization</span>
+        <span class="c1"># parameter before reconstructing the transport plan.</span>
+        <span class="n">scaled_cost</span> <span class="o">=</span> <span class="o">-</span><span class="n">cost</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+
+        <span class="c1"># Combine the scaled costs with the source and target dual</span>
+        <span class="c1"># potentials to obtain the logarithm of the transport plan.</span>
+        <span class="n">log_plan</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">scaled_cost</span>
+            <span class="o">+</span> <span class="n">source</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+            <span class="o">+</span> <span class="n">target</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Recover the transport plan by exponentiating its logarithm.</span>
+        <span class="c1"># The plan has shape (n_source, n_target).</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_plan</span><span class="p">)</span>
+
+        <span class="c1"># Compute the transport cost as the sum of the elementwise</span>
+        <span class="c1"># product of the transport plan and the cost matrix.</span>
+        <span class="n">former_cost</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">plan</span> <span class="o">*</span> <span class="n">cost</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Return the fitted potentials, transport problem parameters,</span>
+        <span class="c1"># transport cost, and convergence diagnostics.</span>
+        <span class="c1"># Convergence is reached when the final change in the dual</span>
+        <span class="c1"># potentials is less than or equal to the configured threshold.</span>
+        <span class="k">return</span> <span class="n">TransportSolution</span><span class="p">(</span>
+            <span class="n">potentials</span><span class="o">=</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">),</span>
+            <span class="n">cost_matrix</span><span class="o">=</span><span class="n">cost</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
+            <span class="n">reg_ot_cost</span><span class="o">=</span><span class="n">former_cost</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">converged</span><span class="o">=</span><span class="n">error</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">num_iterations</span><span class="o">=</span><span class="n">count</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_potential_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">potential</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Evaluate the entropic source potential at one source sample.</span>
+
+<span class="sd">        The potential combines the target dual potential, squared-Euclidean</span>
+<span class="sd">        costs, and target marginal weights using a weighted log-sum-exp.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : jax.Array, shape (n_features,)</span>
+<span class="sd">            Source sample at which to evaluate the potential.</span>
+<span class="sd">        potential : jax.Array, shape (n_target,)</span>
+<span class="sd">            Target dual potential obtained from Sinkhorn iterations.</span>
+<span class="sd">        y : jax.Array, shape (n_target, n_features)</span>
+<span class="sd">            Target samples associated with the dual potential.</span>
+<span class="sd">        weights : jax.Array or None</span>
+<span class="sd">            Target marginal weights. Uniform weights are used when None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jax.Array</span>
+<span class="sd">            Scalar value of the entropic source potential.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the source and target samples have different feature dimensions.</span>
+<span class="sd">        """</span>
+        <span class="c1"># Convert the source sample into a two-dimensional array so that</span>
+        <span class="c1"># its shape is compatible with the pairwise cost computation.</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+        <span class="c1"># Assign uniform weights to the target samples when no</span>
+        <span class="c1"># marginal weights are provided.</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span> <span class="o">/</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># The source sample and target samples must have the same</span>
+        <span class="c1"># number of features to compute squared-Euclidean distances.</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"point and y must share the feature dimension."</span><span class="p">)</span>
+
+        <span class="c1"># Compute the squared-Euclidean distance between the source</span>
+        <span class="c1"># sample and each target sample.</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">_squared_euclidean_cost</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+        <span class="c1"># Combine the target dual potential and the transport costs,</span>
+        <span class="c1"># then scale the result by the entropic regularization parameter.</span>
+        <span class="n">scaled_scores</span> <span class="o">=</span> <span class="p">(</span><span class="n">potential</span> <span class="o">-</span> <span class="n">cost</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+
+        <span class="c1"># Evaluate the entropic source potential using a weighted</span>
+        <span class="c1"># log-sum-exp for numerical stability.</span>
+        <span class="c1"># The result is a scalar because the potential is evaluated</span>
+        <span class="c1"># at a single source sample.</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span>
+            <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+            <span class="o">*</span> <span class="n">logsumexp</span><span class="p">(</span>
+                <span class="n">scaled_scores</span><span class="p">,</span>
+                <span class="n">b</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+                <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="OptimalTransport.transport_fn">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.optimal_transport.OptimalTransport.transport_fn">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transport_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potential</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Build a vectorized transport function from the target dual potential.</span>
+
+<span class="sd">        The transport map is computed from the gradient of the entropic source</span>
+<span class="sd">        potential: T(x) = x - 0.5 * grad(f_epsilon(x)). The factor 0.5 comes</span>
+<span class="sd">        from using squared-Euclidean costs without a factor of one half.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        potential : jax.Array, shape (n_target,)</span>
+<span class="sd">            Target dual potential obtained from Sinkhorn iterations.</span>
+<span class="sd">        y : jax.Array, shape (n_target, n_features)</span>
+<span class="sd">            Target samples associated with the dual potential.</span>
+<span class="sd">        weights : jax.Array or None, optional</span>
+<span class="sd">            Target marginal weights. Uniform weights are used when None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        callable</span>
+<span class="sd">            Function accepting an array of shape (n_samples, n_features)</span>
+<span class="sd">            and returning the transported samples with the same shape.</span>
+<span class="sd">        """</span>
+
+        <span class="c1"># Differentiate the entropic potential for each source sample.</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">single_point_map</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">"""</span>
+<span class="sd">            Transport one source sample using the gradient of the entropic potential.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            point : jax.Array, shape (n_features,)</span>
+<span class="sd">                Source sample to transport.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            jax.Array, shape (n_features,)</span>
+<span class="sd">                Transported source sample.</span>
+<span class="sd">            """</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">potential_value</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">"""</span>
+<span class="sd">                Evaluate the entropic potential at one source sample.</span>
+
+<span class="sd">                Parameters</span>
+<span class="sd">                ----------</span>
+<span class="sd">                x : jax.Array, shape (n_features,)</span>
+<span class="sd">                    Source sample at which to evaluate the potential.</span>
+
+<span class="sd">                Returns</span>
+<span class="sd">                -------</span>
+<span class="sd">                jax.Array</span>
+<span class="sd">                    Scalar value of the entropic potential.</span>
+<span class="sd">                """</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_potential_at</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">potential</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">point</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">jax</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">potential_value</span><span class="p">)(</span><span class="n">point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">single_point_map</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">out_axes</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OptimalTransport.transport_fn_direct">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.optimal_transport.OptimalTransport.transport_fn_direct">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transport_fn_direct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potential</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Build a direct transport function using the target dual potential.</span>
+
+<span class="sd">        This implementation evaluates the transport weights using exponentials</span>
+<span class="sd">        without log-sum-exp stabilization and may be numerically unstable.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        potential : jax.Array, shape (n_target,)</span>
+<span class="sd">            Target dual potential obtained from Sinkhorn iterations.</span>
+<span class="sd">        y : jax.Array, shape (n_target, n_features)</span>
+<span class="sd">            Target samples associated with the dual potential.</span>
+<span class="sd">        weights : jax.Array or None, optional</span>
+<span class="sd">            Target marginal weights. Uniform weights are used when None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        callable</span>
+<span class="sd">            Function transporting one source sample of shape (n_features,)</span>
+<span class="sd">            to a target-space sample with the same shape.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the target dual potential is not one-dimensional or its length</span>
+<span class="sd">            does not match the number of target samples.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">potential</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"potential must be one-dimensional."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">potential</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"potential and y must have the same sample count."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span> <span class="o">/</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">transport_one</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">"""</span>
+<span class="sd">            Transport one source sample using the direct entropic transport map.</span>
+
+<span class="sd">            The transport weights are computed from the target dual potential and</span>
+<span class="sd">            the squared-Euclidean distances to the target samples. The transported</span>
+<span class="sd">            sample is obtained as a weighted average of the target samples.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            point : jax.Array, shape (n_features,)</span>
+<span class="sd">                Source sample to transport.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            jax.Array, shape (n_features,)</span>
+<span class="sd">                Transported source sample.</span>
+<span class="sd">            """</span>
+            <span class="c1"># Compute squared-Euclidean distances to the target samples.</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">_squared_euclidean_cost</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+            <span class="c1"># Compute the transport weights from the target dual potential.</span>
+            <span class="n">unnormalized</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">potential</span> <span class="o">-</span> <span class="n">cost</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span> <span class="o">*</span> <span class="n">weights</span>
+            <span class="c1"># Compute the weighted average of the target samples.</span>
+            <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">unnormalized</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">unnormalized</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">transport_one</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,518 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AID_BC.evaluater &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AID_BC.evaluater</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AID_BC.evaluater</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 CNRS</span>
+<span class="c1"># Authors: Kishanthan Kingston</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">plot_power_spectra</span><span class="p">,</span>
+    <span class="n">plot_qq_quantiles</span><span class="p">,</span>
+    <span class="n">plot_validation_pdfs</span><span class="p">,</span>
+    <span class="n">plot_metrics_heatmap</span><span class="p">,</span>
+    <span class="n">plot_surface</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="MetricTracker">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetricTracker</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Track summary statistics incrementally."""</span>
+
+<div class="viewcode-block" id="MetricTracker.__init__">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.reset">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.reset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Reset tracked statistics."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_sq</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.update">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Update statistics with new values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        values : array-like</span>
+<span class="sd">            Values to accumulate.</span>
+<span class="sd">        """</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="n">values</span><span class="o">.</span><span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum</span> <span class="o">+=</span> <span class="n">values</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_sq</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">,</span> <span class="n">values</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">,</span> <span class="n">values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.getmean">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.getmean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getmean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the mean."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.getstd">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.getstd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getstd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the standard deviation."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getmean</span><span class="p">()</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_sq</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">-</span> <span class="n">mean</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.getmin">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.getmin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getmin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the minimum."""</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.getmax">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.getmax">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getmax</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the maximum."""</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span></div>
+
+
+<div class="viewcode-block" id="MetricTracker.getsqrtmean">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.MetricTracker.getsqrtmean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getsqrtmean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the square root of the mean."""</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getmean</span><span class="p">())</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="summary_metrics">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.summary_metrics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summary_metrics</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Compute summary statistics for one dataset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : array-like</span>
+<span class="sd">        Data to evaluate.</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Dataset name.</span>
+<span class="sd">    ref : array-like or None, optional</span>
+<span class="sd">        Reference data used to compute MAE and RMSE.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Summary statistics.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">variable_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"tp"</span><span class="p">,</span> <span class="s2">"var_tp"</span><span class="p">,</span> <span class="s2">"precipitation"</span><span class="p">]:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="mf">1000.0</span>
+
+        <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.0</span>
+
+    <span class="n">data_tracker</span> <span class="o">=</span> <span class="n">MetricTracker</span><span class="p">()</span>
+    <span class="n">data_tracker</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"dataset"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">"MEAN"</span><span class="p">:</span> <span class="n">data_tracker</span><span class="o">.</span><span class="n">getmean</span><span class="p">(),</span>
+        <span class="s2">"STD"</span><span class="p">:</span> <span class="n">data_tracker</span><span class="o">.</span><span class="n">getstd</span><span class="p">(),</span>
+        <span class="s2">"MIN"</span><span class="p">:</span> <span class="n">data_tracker</span><span class="o">.</span><span class="n">getmin</span><span class="p">(),</span>
+        <span class="s2">"MAX"</span><span class="p">:</span> <span class="n">data_tracker</span><span class="o">.</span><span class="n">getmax</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">"MAE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">"RMSE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+
+        <span class="n">mae_tracker</span> <span class="o">=</span> <span class="n">MetricTracker</span><span class="p">()</span>
+        <span class="n">mae_tracker</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">error</span><span class="p">))</span>
+
+        <span class="n">mse_tracker</span> <span class="o">=</span> <span class="n">MetricTracker</span><span class="p">()</span>
+        <span class="n">mse_tracker</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">error</span><span class="p">))</span>
+
+        <span class="n">row</span><span class="p">[</span><span class="s2">"MAE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mae_tracker</span><span class="o">.</span><span class="n">getmean</span><span class="p">()</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">"RMSE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mse_tracker</span><span class="o">.</span><span class="n">getsqrtmean</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">row</span></div>
+
+
+
+<div class="viewcode-block" id="print_metrics">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.print_metrics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_metrics</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">summaries</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Print summary metrics for one variable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_name : str</span>
+<span class="sd">        Climate variable name.</span>
+<span class="sd">    summaries : list of dict</span>
+<span class="sd">        Summary statistics.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report metrics.</span>
+<span class="sd">    """</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"Evaluation metrics for </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'Dataset'</span><span class="si">:</span><span class="s2">14s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'MAE'</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'RMSE'</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'MEAN'</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'STD'</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'MIN'</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'MAX'</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">summaries</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span><span class="si">:</span><span class="s2">14s</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'MAE'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'RMSE'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'MEAN'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'STD'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'MIN'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'MAX'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.evaluater.evaluate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
+    <span class="n">reference</span><span class="p">,</span>
+    <span class="n">raw</span><span class="p">,</span>
+    <span class="n">corrected</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+    <span class="n">run_name</span><span class="p">,</span>
+    <span class="n">results_dir</span><span class="o">=</span><span class="s2">"./results"</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Evaluate bias-corrected CMIP6 data against ERA5.</span>
+
+<span class="sd">    Metrics are computed separately for each climate variable, while</span>
+<span class="sd">    multivariable diagnostic figures contain one subplot per variable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference : xarray.Dataset</span>
+<span class="sd">        ERA5 reference data on the CMIP6 grid.</span>
+<span class="sd">    raw : xarray.Dataset</span>
+<span class="sd">        Raw CMIP6 application data.</span>
+<span class="sd">    corrected : xarray.Dataset</span>
+<span class="sd">        Bias-corrected CMIP6 data.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered climate variables to evaluate.</span>
+<span class="sd">    method : str</span>
+<span class="sd">        Bias-correction method name.</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Evaluated application year.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report evaluation progress.</span>
+<span class="sd">    run_name : str</span>
+<span class="sd">        Name of the bias-correction run used to create the corresponding</span>
+<span class="sd">        subdirectory inside results_dir.</span>
+<span class="sd">    results_dir : str or pathlib.Path, default="./results"</span>
+<span class="sd">        Root directory for evaluation results.</span>
+<span class="sd">    """</span>
+    <span class="n">result_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">results_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">run_name</span>
+
+    <span class="n">result_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span>
+        <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Evaluating </span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> correction for year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">reference_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">raw_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">corrected_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">lat_1d</span> <span class="o">=</span> <span class="n">reference</span><span class="p">[</span><span class="s2">"latitude"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">lon_1d</span> <span class="o">=</span> <span class="n">reference</span><span class="p">[</span><span class="s2">"longitude"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="n">reference_variable</span> <span class="o">=</span> <span class="n">reference</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+        <span class="n">raw_variable</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+        <span class="n">corrected_variable</span> <span class="o">=</span> <span class="n">corrected</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+
+        <span class="n">summaries</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">summary_metrics</span><span class="p">(</span>
+                <span class="n">reference_variable</span><span class="p">,</span>
+                <span class="s2">"ERA5"</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">summary_metrics</span><span class="p">(</span>
+                <span class="n">raw_variable</span><span class="p">,</span>
+                <span class="s2">"CMIP6_raw"</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="p">,</span>
+                <span class="n">ref</span><span class="o">=</span><span class="n">reference_variable</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">summary_metrics</span><span class="p">(</span>
+                <span class="n">corrected_variable</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"CMIP6_corr_</span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="p">,</span>
+                <span class="n">ref</span><span class="o">=</span><span class="n">reference_variable</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="n">print_metrics</span><span class="p">(</span>
+            <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+            <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">variable_dir</span> <span class="o">=</span> <span class="n">result_dir</span> <span class="o">/</span> <span class="n">variable_name</span>
+
+        <span class="n">plot_metrics_heatmap</span><span class="p">(</span>
+            <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+            <span class="n">metric_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"MAE"</span><span class="p">,</span> <span class="s2">"RMSE"</span><span class="p">],</span>
+            <span class="n">filename</span><span class="o">=</span><span class="s2">"error_metrics.png"</span><span class="p">,</span>
+            <span class="n">save_dir</span><span class="o">=</span><span class="n">variable_dir</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">plot_metrics_heatmap</span><span class="p">(</span>
+            <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+            <span class="n">metric_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"MEAN"</span><span class="p">,</span> <span class="s2">"STD"</span><span class="p">,</span> <span class="s2">"MIN"</span><span class="p">,</span> <span class="s2">"MAX"</span><span class="p">],</span>
+            <span class="n">filename</span><span class="o">=</span><span class="s2">"distribution_metrics.png"</span><span class="p">,</span>
+            <span class="n">save_dir</span><span class="o">=</span><span class="n">variable_dir</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">reference_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference_variable</span><span class="p">)</span>
+        <span class="n">raw_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">raw_variable</span><span class="p">)</span>
+        <span class="n">corrected_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">corrected_variable</span><span class="p">)</span>
+
+    <span class="c1"># dlat = float(</span>
+    <span class="c1">#    np.abs(reference["latitude"].values[1] - reference["latitude"].values[0])</span>
+    <span class="c1"># )</span>
+
+    <span class="c1"># dlon = float(</span>
+    <span class="c1">#    np.abs(reference["longitude"].values[1] - reference["longitude"].values[0])</span>
+    <span class="c1"># )</span>
+
+    <span class="n">plot_validation_pdfs</span><span class="p">(</span>
+        <span class="n">predictions</span><span class="o">=</span><span class="n">corrected_arrays</span><span class="p">,</span>
+        <span class="n">targets</span><span class="o">=</span><span class="n">reference_arrays</span><span class="p">,</span>
+        <span class="n">coarse_inputs</span><span class="o">=</span><span class="n">raw_arrays</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variable_names</span><span class="p">),</span>
+        <span class="n">filename</span><span class="o">=</span><span class="s2">"validation_pdfs.png"</span><span class="p">,</span>
+        <span class="n">save_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">result_dir</span><span class="p">),</span>
+        <span class="n">save_npz</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">plot_power_spectra</span><span class="p">(</span>
+        <span class="n">predictions</span><span class="o">=</span><span class="n">corrected_arrays</span><span class="p">,</span>
+        <span class="n">targets</span><span class="o">=</span><span class="n">reference_arrays</span><span class="p">,</span>
+        <span class="n">coarse_inputs</span><span class="o">=</span><span class="n">raw_arrays</span><span class="p">,</span>
+        <span class="n">dlat</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">dlon</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variable_names</span><span class="p">),</span>
+        <span class="n">filename</span><span class="o">=</span><span class="s2">"power_spectra.png"</span><span class="p">,</span>
+        <span class="n">save_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">result_dir</span><span class="p">),</span>
+        <span class="n">save_npz</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">plot_qq_quantiles</span><span class="p">(</span>
+        <span class="n">predictions</span><span class="o">=</span><span class="n">corrected_arrays</span><span class="p">,</span>
+        <span class="n">targets</span><span class="o">=</span><span class="n">reference_arrays</span><span class="p">,</span>
+        <span class="n">coarse_inputs</span><span class="o">=</span><span class="n">raw_arrays</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variable_names</span><span class="p">),</span>
+        <span class="n">quantiles</span><span class="o">=</span><span class="p">[</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.995</span><span class="p">],</span>
+        <span class="n">filename</span><span class="o">=</span><span class="s2">"qq_quantiles.png"</span><span class="p">,</span>
+        <span class="n">save_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">result_dir</span><span class="p">),</span>
+        <span class="n">save_npz</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">num_time_steps_to_plot</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">reference</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"time"</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">time_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_time_steps_to_plot</span><span class="p">):</span>
+        <span class="n">reference_single_time</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">time_idx</span><span class="p">,</span> <span class="n">time_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reference_arrays</span>
+        <span class="p">]</span>
+
+        <span class="n">raw_single_time</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">time_idx</span><span class="p">,</span> <span class="n">time_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">raw_arrays</span>
+        <span class="p">]</span>
+
+        <span class="n">corrected_single_time</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">time_idx</span><span class="p">,</span> <span class="n">time_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">corrected_arrays</span>
+        <span class="p">]</span>
+
+        <span class="n">save_path</span> <span class="o">=</span> <span class="n">plot_surface</span><span class="p">(</span>
+            <span class="n">predictions</span><span class="o">=</span><span class="n">corrected_single_time</span><span class="p">,</span>
+            <span class="n">targets</span><span class="o">=</span><span class="n">reference_single_time</span><span class="p">,</span>
+            <span class="n">coarse_inputs</span><span class="o">=</span><span class="n">raw_single_time</span><span class="p">,</span>
+            <span class="n">lat_1d</span><span class="o">=</span><span class="n">lat_1d</span><span class="p">,</span>
+            <span class="n">lon_1d</span><span class="o">=</span><span class="n">lon_1d</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">variable_names</span><span class="p">),</span>
+            <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">"surface_time_</span><span class="si">{</span><span class="n">time_idx</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span>
+            <span class="n">save_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">result_dir</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved surface plot for time step </span><span class="si">{</span><span class="n">time_idx</span><span class="si">}</span><span class="s2"> to: </span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Evaluation completed for year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

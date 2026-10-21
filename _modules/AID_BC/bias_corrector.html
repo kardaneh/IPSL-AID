@@ -1,0 +1,1044 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AID_BC.bias_corrector &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AID_BC.bias_corrector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AID_BC.bias_corrector</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 CNRS</span>
+<span class="c1"># Authors: Kishanthan Kingston</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+<span class="sd">"""</span>
+<span class="sd">Bias-correction interfaces and implementations.</span>
+
+<span class="sd">This module defines a common interface for bias-correction methods and provides</span>
+<span class="sd">wrappers for Quantile Mapping and entropy-regularized Optimal Transport.</span>
+
+<span class="sd">All correction methods operate on two-dimensional arrays with shape</span>
+<span class="sd">(n_samples, n_features). In the climate-data workflow, samples correspond</span>
+<span class="sd">to time steps and features correspond to flattened spatial grid points,</span>
+<span class="sd">possibly concatenated across several variables.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.quantile_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">QM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.optimal_transport</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimalTransport</span>
+
+
+<div class="viewcode-block" id="BiasCorrector">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BiasCorrector</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Common interface for bias-correction methods.</span>
+
+<span class="sd">    All arrays follow the convention (n_samples, n_features). In the</span>
+<span class="sd">    climate-data workflow, samples correspond to time steps and features</span>
+<span class="sd">    correspond to flattened spatial grid points, possibly concatenated across</span>
+<span class="sd">    several variables.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    is_fitted : bool</span>
+<span class="sd">        Whether the corrector has been fitted.</span>
+<span class="sd">    n_features : int or None</span>
+<span class="sd">        Number of expected input features after fitting.</span>
+<span class="sd">    """</span>
+
+    <span class="n">method_name</span> <span class="o">=</span> <span class="s2">"base"</span>
+
+<div class="viewcode-block" id="BiasCorrector.__init__">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BiasCorrector.fit">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector.fit">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reference</span><span class="p">,</span>
+        <span class="n">biased</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit the bias-correction model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference : array-like</span>
+<span class="sd">            Reference observations with shape (n_reference_samples, n_features),</span>
+<span class="sd">            for example ERA5 data.</span>
+<span class="sd">        biased : array-like</span>
+<span class="sd">            Biased training observations with shape (n_biased_samples, n_features),</span>
+<span class="sd">            for example historical CMIP6 data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BiasCorrector</span>
+<span class="sd">            Fitted corrector instance.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BiasCorrector.transform">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector.transform">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Correct new biased data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : array-like</span>
+<span class="sd">            Biased application data with shape (n_samples, n_features).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Corrected data with the same shape as data.</span>
+<span class="sd">        """</span></div>
+
+
+<div class="viewcode-block" id="BiasCorrector.fit_transform">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector.fit_transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_transform</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reference</span><span class="p">,</span>
+        <span class="n">biased</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit the corrector and transform application data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference : array-like</span>
+<span class="sd">            Reference observations with shape (n_reference_samples, n_features),</span>
+<span class="sd">            for example ERA5 data.</span>
+<span class="sd">        biased : array-like</span>
+<span class="sd">            Biased training observations with shape (n_biased_samples, n_features).</span>
+<span class="sd">        data : array-like</span>
+<span class="sd">            Biased application data with shape (n_samples, n_features),</span>
+<span class="sd">            for example historical CMIP6 data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Corrected application data.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span>
+            <span class="n">biased</span><span class="o">=</span><span class="n">biased</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Return method diagnostics.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Method name, fitting state, and number of input features.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"method"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">method_name</span><span class="p">,</span>
+            <span class="s2">"is_fitted"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">,</span>
+            <span class="s2">"n_features"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">,</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="BiasCorrector.validate_fit_arrays">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector.validate_fit_arrays">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_fit_arrays</span><span class="p">(</span>
+        <span class="n">reference</span><span class="p">,</span>
+        <span class="n">biased</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Validate reference and biased training arrays.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference : numpy.ndarray</span>
+<span class="sd">            Reference array with shape (n_samples, n_features).</span>
+<span class="sd">        biased : numpy.ndarray</span>
+<span class="sd">            Biased training array with shape (n_samples, n_features).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If an array is not two-dimensional, contains no samples, contains</span>
+<span class="sd">            non-finite values, or if the feature dimensions differ.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">reference</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"reference must be a 2D array with shape "</span>
+                <span class="sa">f</span><span class="s2">"(n_samples, n_features), got </span><span class="si">{</span><span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">biased</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"biased must be a 2D array with shape "</span>
+                <span class="sa">f</span><span class="s2">"(n_samples, n_features), got </span><span class="si">{</span><span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"reference contains no samples."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"biased contains no samples."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"reference and biased must have the same number "</span>
+                <span class="sa">f</span><span class="s2">"of features: </span><span class="si">{</span><span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> != "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"reference contains NaN or infinite values."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">biased</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"biased contains NaN or infinite values."</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BiasCorrector.validate_transform_array">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.BiasCorrector.validate_transform_array">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_transform_array</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Validate application data before transformation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : numpy.ndarray</span>
+<span class="sd">            Application array with shape (n_samples, n_features).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the corrector has not been fitted or its feature count is</span>
+<span class="sd">            unavailable.</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If data is not two-dimensional, has an unexpected number of</span>
+<span class="sd">            features, or contains non-finite values.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"The bias corrector must be fitted before transform()."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"data must be a 2D array with shape "</span>
+                <span class="sa">f</span><span class="s2">"(n_samples, n_features), got </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Internal error: n_features is undefined."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2"> features, "</span> <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Application data contains NaN or infinite values."</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="QuantileMappingCorrector">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.QuantileMappingCorrector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantileMappingCorrector</span><span class="p">(</span><span class="n">BiasCorrector</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Wrapper around the existing SBCK Quantile Mapping implementation.</span>
+<span class="sd">    """</span>
+
+    <span class="n">method_name</span> <span class="o">=</span> <span class="s2">"qm"</span>
+
+<div class="viewcode-block" id="QuantileMappingCorrector.__init__">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.QuantileMappingCorrector.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="QuantileMappingCorrector.fit">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.QuantileMappingCorrector.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reference</span><span class="p">,</span>
+        <span class="n">biased</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit empirical Quantile Mapping.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference : array-like</span>
+<span class="sd">            Reference observations with shape (n_reference_samples, n_features).</span>
+<span class="sd">        biased : array-like</span>
+<span class="sd">            Biased training observations with shape (n_biased_samples, n_features).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantileMappingCorrector</span>
+<span class="sd">            Fitted corrector instance.</span>
+<span class="sd">        """</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">reference</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">biased</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">biased</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_fit_arrays</span><span class="p">(</span>
+            <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span>
+            <span class="n">biased</span><span class="o">=</span><span class="n">biased</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">=</span> <span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">QM</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">Y0</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span>
+            <span class="n">X0</span><span class="o">=</span><span class="n">biased</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="QuantileMappingCorrector.transform">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.QuantileMappingCorrector.transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Apply the fitted Quantile Mapping model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : array-like</span>
+<span class="sd">            Biased application data with shape (n_samples, n_features).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Corrected data as float32.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the underlying Quantile Mapping model is unavailable.</span>
+<span class="sd">        """</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_transform_array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Internal error: QM model is unavailable."</span><span class="p">)</span>
+
+        <span class="n">corrected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+            <span class="n">X0</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">corrected</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OptimalTransportCorrector">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.OptimalTransportCorrector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OptimalTransportCorrector</span><span class="p">(</span><span class="n">BiasCorrector</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Optimal Transport bias corrector.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    epsilon : float, default=1000</span>
+<span class="sd">        Entropic regularization strength.</span>
+<span class="sd">    num_iterations : int, default=15000</span>
+<span class="sd">        Maximum number of Sinkhorn iterations.</span>
+<span class="sd">    threshold : float, default=1e-2</span>
+<span class="sd">        Convergence threshold.</span>
+<span class="sd">    batch_size : int, default=16</span>
+<span class="sd">        Number of application samples transported together.</span>
+<span class="sd">    dtype : {"float32", "float64"}, default="float64"</span>
+<span class="sd">        Floating-point precision used by NumPy and JAX.</span>
+<span class="sd">    normalize : bool, default=True</span>
+<span class="sd">        Whether to fit and apply a shared per-feature normalization.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    center : numpy.ndarray or None</span>
+<span class="sd">        Per-feature normalization center.</span>
+<span class="sd">    scale : numpy.ndarray or None</span>
+<span class="sd">        Per-feature normalization scale.</span>
+<span class="sd">    target_points : jax.Array or None</span>
+<span class="sd">        Normalized ERA5 target samples.</span>
+<span class="sd">    target_potential : jax.Array or None</span>
+<span class="sd">        Target dual potential produced by Sinkhorn.</span>
+<span class="sd">    solver : AID_BC.optimal_transport.SinkhornSolver or None</span>
+<span class="sd">        Sinkhorn solver used during fitting.</span>
+<span class="sd">    transport_function : callable or None</span>
+<span class="sd">        Vectorized transport function.</span>
+<span class="sd">    converged : bool or None</span>
+<span class="sd">        Whether Sinkhorn converged.</span>
+<span class="sd">    fitted_iterations : int or None</span>
+<span class="sd">        Number of iterations performed.</span>
+<span class="sd">    regularized_ot_cost : float or None</span>
+<span class="sd">        Regularized transport cost.</span>
+<span class="sd">    """</span>
+
+    <span class="n">method_name</span> <span class="o">=</span> <span class="s2">"ot"</span>
+
+<div class="viewcode-block" id="OptimalTransportCorrector.__init__">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.OptimalTransportCorrector.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">num_iterations</span><span class="o">=</span><span class="mi">15000</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span>
+        <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">epsilon</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"epsilon must be positive, got </span><span class="si">{</span><span class="n">epsilon</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">num_iterations</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"num_iterations must be positive, "</span> <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="n">num_iterations</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"threshold must be positive, got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"batch_size must be positive, got </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"float32"</span><span class="p">,</span> <span class="s2">"float64"</span><span class="p">}:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"dtype must be either 'float32' or 'float64'."</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_iterations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype_name</span> <span class="o">=</span> <span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">normalize</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">"float32"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jax_dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">float32</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jax_dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">float64</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_points</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_potential</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport_function</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">converged</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitted_iterations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regularized_ot_cost</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_normalization</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reference</span><span class="p">,</span>
+        <span class="n">biased</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit a shared per-feature normalization.</span>
+
+<span class="sd">        A shared normalization is fitted from both source and target samples so</span>
+<span class="sd">        that they remain in the same feature space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference : numpy.ndarray</span>
+<span class="sd">            Reference observations.</span>
+<span class="sd">        biased : numpy.ndarray</span>
+<span class="sd">            Biased training observations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple of numpy.ndarray</span>
+<span class="sd">            Normalized reference and biased arrays.</span>
+<span class="sd">        """</span>
+        <span class="n">number_reference</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">number_biased</span> <span class="o">=</span> <span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">number_total</span> <span class="o">=</span> <span class="n">number_reference</span> <span class="o">+</span> <span class="n">number_biased</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">reference</span><span class="p">,</span> <span class="n">biased</span>
+
+        <span class="c1"># Avoid np.concatenate to reduce peak host-memory usage.</span>
+        <span class="n">sum_values</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">+</span> <span class="n">biased</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+        <span class="p">)</span>
+
+        <span class="n">sum_squared_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span>
+            <span class="n">reference</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span>
+            <span class="n">biased</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">center</span> <span class="o">=</span> <span class="n">sum_values</span> <span class="o">/</span> <span class="n">number_total</span>
+
+        <span class="n">variance</span> <span class="o">=</span> <span class="n">sum_squared_values</span> <span class="o">/</span> <span class="n">number_total</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">center</span><span class="p">)</span>
+
+        <span class="c1"># Protect against small negative values caused by rounding.</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
+
+        <span class="n">minimum_scale</span> <span class="o">=</span> <span class="mf">1e-6</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">minimum_scale</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">center</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_normalize</span><span class="p">(</span><span class="n">reference</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_normalize</span><span class="p">(</span><span class="n">biased</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Normalize data with the fitted shared parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : numpy.ndarray</span>
+<span class="sd">            Data to normalize.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Normalized data in the configured NumPy dtype.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If normalization parameters have not been fitted.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Normalization parameters have not been fitted."</span><span class="p">)</span>
+
+        <span class="n">normalized</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+
+        <span class="k">return</span> <span class="n">normalized</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_denormalize</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Restore data to the original feature scale.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : numpy.ndarray</span>
+<span class="sd">            Normalized data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Data restored to the original scale.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If normalization parameters have not been fitted.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Normalization parameters have not been fitted."</span><span class="p">)</span>
+
+        <span class="n">denormalized</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span>
+
+        <span class="k">return</span> <span class="n">denormalized</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="OptimalTransportCorrector.fit">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.OptimalTransportCorrector.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reference</span><span class="p">,</span>
+        <span class="n">biased</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit the Optimal Transport map from CMIP6 to ERA5.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference : array-like</span>
+<span class="sd">            ERA5 reference observations with shape (n_reference_samples, n_features).</span>
+<span class="sd">        biased : array-like</span>
+<span class="sd">            Historical CMIP6 observations with shape (n_biased_samples, n_features).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        OptimalTransportCorrector</span>
+<span class="sd">            Fitted corrector instance.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the Sinkhorn solver does not converge.</span>
+<span class="sd">        """</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">reference</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">biased</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">biased</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_fit_arrays</span><span class="p">(</span>
+            <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span>
+            <span class="n">biased</span><span class="o">=</span><span class="n">biased</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">=</span> <span class="n">biased</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">reference_normalized</span><span class="p">,</span> <span class="n">biased_normalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_normalization</span><span class="p">(</span>
+            <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span>
+            <span class="n">biased</span><span class="o">=</span><span class="n">biased</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Source: historical CMIP6.</span>
+        <span class="n">source_points</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">device_put</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                <span class="n">biased_normalized</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">jax_dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Target: ERA5.</span>
+        <span class="n">target_points</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">device_put</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                <span class="n">reference_normalized</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">jax_dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="n">OptimalTransport</span><span class="p">(</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
+            <span class="n">num_iterations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="p">(</span>
+            <span class="n">source_points</span><span class="p">,</span>
+            <span class="n">target_points</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Force execution here rather than during a later operation.</span>
+        <span class="n">jax</span><span class="o">.</span><span class="n">block_until_ready</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">reg_ot_cost</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">converged</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">converged</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitted_iterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">num_iterations</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">regularized_ot_cost</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">reg_ot_cost</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">converged</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">"Sinkhorn did not converge. "</span>
+                <span class="sa">f</span><span class="s2">"iterations=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fitted_iterations</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"maximum=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"epsilon=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"Try increasing epsilon or num_iterations."</span>
+            <span class="p">)</span>
+
+        <span class="c1"># For CMIP6 -&gt; ERA5, use the target potential gv and</span>
+        <span class="c1"># the target points ERA5.</span>
+        <span class="c1"># self.target_potential = output.gv</span>
+        <span class="c1"># self.target_points = target_points</span>
+
+        <span class="c1"># Store persistent OT data on CPU instead of keeping JAX arrays</span>
+        <span class="c1"># on the GPU. This avoids GPU-memory accumulation when</span>
+        <span class="c1"># several correctors (12 month correctors) are kept alive at the same time.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_potential</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">gv</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target_points</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">transport_fn</span><span class="p">(</span>
+            <span class="n">potential</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target_potential</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target_points</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># SinkhornOutput contains the full cost matrix.</span>
+        <span class="c1"># Release GPU-side temporary arrays after fitting.</span>
+        <span class="k">del</span> <span class="n">output</span>
+        <span class="k">del</span> <span class="n">source_points</span>
+        <span class="k">del</span> <span class="n">target_points</span>
+        <span class="k">del</span> <span class="n">biased_normalized</span>
+        <span class="k">del</span> <span class="n">reference_normalized</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="OptimalTransportCorrector.transform">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.OptimalTransportCorrector.transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Apply the fitted Optimal Transport map in batches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : array-like</span>
+<span class="sd">            Biased CMIP6 application data with shape (n_samples, n_features).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Corrected data as float32.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the transport function is unavailable.</span>
+<span class="sd">        """</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_transform_array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Internal error: OT transport function is unavailable."</span><span class="p">)</span>
+
+        <span class="n">normalized_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">corrected_batches</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">number_samples</span> <span class="o">=</span> <span class="n">normalized_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">number_samples</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="n">number_samples</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">device_put</span><span class="p">(</span>
+                <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                    <span class="n">normalized_data</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">],</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">jax_dtype</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">corrected_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport_function</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+
+            <span class="n">corrected_batch</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">block_until_ready</span><span class="p">(</span><span class="n">corrected_batch</span><span class="p">)</span>
+
+            <span class="n">corrected_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                    <span class="n">corrected_batch</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy_dtype</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="k">del</span> <span class="n">batch</span>
+            <span class="k">del</span> <span class="n">corrected_batch</span>
+
+        <span class="n">corrected_normalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="n">corrected_batches</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">corrected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_denormalize</span><span class="p">(</span><span class="n">corrected_normalized</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">corrected</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Return Optimal Transport fitting diagnostics.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Base diagnostics together with backend, devices, solver</span>
+<span class="sd">            configuration, convergence information, cost, dtype, batch size,</span>
+<span class="sd">            and normalization state.</span>
+<span class="sd">        """</span>
+        <span class="n">diagnostics</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">diagnostics</span>
+        <span class="n">diagnostics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"backend"</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">default_backend</span><span class="p">(),</span>
+                <span class="s2">"devices"</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">device</span> <span class="ow">in</span> <span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()],</span>
+                <span class="s2">"epsilon"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
+                <span class="s2">"threshold"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+                <span class="s2">"maximum_iterations"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span><span class="p">,</span>
+                <span class="s2">"fitted_iterations"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitted_iterations</span><span class="p">,</span>
+                <span class="s2">"converged"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">converged</span><span class="p">,</span>
+                <span class="s2">"regularized_ot_cost"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularized_ot_cost</span><span class="p">,</span>
+                <span class="s2">"dtype"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype_name</span><span class="p">,</span>
+                <span class="s2">"batch_size"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="s2">"normalize"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">diagnostics</span></div>
+
+
+
+<div class="viewcode-block" id="create_bias_corrector">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.bias_corrector.create_bias_corrector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_bias_corrector</span><span class="p">(</span>
+    <span class="n">method</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ot_epsilon</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">ot_num_iterations</span><span class="o">=</span><span class="mi">15000</span><span class="p">,</span>
+    <span class="n">ot_threshold</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span>
+    <span class="n">ot_batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+    <span class="n">ot_dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span>
+    <span class="n">ot_normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Create a bias-correction method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    method : {"qm", "ot"}</span>
+<span class="sd">        Bias-correction method identifier.</span>
+<span class="sd">    ot_epsilon : float, default=1000</span>
+<span class="sd">        Entropic regularization used by OT.</span>
+<span class="sd">    ot_num_iterations : int, default=15000</span>
+<span class="sd">        Maximum number of Sinkhorn iterations.</span>
+<span class="sd">    ot_threshold : float, default=1e-2</span>
+<span class="sd">        Sinkhorn convergence threshold.</span>
+<span class="sd">    ot_batch_size : int, default=16</span>
+<span class="sd">        Number of application samples transported together.</span>
+<span class="sd">    ot_dtype : {"float32", "float64"}, default="float64"</span>
+<span class="sd">        Floating-point precision used by OT.</span>
+<span class="sd">    ot_normalize : bool, default=True</span>
+<span class="sd">        Whether OT applies shared per-feature normalization.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    QuantileMappingCorrector or OptimalTransportCorrector</span>
+<span class="sd">        New, unfitted corrector instance.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If method is neither "qm" nor "ot".</span>
+<span class="sd">    """</span>
+    <span class="n">normalized_method</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">normalized_method</span> <span class="o">==</span> <span class="s2">"qm"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">QuantileMappingCorrector</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">normalized_method</span> <span class="o">==</span> <span class="s2">"ot"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">OptimalTransportCorrector</span><span class="p">(</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="n">ot_epsilon</span><span class="p">,</span>
+            <span class="n">num_iterations</span><span class="o">=</span><span class="n">ot_num_iterations</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="n">ot_threshold</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">ot_batch_size</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">ot_dtype</span><span class="p">,</span>
+            <span class="n">normalize</span><span class="o">=</span><span class="n">ot_normalize</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Unknown bias-correction method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">. "</span> <span class="s2">"Expected 'qm' or 'ot'."</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,475 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bias Correction &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "processEscapes": true}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Atmospheric Variables" href="atmosphere_variable.html" />
+    <link rel="prev" title="Inference Modes" href="inference_modes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bias Correction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quantile-mapping">Quantile Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimal-transport">Optimal Transport</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#feature-space-construction">Feature space construction</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#training-and-application">Training and application</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#training-period">Training period</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#application-period">Application period</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#monthly-splitting">Monthly splitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimal-transport-parameters">Optimal Transport parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#workflow">Workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#precompute-era5-on-the-cmip6-grid">1. Precompute ERA5 on the CMIP6 grid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-quantile-mapping">2. Run Quantile Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-optimal-transport">3. Run Optimal Transport</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Bias Correction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bias_correction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="inference_modes.html" class="btn btn-neutral float-left" title="Inference Modes" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="atmosphere_variable.html" class="btn btn-neutral float-right" title="Atmospheric Variables" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bias-correction">
+<h1>Bias Correction<a class="headerlink" href="#bias-correction" title="Link to this heading"></a></h1>
+<p>AID-BC provides two bias-correction methods to reduce systematic distributional
+differences between CMIP6 climate model outputs and ERA5 reference data:</p>
+<ul class="simple">
+<li><p><strong>Quantile Mapping (QM)</strong>, for univariate correction,</p></li>
+<li><p><strong>Optimal Transport (OT)</strong>, for univariate or multivariate correction.</p></li>
+</ul>
+<p>Both methods are fitted over a selected training period and then applied to a
+CMIP6 application period. The corrected CMIP6 fields can subsequently be used
+as large-scale inputs for AI-based downscaling experiments.</p>
+<p>Bias correction is performed on the native CMIP6 grid. ERA5 data are therefore
+either projected onto the CMIP6 grid during preprocessing or loaded from
+previously prepared ERA5-on-CMIP6 files.</p>
+<p>Within the IPSL-AID workflow, AID-BC is used as a preprocessing step before
+the downscaling stage. It corrects the low-resolution CMIP6 fields using ERA5
+as reference data, and the resulting bias-corrected CMIP6 fields are then
+interpolated to the ERA5 grid and passed to IPSL-AID.</p>
+<p>The figure below summarizes the complete AID-BC/IPSL-AID workflow. AID-BC
+performs the bias correction on the native CMIP6 grid
+(<span class="math notranslate nohighlight">\(143\times144\)</span>). The corrected CMIP6 fields are then upsampled to the
+ERA5 grid (<span class="math notranslate nohighlight">\(721\times1440\)</span>), split into spatial blocks, and used as
+inputs to the trained IPSL-AID model. IPSL-AID predicts a high-resolution
+residual for each block, which is added to the corresponding upsampled CMIP6
+block before reconstructing the final global high-resolution field.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="_images/workflow_AID_BC_IPSL_AID.jpg"><img alt="_images/workflow_AID_BC_IPSL_AID.jpg" src="_images/workflow_AID_BC_IPSL_AID.jpg" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Integration of AID-BC within the IPSL-AID workflow, from low-resolution
+bias correction to high-resolution CMIP6 reconstruction.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<section id="quantile-mapping">
+<h2>Quantile Mapping<a class="headerlink" href="#quantile-mapping" title="Link to this heading"></a></h2>
+<p>Quantile Mapping corrects one climate variable at a time by matching the
+distribution of biased CMIP6 data to the ERA5 reference distribution while
+preserving the relative rank of the CMIP6 values.</p>
+<p>For a CMIP6 value <span class="math notranslate nohighlight">\(x_{CMIP6}\)</span>, the corresponding quantile in the CMIP6
+training distribution is</p>
+<div class="math notranslate nohighlight">
+\[q = F_{CMIP6}(x_{CMIP6})\]</div>
+<p>and the corrected value is obtained from the ERA5 inverse cumulative
+distribution function:</p>
+<div class="math notranslate nohighlight">
+\[x_{corrected} = F^{-1}_{ERA5}(q)\]</div>
+<p>or equivalently,</p>
+<div class="math notranslate nohighlight">
+\[x_{corrected}
+= F^{-1}_{ERA5}\left(F_{CMIP6}(x_{CMIP6})\right)\]</div>
+<p>The principle is illustrated below.</p>
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="_images/quantile_mapping_principle.png"><img alt="_images/quantile_mapping_principle.png" src="_images/quantile_mapping_principle.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Illustration of Quantile Mapping. A CMIP6 value is converted into a
+cumulative probability using the CMIP6 CDF, then mapped to the ERA5 value
+corresponding to the same probability.</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>In the current implementation, exactly one climate variable is corrected in a
+Quantile Mapping experiment. Fields are reshaped from</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>(time, latitude, longitude)
+</pre></div>
+</div>
+<p>to</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>(time, latitude * longitude)
+</pre></div>
+</div>
+<p>before fitting.</p>
+<p>AID-BC can fit either one global Quantile Mapping corrector using all training
+samples or one independent corrector for each month.</p>
+</section>
+<section id="optimal-transport">
+<h2>Optimal Transport<a class="headerlink" href="#optimal-transport" title="Link to this heading"></a></h2>
+<p>Optimal Transport can correct one or several climate variables jointly and can
+therefore account for spatial and inter-variable dependencies that are not
+explicitly represented by a variable-by-variable correction.</p>
+<p>AID-BC treats each time step as a point in a feature space. The cost of
+transporting a CMIP6 point <span class="math notranslate nohighlight">\(x\)</span> to an ERA5 point <span class="math notranslate nohighlight">\(y\)</span> is the squared
+Euclidean distance:</p>
+<div class="math notranslate nohighlight">
+\[c(x, y) = \|x - y\|^2\]</div>
+<p>Instead of solving the unregularized transport problem directly, AID-BC uses
+entropy-regularized Optimal Transport:</p>
+<div class="math notranslate nohighlight">
+\[\min_{\pi \in \Pi(a, b)}
+\sum_{i,j} \pi_{ij} c(x_i, y_j)
++
+\varepsilon
+\sum_{i,j} \pi_{ij}
+\left(\log \pi_{ij} - 1\right)\]</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> are uniform empirical weights and
+<span class="math notranslate nohighlight">\(\varepsilon\)</span> controls the strength of the entropic regularization.</p>
+<p>The regularized problem is solved with the Sinkhorn algorithm in log space.
+The iterations stop when the change in the dual potentials falls below a
+convergence threshold or when the maximum number of iterations is reached.</p>
+<p>After fitting, the ERA5-side dual potential is used to construct a smooth
+transport function for new CMIP6 samples:</p>
+<div class="math notranslate nohighlight">
+\[f_{\varepsilon}(x) =
+-\varepsilon \log
+\left(
+   \sum_i
+   \exp\left(
+      \frac{
+         g_{\varepsilon}(y_i) - c(x, y_i)
+      }{\varepsilon}
+   \right)
+   b_i
+\right)\]</div>
+<div class="math notranslate nohighlight">
+\[T(x) = x - \tfrac{1}{2} \nabla f_{\varepsilon}(x)\]</div>
+<p>This allows new CMIP6 samples to be corrected without solving a new full
+Sinkhorn problem for each sample.</p>
+<section id="feature-space-construction">
+<h3>Feature space construction<a class="headerlink" href="#feature-space-construction" title="Link to this heading"></a></h3>
+<p>ERA5 and CMIP6 training fields can be standardized using a shared per-feature
+normalization. The same normalization parameters are used during application,
+and corrected values are transformed back to their original physical scale.</p>
+<p>For a single variable, each time step is flattened into a vector of length</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>latitude * longitude
+</pre></div>
+</div>
+<p>For several jointly corrected variables, the flattened fields are concatenated
+into a vector of length</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>n_variables * latitude * longitude
+</pre></div>
+</div>
+<p>so that all variables and grid points are transported jointly.</p>
+</section>
+</section>
+<section id="training-and-application">
+<h2>Training and application<a class="headerlink" href="#training-and-application" title="Link to this heading"></a></h2>
+<p>Both Quantile Mapping and Optimal Transport use the same two-period workflow.</p>
+<section id="training-period">
+<h3>Training period<a class="headerlink" href="#training-period" title="Link to this heading"></a></h3>
+<p>The training period is used to estimate the statistical relationship between
+ERA5 and historical CMIP6 data.</p>
+<p>Both datasets must share the same latitude-longitude grid. In the current
+workflow, ERA5 is represented on the native CMIP6 grid.</p>
+</section>
+<section id="application-period">
+<h3>Application period<a class="headerlink" href="#application-period" title="Link to this heading"></a></h3>
+<p>The application period contains the CMIP6 data to be corrected using the fitted
+Quantile Mapping or Optimal Transport model.</p>
+<p>It can correspond to:</p>
+<ul class="simple">
+<li><p>a historical period not used during training,</p></li>
+<li><p>a validation or test period,</p></li>
+<li><p>a future CMIP6 simulation period.</p></li>
+</ul>
+<p>Corrected fields are reconstructed on the native CMIP6 grid and saved as yearly
+NetCDF files.</p>
+</section>
+</section>
+<section id="monthly-splitting">
+<h2>Monthly splitting<a class="headerlink" href="#monthly-splitting" title="Link to this heading"></a></h2>
+<p>Both methods can use either:</p>
+<ul class="simple">
+<li><p>one global corrector fitted from all training samples,</p></li>
+<li><p>one independent corrector for each month.</p></li>
+</ul>
+<p>Monthly splitting is especially useful for Optimal Transport because the
+Sinkhorn problem involves a pairwise cost matrix of shape
+<code class="docutils literal notranslate"><span class="pre">(n_x,</span> <span class="pre">n_y)</span></code>, where <code class="docutils literal notranslate"><span class="pre">n_x</span></code> and <code class="docutils literal notranslate"><span class="pre">n_y</span></code> are the numbers of CMIP6 and ERA5
+training samples.</p>
+<p>When the two sample counts are similar, memory and computational requirements
+scale approximately quadratically with the number of training samples.
+Splitting the training period by month therefore substantially reduces
+the size of each transport problem.</p>
+</section>
+<section id="optimal-transport-parameters">
+<h2>Optimal Transport parameters<a class="headerlink" href="#optimal-transport-parameters" title="Link to this heading"></a></h2>
+<p>The Optimal Transport solver is controlled by the following parameters:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">epsilon</span></code></dt><dd><p>Strength of the entropic regularization. Larger values produce a smoother
+transport problem, while smaller values generally preserve more variability
+but are harder to optimize.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">num_iterations</span></code></dt><dd><p>Maximum number of Sinkhorn iterations.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">threshold</span></code></dt><dd><p>Convergence threshold applied to changes in the dual potentials.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dtype</span></code></dt><dd><p>Floating-point precision used by JAX (<code class="docutils literal notranslate"><span class="pre">float32</span></code> or <code class="docutils literal notranslate"><span class="pre">float64</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">batch_size</span></code></dt><dd><p>Number of time steps transported together during application to control
+memory usage.</p>
+</dd>
+</dl>
+</section>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
+<p>The AID-BC workflow consists of an optional preprocessing step followed by
+bias correction using either Quantile Mapping or Optimal Transport.</p>
+<section id="precompute-era5-on-the-cmip6-grid">
+<h3>1. Precompute ERA5 on the CMIP6 grid<a class="headerlink" href="#precompute-era5-on-the-cmip6-grid" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">AID_BC.preprocess</span></code> resizes one ERA5 variable onto the native CMIP6 grid and
+writes one compressed NetCDF file per year.</p>
+<p>Run this step once for each ERA5 variable and CMIP6 grid combination.</p>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>AID_BC.preprocess<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--era5_root<span class="w"> </span>/path/to/ERA5/data_6hourly_t2m<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmip6_root<span class="w"> </span>/path/to/CMIP6_historical/data_6hourly_tas<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--variable<span class="w"> </span>VAR_2T<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--start_year<span class="w"> </span><span class="m">1980</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--end_year<span class="w"> </span><span class="m">2014</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output_dir<span class="w"> </span>/path/to/ERA5_on_CMIP6/data_6hourly_t2m
+</pre></div>
+</div>
+<p>The output directory contains one file per year together with a
+<code class="docutils literal notranslate"><span class="pre">metadata.json</span></code> file describing the preprocessing configuration:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>data_6hourly_t2m/
+├── samples_1980.nc
+├── samples_1981.nc
+├── ...
+├── samples_2014.nc
+└── metadata.json
+</pre></div>
+</div>
+<p>For multivariate Optimal Transport experiments, preprocessing must be performed
+once for each variable.</p>
+</section>
+<section id="run-quantile-mapping">
+<h3>2. Run Quantile Mapping<a class="headerlink" href="#run-quantile-mapping" title="Link to this heading"></a></h3>
+<p>Quantile Mapping accepts exactly one variable.</p>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>AID_BC.main<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--method<span class="w"> </span>qm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--split<span class="w"> </span>month<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--train_start<span class="w"> </span><span class="m">1980</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--train_end<span class="w"> </span><span class="m">2014</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--apply_start<span class="w"> </span><span class="m">2021</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--apply_end<span class="w"> </span><span class="m">2021</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--variables<span class="w"> </span>VAR_2T<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--era5_on_cmip6_root<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>/path/to/ERA5_on_CMIP6/data_6hourly_t2m<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmip6_train_root<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>/path/to/CMIP6_historical/data_6hourly_tas<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmip6_apply_root<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>/path/to/CMIP6_future/data_6hourly_tas<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output_dir<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>data/CMIP6_QM/data_6hourly_tas_corrected
+</pre></div>
+</div>
+</section>
+<section id="run-optimal-transport">
+<h3>3. Run Optimal Transport<a class="headerlink" href="#run-optimal-transport" title="Link to this heading"></a></h3>
+<p>Optimal Transport can correct one variable or several variables jointly.</p>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>AID_BC.main<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--method<span class="w"> </span>ot<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--split<span class="w"> </span>month<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--train_start<span class="w"> </span><span class="m">1980</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--train_end<span class="w"> </span><span class="m">2014</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--apply_start<span class="w"> </span><span class="m">2021</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--apply_end<span class="w"> </span><span class="m">2021</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--variables<span class="w"> </span>VAR_2T<span class="w"> </span>VAR_10U<span class="w"> </span>VAR_10V<span class="w"> </span>VAR_TP<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--era5_on_cmip6_root<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>/path/to/ERA5_on_CMIP6/data_6hourly_t2m<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10U</span><span class="o">=</span>/path/to/ERA5_on_CMIP6/data_6hourly_u10<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10V</span><span class="o">=</span>/path/to/ERA5_on_CMIP6/data_6hourly_v10<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_TP</span><span class="o">=</span>/path/to/ERA5_on_CMIP6/data_6hourly_tp_3hmean<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmip6_train_root<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>/path/to/CMIP6_historical/data_6hourly_tas<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10U</span><span class="o">=</span>/path/to/CMIP6_historical/data_6hourly_uas<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10V</span><span class="o">=</span>/path/to/CMIP6_historical/data_6hourly_vas<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_TP</span><span class="o">=</span>/path/to/CMIP6_historical/data_6hourly_pr<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmip6_apply_root<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>/path/to/CMIP6_future/data_6hourly_tas<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10U</span><span class="o">=</span>/path/to/CMIP6_future/data_6hourly_uas<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10V</span><span class="o">=</span>/path/to/CMIP6_future/data_6hourly_vas<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_TP</span><span class="o">=</span>/path/to/CMIP6_future/data_6hourly_pr<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output_dir<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_2T</span><span class="o">=</span>data/CMIP6_OT/data_6hourly_tas_corrected<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10U</span><span class="o">=</span>data/CMIP6_OT/data_6hourly_uas_corrected<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_10V</span><span class="o">=</span>data/CMIP6_OT/data_6hourly_vas_corrected<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">VAR_TP</span><span class="o">=</span>data/CMIP6_OT/data_6hourly_pr_corrected<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ot_epsilon<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ot_num_iterations<span class="w"> </span><span class="m">1000000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ot_threshold<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ot_batch_size<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ot_dtype<span class="w"> </span>float64
+</pre></div>
+</div>
+<p>The Optimal Transport parameters may need to be adjusted depending on the
+training period, sample size, variables, normalization, and available
+computational resources.</p>
+</section>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Quantile Mapping is univariate and corrects only the marginal distribution
+of one climate variable at a time. It does not explicitly preserve
+dependencies between several climate variables.</p></li>
+<li><p>Optimal Transport is more computationally demanding. For <code class="docutils literal notranslate"><span class="pre">n_x</span></code> CMIP6
+samples and <code class="docutils literal notranslate"><span class="pre">n_y</span></code> ERA5 samples, the dominant pairwise matrices have shape
+<code class="docutils literal notranslate"><span class="pre">(n_x,</span> <span class="pre">n_y)</span></code>, and memory usage scales as <span class="math notranslate nohighlight">\(O(n_x n_y)\)</span>, or
+approximately <span class="math notranslate nohighlight">\(O(N^2)\)</span> when the two sample counts are similar.</p></li>
+<li><p>Entropic regularization in Optimal Transport introduces smoothing. Large
+values of <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> can reduce variance and extreme values.</p></li>
+<li><p>Small values of <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> can make Sinkhorn convergence slower and more
+difficult.</p></li>
+<li><p>Both methods assume that the statistical relationship estimated during the
+training period remains applicable during the application period.</p></li>
+</ul>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<p>[1] Pooladian, Aram-Alexandre, and Niles-Weed, Jonathan.
+“Entropic estimation of optimal transport maps.”
+arXiv preprint arXiv:2109.12004 (2021).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="inference_modes.html" class="btn btn-neutral float-left" title="Inference Modes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="atmosphere_variable.html" class="btn btn-neutral float-right" title="Atmospheric Variables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

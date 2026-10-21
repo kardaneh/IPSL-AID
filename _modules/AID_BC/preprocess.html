@@ -1,0 +1,444 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AID_BC.preprocess &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AID_BC.preprocess</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AID_BC.preprocess</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 CNRS</span>
+<span class="c1"># Authors: Kishanthan Kingston</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+<span class="sd">"""</span>
+<span class="sd">Precompute ERA5 resized onto the native CMIP6 grid, once, and store it</span>
+<span class="sd">as yearly NetCDF files.</span>
+
+<span class="sd">Run this once per (era5_root, cmip6_root, variable) combination, then</span>
+<span class="sd">point main.py at the output directory with --era5_on_cmip6_root.</span>
+
+<span class="sd">Example</span>
+<span class="sd">--------</span>
+<span class="sd">Run the preprocessing for 2m air temperature:</span>
+
+<span class="sd">python preprocess.py \</span>
+<span class="sd">    --era5_root /data/kkingston/data/CMIP6/ERA5/data_6hourly_t2m \</span>
+<span class="sd">    --cmip6_root /data/kkingston/data/CMIP6/CMIP6_historical/data_6hourly_tas \</span>
+<span class="sd">    --variable VAR_2T \</span>
+<span class="sd">    --start_year 1980 \</span>
+<span class="sd">    --end_year 2014 \</span>
+<span class="sd">    --output_dir /data/kkingston/data/CMIP6/ERA5_on_CMIP6/data_6hourly_t2m</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClimateDataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
+
+
+<div class="viewcode-block" id="parse_args">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.preprocess.parse_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Parse command-line arguments.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    argparse.Namespace</span>
+<span class="sd">        Parsed arguments.</span>
+<span class="sd">    """</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Precompute ERA5 resized onto the native CMIP6 grid, once, "</span>
+            <span class="s2">"for reuse across bias-correction runs."</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--era5_root"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Directory containing raw ERA5 yearly NetCDF files."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--cmip6_root"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Directory containing CMIP6 files that define the target "</span>
+            <span class="s2">"native grid (typically the historical training root)."</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--variable"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"VAR_2T"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Climate variable name."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--start_year"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"First year to precompute (inclusive)."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--end_year"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Last year to precompute (inclusive)."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--output_dir"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Directory to write precomputed samples_&lt;year&gt;.nc files to."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="build_path">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.preprocess.build_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Build the yearly NetCDF path for a data directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    root : str or pathlib.Path</span>
+<span class="sd">        Directory containing yearly NetCDF files.</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Year used in the ``samples_&lt;year&gt;.nc`` filename.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Full path to the yearly NetCDF file.</span>
+<span class="sd">    """</span>
+    <span class="c1"># All input and output yearly files follow the same naming convention</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"samples_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.nc"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="process_year">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.preprocess.process_year">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_year</span><span class="p">(</span>
+    <span class="n">year</span><span class="p">,</span>
+    <span class="n">era5_root</span><span class="p">,</span>
+    <span class="n">cmip6_root</span><span class="p">,</span>
+    <span class="n">variable_name</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Resize one year of ERA5 data onto the native CMIP6 grid and save it.</span>
+
+<span class="sd">    The function loads one ERA5 file and one CMIP6 file, prepares the two</span>
+<span class="sd">    datasets with AID_BC.dataset.ClimateDataset, resizes ERA5 onto</span>
+<span class="sd">    the CMIP6 grid, and writes the resulting ERA5 field as a yearly NetCDF</span>
+<span class="sd">    file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Year to preprocess.</span>
+<span class="sd">    era5_root : str or pathlib.Path</span>
+<span class="sd">        Directory containing raw ERA5 yearly files named</span>
+<span class="sd">        ``samples_&lt;year&gt;.nc``.</span>
+<span class="sd">    cmip6_root : str or pathlib.Path</span>
+<span class="sd">        Directory containing CMIP6 yearly files that define the target native</span>
+<span class="sd">        grid.</span>
+<span class="sd">    variable_name : str</span>
+<span class="sd">        Name of the climate variable to preprocess.</span>
+<span class="sd">    output_dir : str or pathlib.Path</span>
+<span class="sd">        Directory in which the precomputed ERA5-on-CMIP6 file is written.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report progress, retries, and output paths.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        ``True`` if the original ERA5 latitude coordinate is descending,</span>
+<span class="sd">        otherwise ``False``.</span>
+<span class="sd">    """</span>
+
+    <span class="c1"># Build the ERA5 and CMIP6 input paths for the current year</span>
+    <span class="n">era5_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span><span class="n">era5_root</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+    <span class="n">cmip6_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span><span class="n">cmip6_root</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+
+    <span class="c1"># ClimateDataset loads both sources and performs the ERA5-to-CMIP6 resizing</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">ClimateDataset</span><span class="p">(</span>
+        <span class="n">era5_path</span><span class="o">=</span><span class="n">era5_path</span><span class="p">,</span>
+        <span class="n">cmip6_path</span><span class="o">=</span><span class="n">cmip6_path</span><span class="p">,</span>
+        <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+        <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="p">(</span>
+        <span class="n">era5_on_cmip6</span><span class="p">,</span>
+        <span class="n">_cmip6_native</span><span class="p">,</span>
+        <span class="n">latitude_descending</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">()</span>
+
+    <span class="n">era5_on_cmip6</span> <span class="o">=</span> <span class="n">era5_on_cmip6</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+    <span class="n">dataset</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">era5_on_cmip6</span> <span class="o">=</span> <span class="n">era5_on_cmip6</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+        <span class="s2">"time"</span><span class="p">,</span>
+        <span class="s2">"latitude"</span><span class="p">,</span>
+        <span class="s2">"longitude"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span>
+        <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Write one precomputed ERA5-on-CMIP6 file per year</span>
+    <span class="n">output_file</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"samples_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.nc"</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Writing precomputed ERA5-on-CMIP6 file:</span><span class="se">\n</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="c1"># Store the DataArray as a one-variable xarray Dataset</span>
+    <span class="n">output_dataset</span> <span class="o">=</span> <span class="n">era5_on_cmip6</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">)</span>
+
+    <span class="c1"># Compressed float32 storage to reduce disk usage</span>
+    <span class="n">encoding</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">variable_name</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"dtype"</span><span class="p">:</span> <span class="s2">"float32"</span><span class="p">,</span>
+            <span class="s2">"zlib"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">"complevel"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">output_dataset</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span>
+        <span class="n">output_file</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">output_dataset</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Release large in-memory arrays before processing the next year</span>
+    <span class="k">del</span> <span class="n">era5_on_cmip6</span>
+    <span class="k">del</span> <span class="n">output_dataset</span>
+
+    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="c1"># Keep the original ERA5 latitude orientation in metadata</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">latitude_descending</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.preprocess.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Run ERA5-on-CMIP6 preprocessing for the requested year range.</span>
+
+<span class="sd">    The function parses command-line arguments, preprocesses every year,</span>
+<span class="sd">    verifies that ERA5 latitude orientation remains consistent across years,</span>
+<span class="sd">    and writes a ``metadata.json`` file describing the generated dataset.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the ERA5 latitude ordering changes between processed years.</span>
+<span class="sd">    """</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">"Precomputing ERA5-on-CMIP6 grid for years "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">start_year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">end_year</span><span class="si">}</span><span class="s2">, variable </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">variable</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Track the ERA5 latitude orientation detected during the first year</span>
+    <span class="n">latitude_descending</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Process and save each year independently to limit memory usage</span>
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">start_year</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">end_year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"=== Year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2"> ==="</span><span class="p">)</span>
+
+        <span class="n">current_latitude_descending</span> <span class="o">=</span> <span class="n">process_year</span><span class="p">(</span>
+            <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span>
+            <span class="n">era5_root</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">era5_root</span><span class="p">,</span>
+            <span class="n">cmip6_root</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">cmip6_root</span><span class="p">,</span>
+            <span class="n">variable_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">variable</span><span class="p">,</span>
+            <span class="n">output_dir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Require a consistent latitude orientation across the full period</span>
+        <span class="k">if</span> <span class="n">latitude_descending</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">latitude_descending</span> <span class="o">=</span> <span class="n">current_latitude_descending</span>
+        <span class="k">elif</span> <span class="n">latitude_descending</span> <span class="o">!=</span> <span class="n">current_latitude_descending</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"ERA5 latitude ordering changed between years "</span>
+                <span class="sa">f</span><span class="s2">"(mismatch detected at year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">). "</span>
+                <span class="s2">"This would make years inconsistent to use together."</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Record the preprocessing configuration needed by main.py when it loads</span>
+    <span class="c1"># the precomputed ERA5 files</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"variable_name"</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">variable</span><span class="p">,</span>
+        <span class="s2">"latitude_descending"</span><span class="p">:</span> <span class="n">latitude_descending</span><span class="p">,</span>
+        <span class="s2">"source_era5_root"</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">era5_root</span><span class="p">,</span>
+        <span class="s2">"source_cmip6_root"</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">cmip6_root</span><span class="p">,</span>
+        <span class="s2">"start_year"</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">start_year</span><span class="p">,</span>
+        <span class="s2">"end_year"</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">end_year</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Save metadata next to the yearly NetCDF files</span>
+    <span class="n">metadata_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"metadata.json"</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metadata_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="s2">"Precomputation complete.</span><span class="se">\n</span><span class="s2">"</span> <span class="sa">f</span><span class="s2">"Metadata written to: </span><span class="si">{</span><span class="n">metadata_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

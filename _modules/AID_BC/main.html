@@ -1,0 +1,2119 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AID_BC.main &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AID_BC.main</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AID_BC.main</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 CNRS</span>
+<span class="c1"># Authors: Kishanthan Kingston</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.bias_corrector</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">create_bias_corrector</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.evaluater</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">AID_BC.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClimateDataset</span>
+
+
+<div class="viewcode-block" id="parse_args">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.parse_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Parse command-line arguments.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    argparse.Namespace</span>
+<span class="sd">        Parsed arguments.</span>
+<span class="sd">    """</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Bias correction on the native CMIP6 grid. "</span>
+            <span class="s2">"QM accepts exactly one climate variable; "</span>
+            <span class="s2">"OT accepts one or several variables jointly."</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--method"</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">"qm"</span><span class="p">,</span> <span class="s2">"ot"</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"qm"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Bias-correction method."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--split"</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">"none"</span><span class="p">,</span> <span class="s2">"month"</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Fit one global corrector ('none') or one corrector per "</span>
+            <span class="s2">"calendar month ('month'). Monthly splitting strongly reduces "</span>
+            <span class="s2">"the O(N^2) Sinkhorn cost."</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--train_start"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"First training year."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--train_end"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Last training year."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--apply_start"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"First application year."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--apply_end"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Last application year."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># One argument only:</span>
+    <span class="c1">#   QM: --variables VAR_2T</span>
+    <span class="c1">#   OT: --variables VAR_2T VAR_10U VAR_10V</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--variables"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="s2">"VAR_2T"</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Climate variable names. QM requires exactly one variable. "</span>
+            <span class="s2">"OT accepts one or several variables jointly."</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--era5_root"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"VARIABLE=PATH"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Raw ERA5 roots written as VARIABLE=PATH. Provide this or "</span>
+            <span class="s2">"--era5_on_cmip6_root, but not both."</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--era5_on_cmip6_root"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"VARIABLE=PATH"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span><span class="s2">"Precomputed ERA5-on-CMIP6 roots written as VARIABLE=PATH."</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--cmip6_train_root"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"VARIABLE=PATH"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span><span class="s2">"Historical CMIP6 roots written as VARIABLE=PATH."</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--cmip6_apply_root"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"VARIABLE=PATH"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span><span class="s2">"CMIP6 application roots written as VARIABLE=PATH."</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--output_dir"</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"VARIABLE=PATH"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Output directories written as VARIABLE=PATH. Each corrected "</span>
+            <span class="s2">"variable is saved separately."</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Optimal Transport arguments</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--ot_epsilon"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Sinkhorn entropic regularization."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--ot_num_iterations"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Maximum number of Sinkhorn iterations."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--ot_threshold"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Sinkhorn convergence threshold."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--ot_batch_size"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Number of time steps transported together during application."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--ot_dtype"</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">,</span> <span class="s2">"float64"</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Floating-point dtype used by JAX."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--ot_no_normalization"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Disable shared per-feature normalization for OT."</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="parse_variable_paths">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.parse_variable_paths">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_variable_paths</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">argument_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Parse variable-specific paths from command-line values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    items : sequence of str or None</span>
+<span class="sd">        Values written as VARIABLE=PATH. If None, no mapping is created.</span>
+<span class="sd">    argument_name : str</span>
+<span class="sd">        Name of the command-line argument, used in validation messages.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to str or None</span>
+<span class="sd">        Mapping from variable names to directory paths, or None when items</span>
+<span class="sd">        is None.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If an item does not use the VARIABLE=PATH format, contains an empty</span>
+<span class="sd">        variable name or path, or defines the same variable more than once.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">items</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"="</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2">: expected VARIABLE=PATH, got '</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+
+        <span class="n">variable_name</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"="</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">variable_name</span> <span class="o">=</span> <span class="n">variable_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">variable_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2">: empty variable name in '</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2">: empty path for '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2">: duplicate variable '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+
+        <span class="n">paths</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="k">return</span> <span class="n">paths</span></div>
+
+
+
+<div class="viewcode-block" id="validate_variable_paths">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.validate_variable_paths">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_variable_paths</span><span class="p">(</span><span class="n">variable_names</span><span class="p">,</span> <span class="n">paths</span><span class="p">,</span> <span class="n">argument_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Validate that paths are defined for exactly the requested variables.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Climate variables requested for the correction.</span>
+<span class="sd">    paths : dict of str to str or None</span>
+<span class="sd">        Mapping from variable names to directory paths.</span>
+<span class="sd">    argument_name : str</span>
+<span class="sd">        Name of the command-line argument, used in validation messages.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the mapping is missing, if a requested variable has no path, or if a</span>
+<span class="sd">        path is provided for an unrequested variable.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2"> was not provided."</span><span class="p">)</span>
+
+    <span class="n">expected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span>
+    <span class="n">provided</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+
+    <span class="n">missing</span> <span class="o">=</span> <span class="n">expected</span> <span class="o">-</span> <span class="n">provided</span>
+    <span class="n">unexpected</span> <span class="o">=</span> <span class="n">provided</span> <span class="o">-</span> <span class="n">expected</span>
+
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2">: missing paths for </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">unexpected</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">argument_name</span><span class="si">}</span><span class="s2">: unexpected variables </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unexpected</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="validate_args">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.validate_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_args</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Validate general command-line arguments.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : argparse.Namespace</span>
+<span class="sd">        Parsed command-line arguments.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If year ranges are invalid, variables are missing or duplicated, QM is</span>
+<span class="sd">        requested with more than one variable, OT parameters are non-positive,</span>
+<span class="sd">        or both/neither ERA5 input modes are supplied.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">train_start</span> <span class="o">&gt;</span> <span class="n">args</span><span class="o">.</span><span class="n">train_end</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"train_start must be &lt;= train_end, got "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">train_start</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">train_end</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">apply_start</span> <span class="o">&gt;</span> <span class="n">args</span><span class="o">.</span><span class="n">apply_end</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"apply_start must be &lt;= apply_end, got "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">apply_start</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">apply_end</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"--variables must contain at least one variable."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"--variables contains duplicates: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"qm"</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"QM is univariate and therefore requires exactly one variable, "</span>
+            <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ot_epsilon</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ot_epsilon must be positive, got </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">ot_epsilon</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ot_num_iterations</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ot_num_iterations must be positive."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ot_threshold</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ot_threshold must be positive."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ot_batch_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ot_batch_size must be positive."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">era5_root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">era5_on_cmip6_root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Provide exactly one of --era5_root or "</span> <span class="s2">"--era5_on_cmip6_root."</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_path">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.build_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Build the yearly NetCDF path for a data directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    root : str or pathlib.Path</span>
+<span class="sd">        Directory containing yearly NetCDF files.</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Year used in the samples_&lt;year&gt;.nc filename.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Full path to the yearly NetCDF file.</span>
+<span class="sd">    """</span>
+    <span class="c1"># All input and output yearly files follow the same naming convention</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"samples_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.nc"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_same_spatial_grid">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.check_same_spatial_grid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_same_spatial_grid</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Check that two arrays use the same latitude-longitude grid.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference : xarray.DataArray</span>
+<span class="sd">        Reference array defining the expected spatial grid.</span>
+<span class="sd">    target : xarray.DataArray</span>
+<span class="sd">        Array whose spatial grid is compared with reference.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If latitude or longitude dimensions are missing, dimension sizes differ,</span>
+<span class="sd">        or coordinate values are not equal within numerical tolerance.</span>
+<span class="sd">    """</span>
+    <span class="n">required_dimensions</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"latitude"</span><span class="p">,</span> <span class="s2">"longitude"</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">required_dimensions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dimension</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reference</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Reference data have no </span><span class="si">{</span><span class="n">dimension</span><span class="si">}</span><span class="s2"> dimension."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dimension</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Target data have no </span><span class="si">{</span><span class="n">dimension</span><span class="si">}</span><span class="s2"> dimension."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">reference</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span> <span class="o">!=</span> <span class="n">target</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">dimension</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dimension</span><span class="si">}</span><span class="s2"> size mismatch: "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">reference</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="si">}</span><span class="s2"> != "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+            <span class="n">reference</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">target</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dimension</span><span class="si">}</span><span class="s2"> coordinates differ."</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_dataset_consistency">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.check_dataset_consistency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_dataset_consistency</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">variable_names</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Validate dimensions, coordinates, and values across dataset variables.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : xarray.Dataset</span>
+<span class="sd">        Dataset containing the climate variables to validate.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Variable names expected in dataset.</span>
+<span class="sd">    label : str</span>
+<span class="sd">        Readable dataset label used in error messages.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If no variables are provided, a variable is missing, required dimensions</span>
+<span class="sd">        are absent, spatial or temporal coordinates differ, or non-finite values</span>
+<span class="sd">        are present.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No variable name was provided."</span><span class="p">)</span>
+
+    <span class="n">first</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variable '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">' is missing from </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="n">current</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+
+        <span class="n">required_dims</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"time"</span><span class="p">,</span> <span class="s2">"latitude"</span><span class="p">,</span> <span class="s2">"longitude"</span><span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">required_dims</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">dims</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2"> must contain dimensions "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">required_dims</span><span class="p">)</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">current</span><span class="o">.</span><span class="n">dims</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+
+        <span class="n">check_same_spatial_grid</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">current</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span>
+            <span class="n">first</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">current</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Time coordinates differ between "</span>
+                <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">' and '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">' in </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2"> contains NaN or infinite values."</span>
+            <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="select_month">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.select_month">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">select_month</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">month</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Select all time steps belonging to one calendar month.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : xarray.Dataset or xarray.DataArray</span>
+<span class="sd">        Input climate data with a datetime-like time coordinate.</span>
+<span class="sd">    month : int</span>
+<span class="sd">        Calendar month in the inclusive range 1 to 12.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset or xarray.DataArray</span>
+<span class="sd">        Subset containing all selected-month samples across available years.</span>
+<span class="sd">    """</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span> <span class="o">==</span> <span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="prepare_dataarray">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.prepare_dataarray">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_dataarray</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Convert and standardize a climate data array for downstream processing.</span>
+
+<span class="sd">    The array is converted to float32, loaded into memory, and reordered to</span>
+<span class="sd">    use the canonical dimension order time, latitude, longitude.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : xarray.DataArray</span>
+<span class="sd">        Climate data array to prepare.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.DataArray</span>
+<span class="sd">        Prepared array with float32 values loaded into memory and dimensions</span>
+<span class="sd">        ordered as time, latitude, longitude.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">load</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="s2">"time"</span><span class="p">,</span>
+            <span class="s2">"latitude"</span><span class="p">,</span>
+            <span class="s2">"longitude"</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="resolve_precomputed_variable_root">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.resolve_precomputed_variable_root">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_precomputed_variable_root</span><span class="p">(</span>
+    <span class="n">era5_on_cmip6_root</span><span class="p">,</span>
+    <span class="n">variable_name</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Resolve the precomputed ERA5 directory for one variable.</span>
+
+<span class="sd">    The function supports either a common directory containing metadata.json</span>
+<span class="sd">    and yearly files or a parent directory containing one subdirectory per</span>
+<span class="sd">    variable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    era5_on_cmip6_root : str or pathlib.Path</span>
+<span class="sd">        Common root or parent directory of precomputed ERA5-on-CMIP6 data.</span>
+<span class="sd">    variable_name : str</span>
+<span class="sd">        Climate variable whose directory is required.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pathlib.Path</span>
+<span class="sd">        Directory containing the variable metadata and yearly files.</span>
+<span class="sd">    """</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">era5_on_cmip6_root</span><span class="p">)</span>
+    <span class="n">variable_root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">variable_name</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">variable_root</span> <span class="o">/</span> <span class="s2">"metadata.json"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">variable_root</span>
+
+    <span class="k">return</span> <span class="n">root</span></div>
+
+
+
+<div class="viewcode-block" id="load_precomputed_metadata">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.load_precomputed_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_precomputed_metadata</span><span class="p">(</span>
+    <span class="n">era5_on_cmip6_root</span><span class="p">,</span>
+    <span class="n">variable_name</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Load and validate metadata for precomputed ERA5-on-CMIP6 data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    era5_on_cmip6_root : str or pathlib.Path</span>
+<span class="sd">        Common root or parent directory of precomputed ERA5 data.</span>
+<span class="sd">    variable_name : str</span>
+<span class="sd">        Requested climate variable.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report the loaded metadata.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    metadata : dict</span>
+<span class="sd">        Metadata read from metadata.json.</span>
+<span class="sd">    variable_root : pathlib.Path</span>
+<span class="sd">        Directory containing the metadata and yearly variable files.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    FileNotFoundError</span>
+<span class="sd">        If metadata.json cannot be found.</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the metadata variable name conflicts with variable_name.</span>
+<span class="sd">    """</span>
+    <span class="n">variable_root</span> <span class="o">=</span> <span class="n">resolve_precomputed_variable_root</span><span class="p">(</span>
+        <span class="n">era5_on_cmip6_root</span><span class="p">,</span>
+        <span class="n">variable_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">metadata_path</span> <span class="o">=</span> <span class="n">variable_root</span> <span class="o">/</span> <span class="s2">"metadata.json"</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">metadata_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"metadata.json not found for variable '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">' "</span>
+            <span class="sa">f</span><span class="s2">"under </span><span class="si">{</span><span class="n">era5_on_cmip6_root</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metadata_path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+
+    <span class="n">metadata_variable</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"variable_name"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">metadata_variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">metadata_variable</span> <span class="o">!=</span> <span class="n">variable_name</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Precomputed metadata at </span><span class="si">{</span><span class="n">metadata_path</span><span class="si">}</span><span class="s2"> were built for "</span>
+            <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">metadata_variable</span><span class="si">}</span><span class="s2">', but '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">' was requested."</span>
+        <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Loaded precompute metadata for </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"from </span><span class="si">{</span><span class="n">metadata_path</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">variable_root</span></div>
+
+
+
+<div class="viewcode-block" id="open_dataarray">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.open_dataarray">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">open_dataarray</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Open one variable from a NetCDF file and load it into memory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or pathlib.Path</span>
+<span class="sd">        Path to the NetCDF file.</span>
+<span class="sd">    variable_name : str</span>
+<span class="sd">        Variable to extract from the dataset.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.DataArray</span>
+<span class="sd">        Requested variable loaded into memory.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If variable_name is not present in the file.</span>
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">dataset</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variable '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">' not found in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="load_training_variable">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.load_training_variable">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_training_variable</span><span class="p">(</span>
+    <span class="n">train_start</span><span class="p">,</span>
+    <span class="n">train_end</span><span class="p">,</span>
+    <span class="n">cmip6_train_root</span><span class="p">,</span>
+    <span class="n">variable_name</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+    <span class="n">era5_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">era5_on_cmip6_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Load one training variable from ERA5 and historical CMIP6 files.</span>
+
+<span class="sd">    ERA5 data can either be loaded from raw files and prepared onto the</span>
+<span class="sd">    CMIP6 grid, or loaded from previously prepared ERA5-on-CMIP6 files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    train_start : int</span>
+<span class="sd">        First training year.</span>
+<span class="sd">    train_end : int</span>
+<span class="sd">        Last training year, inclusive.</span>
+<span class="sd">    cmip6_train_root : str or pathlib.Path</span>
+<span class="sd">        Directory containing historical CMIP6 yearly files.</span>
+<span class="sd">    variable_name : str</span>
+<span class="sd">        Climate variable to load.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report progress.</span>
+<span class="sd">    era5_root : str or pathlib.Path or None, optional</span>
+<span class="sd">        Directory containing raw ERA5 yearly files.</span>
+<span class="sd">    era5_on_cmip6_root : str or pathlib.Path or None, optional</span>
+<span class="sd">        Directory containing precomputed ERA5-on-CMIP6 fields.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    reference_train : xarray.DataArray</span>
+<span class="sd">        Concatenated ERA5 training data on the CMIP6 grid.</span>
+<span class="sd">    biased_train : xarray.DataArray</span>
+<span class="sd">        Concatenated historical CMIP6 training data.</span>
+<span class="sd">    latitude_descending : bool</span>
+<span class="sd">        Whether latitude is ordered north to south.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If both or neither ERA5 input modes are provided, or if spatial grids</span>
+<span class="sd">        or latitude orientation are inconsistent between years.</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If no training year is loaded.</span>
+<span class="sd">    """</span>
+    <span class="c1"># Exactly one ERA5 input mode must be selected:</span>
+    <span class="c1"># raw ERA5 files or precomputed ERA5-on-CMIP6 files.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">era5_root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">era5_on_cmip6_root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Provide exactly one of era5_root or era5_on_cmip6_root."</span><span class="p">)</span>
+
+    <span class="n">use_precomputed</span> <span class="o">=</span> <span class="n">era5_on_cmip6_root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># Precomputed ERA5 files already contain the latitude orientation</span>
+    <span class="c1"># required to match the CMIP6 grid.</span>
+    <span class="k">if</span> <span class="n">use_precomputed</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">,</span> <span class="n">variable_root</span> <span class="o">=</span> <span class="n">load_precomputed_metadata</span><span class="p">(</span>
+            <span class="n">era5_on_cmip6_root</span><span class="p">,</span>
+            <span class="n">variable_name</span><span class="p">,</span>
+            <span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">latitude_descending</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"latitude_descending"</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variable_root</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">latitude_descending</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Accumulate yearly ERA5 and CMIP6 fields before concatenating them</span>
+    <span class="c1"># along the time dimension.</span>
+    <span class="n">reference_years</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">biased_years</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Keep the first yearly grids as references for consistency checks.</span>
+    <span class="n">reference_grid</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">biased_grid</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">train_start</span><span class="p">,</span> <span class="n">train_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">cmip6_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span><span class="n">cmip6_train_root</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_precomputed</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Preparing </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">, training year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2"> "</span> <span class="s2">"(precomputed ERA5)"</span>
+            <span class="p">)</span>
+
+            <span class="n">era5_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span><span class="n">variable_root</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+
+            <span class="c1"># ERA5 is already prepared on the CMIP6 grid</span>
+            <span class="n">reference_year</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span>
+                <span class="n">open_dataarray</span><span class="p">(</span>
+                    <span class="n">era5_path</span><span class="p">,</span>
+                    <span class="n">variable_name</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">climate_dataset</span> <span class="o">=</span> <span class="n">ClimateDataset</span><span class="p">(</span>
+                <span class="n">cmip6_path</span><span class="o">=</span><span class="n">cmip6_path</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Prepare CMIP6 using the latitude orientation stored</span>
+            <span class="c1"># in the precomputed ERA5 metadata.</span>
+            <span class="n">biased_year</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span>
+                <span class="n">climate_dataset</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span>
+                    <span class="n">latitude_descending</span><span class="o">=</span><span class="n">latitude_descending</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Preparing </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">, training year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+            <span class="n">era5_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span><span class="n">era5_root</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+
+            <span class="n">climate_dataset</span> <span class="o">=</span> <span class="n">ClimateDataset</span><span class="p">(</span>
+                <span class="n">era5_path</span><span class="o">=</span><span class="n">era5_path</span><span class="p">,</span>
+                <span class="n">cmip6_path</span><span class="o">=</span><span class="n">cmip6_path</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Raw ERA5 must be prepared and aligned with the native CMIP6 grid.</span>
+            <span class="p">(</span>
+                <span class="n">reference_year</span><span class="p">,</span>
+                <span class="n">biased_year</span><span class="p">,</span>
+                <span class="n">current_latitude_descending</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">climate_dataset</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">()</span>
+
+            <span class="n">reference_year</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span><span class="n">reference_year</span><span class="p">)</span>
+
+            <span class="n">biased_year</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span><span class="n">biased_year</span><span class="p">)</span>
+
+            <span class="c1"># Latitude orientation must remain identical across all years.</span>
+            <span class="k">if</span> <span class="n">latitude_descending</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">latitude_descending</span> <span class="o">=</span> <span class="n">current_latitude_descending</span>
+            <span class="k">elif</span> <span class="n">latitude_descending</span> <span class="o">!=</span> <span class="n">current_latitude_descending</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ERA5 latitude ordering changes between years."</span><span class="p">)</span>
+
+        <span class="n">climate_dataset</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># ERA5 and CMIP6 must share exactly the same spatial grid</span>
+        <span class="c1"># before they can be used for bias correction.</span>
+        <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+            <span class="n">reference_year</span><span class="p">,</span>
+            <span class="n">biased_year</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Check that the grid remains unchanged from one year to the next.</span>
+        <span class="k">if</span> <span class="n">reference_grid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reference_grid</span> <span class="o">=</span> <span class="n">reference_year</span>
+            <span class="n">biased_grid</span> <span class="o">=</span> <span class="n">biased_year</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+                <span class="n">reference_grid</span><span class="p">,</span>
+                <span class="n">reference_year</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+                <span class="n">biased_grid</span><span class="p">,</span>
+                <span class="n">biased_year</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">reference_years</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference_year</span><span class="p">)</span>
+        <span class="n">biased_years</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">biased_year</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">latitude_descending</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"No training year was loaded."</span><span class="p">)</span>
+
+    <span class="c1"># Merge all yearly samples into continuous training time series.</span>
+    <span class="n">reference_train</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="n">reference_years</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"time"</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+        <span class="s2">"time"</span><span class="p">,</span>
+        <span class="s2">"latitude"</span><span class="p">,</span>
+        <span class="s2">"longitude"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">biased_train</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="n">biased_years</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"time"</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+        <span class="s2">"time"</span><span class="p">,</span>
+        <span class="s2">"latitude"</span><span class="p">,</span>
+        <span class="s2">"longitude"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Safety check after concatenation.</span>
+    <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+        <span class="n">reference_train</span><span class="p">,</span>
+        <span class="n">biased_train</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">reference_train</span><span class="p">,</span>
+        <span class="n">biased_train</span><span class="p">,</span>
+        <span class="n">latitude_descending</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="assemble_variable_dataset">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.assemble_variable_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">assemble_variable_dataset</span><span class="p">(</span>
+    <span class="n">variable_arrays</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Assemble aligned climate variables into one dataset.</span>
+
+<span class="sd">    Auxiliary scalar coordinates, such as variable-specific measurement heights,</span>
+<span class="sd">    are moved to variable attributes before merging. Time, latitude, and longitude</span>
+<span class="sd">    coordinates must match exactly across variables.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_arrays : dict of str to xarray.DataArray</span>
+<span class="sd">        Mapping from climate variable names to data arrays.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered variables to include in the assembled dataset.</span>
+<span class="sd">    label : str</span>
+<span class="sd">        Human-readable dataset label used in error messages.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Dataset containing all variables with shared time and spatial coordinates.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If variables cannot be aligned exactly or fail consistency checks.</span>
+<span class="sd">    """</span>
+    <span class="n">cleaned_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">variable_arrays</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+
+        <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="s2">"time"</span><span class="p">,</span>
+            <span class="s2">"latitude"</span><span class="p">,</span>
+            <span class="s2">"longitude"</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Preserve auxiliary coordinates as attributes before removing them.</span>
+        <span class="n">auxiliary_coordinates</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">coordinate_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">coords</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">coordinate_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
+                <span class="s2">"time"</span><span class="p">,</span>
+                <span class="s2">"latitude"</span><span class="p">,</span>
+                <span class="s2">"longitude"</span><span class="p">,</span>
+            <span class="p">}:</span>
+                <span class="n">coordinate</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">coordinate_name</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">coordinate</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">coordinate</span><span class="o">.</span><span class="n">values</span>
+
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+                    <span class="n">auxiliary_coordinates</span><span class="p">[</span><span class="n">coordinate_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c1"># Remove all non-index coordinates, for example height.</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">reset_coords</span><span class="p">(</span>
+            <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Keep their information inside the variable attributes.</span>
+        <span class="k">for</span> <span class="n">coordinate_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">auxiliary_coordinates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="sa">f</span><span class="s2">"original_coordinate_</span><span class="si">{</span><span class="n">coordinate_name</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="n">array</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">variable_name</span>
+        <span class="n">cleaned_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">aligned_arrays</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">cleaned_arrays</span><span class="p">,</span>
+            <span class="n">join</span><span class="o">=</span><span class="s2">"exact"</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Variables in </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> do not share exactly the same "</span>
+            <span class="s2">"time and spatial coordinates."</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="n">variable_name</span><span class="p">:</span> <span class="n">array</span>
+            <span class="k">for</span> <span class="n">variable_name</span><span class="p">,</span> <span class="n">array</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">variable_names</span><span class="p">,</span>
+                <span class="n">aligned_arrays</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="n">check_dataset_consistency</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+
+<div class="viewcode-block" id="load_training_data">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.load_training_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_training_data</span><span class="p">(</span>
+    <span class="n">train_start</span><span class="p">,</span>
+    <span class="n">train_end</span><span class="p">,</span>
+    <span class="n">era5_roots</span><span class="p">,</span>
+    <span class="n">era5_on_cmip6_roots</span><span class="p">,</span>
+    <span class="n">cmip6_train_roots</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Load and assemble all variables required for training.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    train_start : int</span>
+<span class="sd">        First training year.</span>
+<span class="sd">    train_end : int</span>
+<span class="sd">        Last training year, inclusive.</span>
+<span class="sd">    era5_roots : dict of str to str or None</span>
+<span class="sd">        Raw ERA5 directory for each variable, or None when precomputed ERA5 data</span>
+<span class="sd">        are used.</span>
+<span class="sd">    era5_on_cmip6_roots : dict of str to str or None</span>
+<span class="sd">        Precomputed ERA5-on-CMIP6 directory for each variable, or None when raw</span>
+<span class="sd">        ERA5 data are used.</span>
+<span class="sd">    cmip6_train_roots : dict of str to str</span>
+<span class="sd">        Historical CMIP6 directory for each variable.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered climate variables to load.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report progress.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    reference_train : xarray.Dataset</span>
+<span class="sd">        ERA5 training variables on the CMIP6 grid.</span>
+<span class="sd">    biased_train : xarray.Dataset</span>
+<span class="sd">        Historical CMIP6 training variables.</span>
+<span class="sd">    latitude_descending : bool</span>
+<span class="sd">        Common latitude orientation used by all variables.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If variables have inconsistent latitude orientation, grids, times, or</span>
+<span class="sd">        values.</span>
+<span class="sd">    """</span>
+    <span class="n">reference_variables</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">biased_variables</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">common_latitude_descending</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="n">cmip6_train_root</span> <span class="o">=</span> <span class="n">cmip6_train_roots</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+
+        <span class="c1"># Select the raw ERA5 root when raw inputs are used.</span>
+        <span class="n">era5_root</span> <span class="o">=</span> <span class="n">era5_roots</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="k">if</span> <span class="n">era5_roots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># Select the precomputed ERA5-on-CMIP6 root when available.</span>
+        <span class="n">era5_on_cmip6_root</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">era5_on_cmip6_roots</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">era5_on_cmip6_roots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Load the current variable using the active ERA5 input mode.</span>
+        <span class="p">(</span>
+            <span class="n">reference_variable</span><span class="p">,</span>
+            <span class="n">biased_variable</span><span class="p">,</span>
+            <span class="n">latitude_descending</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">load_training_variable</span><span class="p">(</span>
+            <span class="n">train_start</span><span class="o">=</span><span class="n">train_start</span><span class="p">,</span>
+            <span class="n">train_end</span><span class="o">=</span><span class="n">train_end</span><span class="p">,</span>
+            <span class="n">cmip6_train_root</span><span class="o">=</span><span class="n">cmip6_train_root</span><span class="p">,</span>
+            <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="n">era5_root</span><span class="o">=</span><span class="n">era5_root</span><span class="p">,</span>
+            <span class="n">era5_on_cmip6_root</span><span class="o">=</span><span class="n">era5_on_cmip6_root</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># All variables must use the same latitude orientation.</span>
+        <span class="k">if</span> <span class="n">common_latitude_descending</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">common_latitude_descending</span> <span class="o">=</span> <span class="n">latitude_descending</span>
+        <span class="k">elif</span> <span class="n">common_latitude_descending</span> <span class="o">!=</span> <span class="n">latitude_descending</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Latitude orientation differs between variables."</span><span class="p">)</span>
+
+        <span class="n">reference_variables</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">reference_variable</span>
+        <span class="n">biased_variables</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">biased_variable</span>
+
+    <span class="c1"># Merge all ERA5 variables into one aligned training dataset.</span>
+    <span class="n">reference_train</span> <span class="o">=</span> <span class="n">assemble_variable_dataset</span><span class="p">(</span>
+        <span class="n">reference_variables</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"ERA5 training data"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Merge all CMIP6 variables into one aligned training dataset.</span>
+    <span class="n">biased_train</span> <span class="o">=</span> <span class="n">assemble_variable_dataset</span><span class="p">(</span>
+        <span class="n">biased_variables</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"CMIP6 training data"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ERA5 and CMIP6 must share the same spatial grid before fitting.</span>
+    <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+        <span class="n">reference_train</span><span class="p">[</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+        <span class="n">biased_train</span><span class="p">[</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">success</span><span class="p">(</span>
+        <span class="s2">"Training data ready:</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"Variables: </span><span class="si">{</span><span class="n">variable_names</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"ERA5 sizes:  </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">reference_train</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"CMIP6 sizes: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">biased_train</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">reference_train</span><span class="p">,</span>
+        <span class="n">biased_train</span><span class="p">,</span>
+        <span class="n">common_latitude_descending</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_application_data">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.load_application_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_application_data</span><span class="p">(</span>
+    <span class="n">year</span><span class="p">,</span>
+    <span class="n">era5_roots</span><span class="p">,</span>
+    <span class="n">era5_on_cmip6_roots</span><span class="p">,</span>
+    <span class="n">cmip6_apply_roots</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">latitude_descending</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Load and assemble ERA5 reference and CMIP6 data for one application year.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Application year to load.</span>
+<span class="sd">    era5_roots : dict of str to str or None</span>
+<span class="sd">        Raw ERA5 directory for each variable.</span>
+<span class="sd">    era5_on_cmip6_roots : dict of str to str or None</span>
+<span class="sd">        Precomputed ERA5-on-CMIP6 directory for each variable.</span>
+<span class="sd">    cmip6_apply_roots : dict of str to str</span>
+<span class="sd">        CMIP6 application directory for each variable.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered climate variables to load.</span>
+<span class="sd">    latitude_descending : bool</span>
+<span class="sd">        Latitude orientation established during training.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report progress.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    reference_apply : xarray.Dataset</span>
+<span class="sd">        ERA5 reference data on the CMIP6 grid.</span>
+<span class="sd">    biased_apply : xarray.Dataset</span>
+<span class="sd">        Raw CMIP6 application data.</span>
+<span class="sd">    """</span>
+    <span class="n">reference_variables</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">biased_variables</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="n">cmip6_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span>
+            <span class="n">cmip6_apply_roots</span><span class="p">[</span><span class="n">variable_name</span><span class="p">],</span>
+            <span class="n">year</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">era5_on_cmip6_roots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">variable_root</span> <span class="o">=</span> <span class="n">resolve_precomputed_variable_root</span><span class="p">(</span>
+                <span class="n">era5_on_cmip6_roots</span><span class="p">[</span><span class="n">variable_name</span><span class="p">],</span>
+                <span class="n">variable_name</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">era5_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span>
+                <span class="n">variable_root</span><span class="p">,</span>
+                <span class="n">year</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">reference_variable</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span>
+                <span class="n">open_dataarray</span><span class="p">(</span>
+                    <span class="n">era5_path</span><span class="p">,</span>
+                    <span class="n">variable_name</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">climate_dataset</span> <span class="o">=</span> <span class="n">ClimateDataset</span><span class="p">(</span>
+                <span class="n">cmip6_path</span><span class="o">=</span><span class="n">cmip6_path</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">biased_variable</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span>
+                <span class="n">climate_dataset</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span>
+                    <span class="n">latitude_descending</span><span class="o">=</span><span class="n">latitude_descending</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">era5_roots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Internal error: ERA5 roots are unavailable."</span><span class="p">)</span>
+
+            <span class="n">era5_path</span> <span class="o">=</span> <span class="n">build_path</span><span class="p">(</span>
+                <span class="n">era5_roots</span><span class="p">[</span><span class="n">variable_name</span><span class="p">],</span>
+                <span class="n">year</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">climate_dataset</span> <span class="o">=</span> <span class="n">ClimateDataset</span><span class="p">(</span>
+                <span class="n">era5_path</span><span class="o">=</span><span class="n">era5_path</span><span class="p">,</span>
+                <span class="n">cmip6_path</span><span class="o">=</span><span class="n">cmip6_path</span><span class="p">,</span>
+                <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="p">(</span>
+                <span class="n">reference_variable</span><span class="p">,</span>
+                <span class="n">biased_variable</span><span class="p">,</span>
+                <span class="n">current_latitude_descending</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">climate_dataset</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">current_latitude_descending</span> <span class="o">!=</span> <span class="n">latitude_descending</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Latitude orientation differs for "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2"> in year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">."</span>
+                <span class="p">)</span>
+
+            <span class="n">reference_variable</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span><span class="n">reference_variable</span><span class="p">)</span>
+
+            <span class="n">biased_variable</span> <span class="o">=</span> <span class="n">prepare_dataarray</span><span class="p">(</span><span class="n">biased_variable</span><span class="p">)</span>
+
+        <span class="n">climate_dataset</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+            <span class="n">reference_variable</span><span class="p">,</span>
+            <span class="n">biased_variable</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">reference_variables</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">reference_variable</span>
+        <span class="n">biased_variables</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">biased_variable</span>
+
+    <span class="n">reference_apply</span> <span class="o">=</span> <span class="n">assemble_variable_dataset</span><span class="p">(</span>
+        <span class="n">reference_variables</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"ERA5 evaluation year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">biased_apply</span> <span class="o">=</span> <span class="n">assemble_variable_dataset</span><span class="p">(</span>
+        <span class="n">biased_variables</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"CMIP6 application year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">check_same_spatial_grid</span><span class="p">(</span>
+        <span class="n">reference_apply</span><span class="p">[</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+        <span class="n">biased_apply</span><span class="p">[</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span>
+        <span class="n">reference_apply</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">biased_apply</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ERA5 and CMIP6 time coordinates differ for year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">reference_apply</span><span class="p">,</span> <span class="n">biased_apply</span></div>
+
+
+
+<div class="viewcode-block" id="flatten_dataset">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.flatten_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">flatten_dataset</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Flatten and concatenate climate variables into a feature matrix.</span>
+
+<span class="sd">    Variables are concatenated by blocks in the order given by variable_names.</span>
+<span class="sd">    Each block contains all latitude-longitude grid points for one variable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : xarray.Dataset</span>
+<span class="sd">        Dataset with dimensions time, latitude, and longitude.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered variables to concatenate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    matrix : numpy.ndarray</span>
+<span class="sd">        Array of shape (time, n_variables * latitude * longitude).</span>
+<span class="sd">    metadata : dict</span>
+<span class="sd">        Variable order and original dimensions required for reconstruction.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the dataset fails consistency checks.</span>
+<span class="sd">    """</span>
+    <span class="n">check_dataset_consistency</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"flatten input"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">matrices</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">number_times</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span>
+    <span class="n">number_latitudes</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"latitude"</span><span class="p">]</span>
+    <span class="n">number_longitudes</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"longitude"</span><span class="p">]</span>
+    <span class="n">grid_size</span> <span class="o">=</span> <span class="n">number_latitudes</span> <span class="o">*</span> <span class="n">number_longitudes</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+                <span class="s2">"time"</span><span class="p">,</span>
+                <span class="s2">"latitude"</span><span class="p">,</span>
+                <span class="s2">"longitude"</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">matrices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">number_times</span><span class="p">,</span> <span class="n">grid_size</span><span class="p">))</span>
+
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+        <span class="n">matrices</span><span class="p">,</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"variable_names"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">variable_names</span><span class="p">),</span>
+        <span class="s2">"number_times"</span><span class="p">:</span> <span class="n">number_times</span><span class="p">,</span>
+        <span class="s2">"number_latitudes"</span><span class="p">:</span> <span class="n">number_latitudes</span><span class="p">,</span>
+        <span class="s2">"number_longitudes"</span><span class="p">:</span> <span class="n">number_longitudes</span><span class="p">,</span>
+        <span class="s2">"grid_size"</span><span class="p">:</span> <span class="n">grid_size</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">metadata</span></div>
+
+
+
+<div class="viewcode-block" id="reconstruct_dataset">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.reconstruct_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reconstruct_dataset</span><span class="p">(</span>
+    <span class="n">corrected_2d</span><span class="p">,</span>
+    <span class="n">template_dataset</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">,</span>
+    <span class="n">method_name</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Reconstruct corrected climate fields from a feature matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    corrected_2d : numpy.ndarray</span>
+<span class="sd">        Corrected matrix with shape</span>
+<span class="sd">        (time, n_variables * latitude * longitude).</span>
+<span class="sd">    template_dataset : xarray.Dataset</span>
+<span class="sd">        Dataset providing coordinates, variable attributes, and output structure.</span>
+<span class="sd">    metadata : dict</span>
+<span class="sd">        Flattening metadata produced by flatten_dataset.</span>
+<span class="sd">    method_name : str</span>
+<span class="sd">        Name of the applied bias-correction method.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Corrected variables reconstructed on their original grid.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If corrected_2d does not have the expected shape.</span>
+<span class="sd">    """</span>
+    <span class="n">variable_names</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">]</span>
+    <span class="n">number_times</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"number_times"</span><span class="p">]</span>
+    <span class="n">number_latitudes</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"number_latitudes"</span><span class="p">]</span>
+    <span class="n">number_longitudes</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"number_longitudes"</span><span class="p">]</span>
+    <span class="n">grid_size</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"grid_size"</span><span class="p">]</span>
+
+    <span class="n">expected_shape</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">number_times</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span> <span class="o">*</span> <span class="n">grid_size</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">corrected_2d</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">"Unexpected corrected matrix shape: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">corrected_2d</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">expected_shape</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="n">corrected_variables</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">variable_index</span><span class="p">,</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variable_names</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">variable_index</span> <span class="o">*</span> <span class="n">grid_size</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">grid_size</span>
+
+        <span class="n">corrected_values</span> <span class="o">=</span> <span class="n">corrected_2d</span><span class="p">[</span>
+            <span class="p">:,</span>
+            <span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">,</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">number_times</span><span class="p">,</span>
+            <span class="n">number_latitudes</span><span class="p">,</span>
+            <span class="n">number_longitudes</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">template</span> <span class="o">=</span> <span class="n">template_dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="s2">"time"</span><span class="p">,</span>
+            <span class="s2">"latitude"</span><span class="p">,</span>
+            <span class="s2">"longitude"</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">corrected_variable</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">corrected_values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">corrected_variable</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">variable_name</span>
+        <span class="n">corrected_variable</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+        <span class="n">corrected_variable</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"bias_correction_method"</span><span class="p">]</span> <span class="o">=</span> <span class="n">method_name</span>
+
+        <span class="n">corrected_variable</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"bias_correction_mode"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"univariate"</span> <span class="k">if</span> <span class="n">method_name</span> <span class="o">==</span> <span class="s2">"qm"</span> <span class="k">else</span> <span class="s2">"multivariate"</span>
+        <span class="p">)</span>
+
+        <span class="n">corrected_variables</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">corrected_variable</span>
+
+    <span class="n">corrected_dataset</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">corrected_variables</span><span class="p">)</span>
+    <span class="n">corrected_dataset</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">template_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+    <span class="n">corrected_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"bias_correction_method"</span><span class="p">]</span> <span class="o">=</span> <span class="n">method_name</span>
+    <span class="n">corrected_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"bias_correction_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">corrected_dataset</span></div>
+
+
+
+<div class="viewcode-block" id="fit_bias_corrector">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.fit_bias_corrector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fit_bias_corrector</span><span class="p">(</span>
+    <span class="n">reference_train</span><span class="p">,</span>
+    <span class="n">biased_train</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">corrector</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Fit one bias corrector on flattened climate fields.</span>
+
+<span class="sd">    For QM, command-line validation ensures that only one climate variable is</span>
+<span class="sd">    provided. For OT, all requested variables and grid points are concatenated</span>
+<span class="sd">    and corrected jointly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference_train : xarray.Dataset</span>
+<span class="sd">        ERA5 training data on the CMIP6 grid.</span>
+<span class="sd">    biased_train : xarray.Dataset</span>
+<span class="sd">        Historical CMIP6 training data.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered variables used to construct the feature matrices.</span>
+<span class="sd">    corrector : BiasCorrector</span>
+<span class="sd">        Initialized bias-correction object.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report fitting diagnostics.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BiasCorrector</span>
+<span class="sd">        Fitted bias corrector.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ERA5 and CMIP6 spatial or feature dimensions are inconsistent.</span>
+<span class="sd">    """</span>
+    <span class="n">reference_2d</span><span class="p">,</span> <span class="n">reference_metadata</span> <span class="o">=</span> <span class="n">flatten_dataset</span><span class="p">(</span>
+        <span class="n">reference_train</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">biased_2d</span><span class="p">,</span> <span class="n">biased_metadata</span> <span class="o">=</span> <span class="n">flatten_dataset</span><span class="p">(</span>
+        <span class="n">biased_train</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">reference_metadata</span><span class="p">[</span><span class="s2">"number_latitudes"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">biased_metadata</span><span class="p">[</span><span class="s2">"number_latitudes"</span><span class="p">]</span>
+        <span class="ow">or</span> <span class="n">reference_metadata</span><span class="p">[</span><span class="s2">"number_longitudes"</span><span class="p">]</span>
+        <span class="o">!=</span> <span class="n">biased_metadata</span><span class="p">[</span><span class="s2">"number_longitudes"</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ERA5 and CMIP6 spatial dimensions differ."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">reference_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">biased_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"ERA5 and CMIP6 feature dimensions differ: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">reference_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">biased_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Fitting method: </span><span class="si">{</span><span class="n">corrector</span><span class="o">.</span><span class="n">method_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"Variables: </span><span class="si">{</span><span class="n">variable_names</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"Reference matrix: </span><span class="si">{</span><span class="n">reference_2d</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"Biased matrix:    </span><span class="si">{</span><span class="n">biased_2d</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+
+    <span class="n">corrector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+        <span class="n">reference</span><span class="o">=</span><span class="n">reference_2d</span><span class="p">,</span>
+        <span class="n">biased</span><span class="o">=</span><span class="n">biased_2d</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">corrector</span><span class="o">.</span><span class="n">method_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> fitting completed"</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">"Corrector diagnostics:</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="o">+</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+            <span class="n">corrector</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">,</span>
+            <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">del</span> <span class="n">reference_2d</span>
+    <span class="k">del</span> <span class="n">biased_2d</span>
+    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">corrector</span></div>
+
+
+
+<div class="viewcode-block" id="fit_bias_correctors_by_month">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.fit_bias_correctors_by_month">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fit_bias_correctors_by_month</span><span class="p">(</span>
+    <span class="n">reference_train</span><span class="p">,</span>
+    <span class="n">biased_train</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">,</span>
+    <span class="n">ot_kwargs</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Fit one bias corrector for each calendar month.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference_train : xarray.Dataset</span>
+<span class="sd">        ERA5 training data covering all training years.</span>
+<span class="sd">    biased_train : xarray.Dataset</span>
+<span class="sd">        Historical CMIP6 training data covering all training years.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered variables used during fitting.</span>
+<span class="sd">    method : {'qm', 'ot'}</span>
+<span class="sd">        Bias-correction method.</span>
+<span class="sd">    ot_kwargs : dict</span>
+<span class="sd">        Keyword arguments passed to create_bias_corrector.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report monthly fitting progress.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of int to BiasCorrector</span>
+<span class="sd">        Fitted corrector indexed by calendar month from 1 to 12.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If ERA5 or CMIP6 contains no training samples for a calendar month.</span>
+<span class="sd">    """</span>
+    <span class="n">correctors</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">month</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"=== Fitting corrector for month </span><span class="si">{</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2"> ==="</span><span class="p">)</span>
+
+        <span class="n">reference_month</span> <span class="o">=</span> <span class="n">select_month</span><span class="p">(</span>
+            <span class="n">reference_train</span><span class="p">,</span>
+            <span class="n">month</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">biased_month</span> <span class="o">=</span> <span class="n">select_month</span><span class="p">(</span>
+            <span class="n">biased_train</span><span class="p">,</span>
+            <span class="n">month</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">reference_month</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No ERA5 samples found for month </span><span class="si">{</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">biased_month</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No CMIP6 samples found for month </span><span class="si">{</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="n">corrector</span> <span class="o">=</span> <span class="n">create_bias_corrector</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">ot_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">corrector</span> <span class="o">=</span> <span class="n">fit_bias_corrector</span><span class="p">(</span>
+            <span class="n">reference_train</span><span class="o">=</span><span class="n">reference_month</span><span class="p">,</span>
+            <span class="n">biased_train</span><span class="o">=</span><span class="n">biased_month</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">corrector</span><span class="o">=</span><span class="n">corrector</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">correctors</span><span class="p">[</span><span class="n">month</span><span class="p">]</span> <span class="o">=</span> <span class="n">corrector</span>
+
+        <span class="k">del</span> <span class="n">reference_month</span>
+        <span class="k">del</span> <span class="n">biased_month</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">correctors</span></div>
+
+
+
+<div class="viewcode-block" id="apply_bias_corrector">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.apply_bias_corrector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_bias_corrector</span><span class="p">(</span>
+    <span class="n">biased_apply</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">corrector</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Apply a fitted bias corrector to climate fields.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    biased_apply : xarray.Dataset</span>
+<span class="sd">        CMIP6 data to correct.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered variables used during fitting and application.</span>
+<span class="sd">    corrector : BiasCorrector</span>
+<span class="sd">        Fitted bias corrector.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report application diagnostics.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Corrected climate variables on the original CMIP6 grid.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If the transformed matrix shape differs from the input matrix shape.</span>
+<span class="sd">    """</span>
+    <span class="n">biased_apply_2d</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">flatten_dataset</span><span class="p">(</span>
+        <span class="n">biased_apply</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Application matrix: </span><span class="si">{</span><span class="n">biased_apply_2d</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">corrected_2d</span> <span class="o">=</span> <span class="n">corrector</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">biased_apply_2d</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">corrected_2d</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">biased_apply_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">"The corrected matrix has an unexpected shape: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">corrected_2d</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">biased_apply_2d</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="n">corrected</span> <span class="o">=</span> <span class="n">reconstruct_dataset</span><span class="p">(</span>
+        <span class="n">corrected_2d</span><span class="o">=</span><span class="n">corrected_2d</span><span class="p">,</span>
+        <span class="n">template_dataset</span><span class="o">=</span><span class="n">biased_apply</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="n">corrector</span><span class="o">.</span><span class="n">method_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">del</span> <span class="n">biased_apply_2d</span>
+    <span class="k">del</span> <span class="n">corrected_2d</span>
+    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">corrected</span></div>
+
+
+
+<div class="viewcode-block" id="apply_bias_corrector_by_month">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.apply_bias_corrector_by_month">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_bias_corrector_by_month</span><span class="p">(</span>
+    <span class="n">biased_apply</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">correctors_by_month</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Apply month-specific correctors and reassemble the time series.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    biased_apply : xarray.Dataset</span>
+<span class="sd">        CMIP6 data for one application year.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Ordered variables used during fitting and application.</span>
+<span class="sd">    correctors_by_month : dict of int to BiasCorrector</span>
+<span class="sd">        Fitted corrector for each calendar month.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report application progress.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Corrected data concatenated and sorted chronologically.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If a required monthly corrector is missing or no month is corrected.</span>
+<span class="sd">    """</span>
+    <span class="n">corrected_months</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">month</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
+        <span class="n">biased_apply_month</span> <span class="o">=</span> <span class="n">select_month</span><span class="p">(</span>
+            <span class="n">biased_apply</span><span class="p">,</span>
+            <span class="n">month</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">biased_apply_month</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">month</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">correctors_by_month</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No fitted corrector available for month </span><span class="si">{</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Applying month </span><span class="si">{</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2"> corrector "</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">biased_apply_month</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span><span class="si">}</span><span class="s2"> time steps)"</span>
+        <span class="p">)</span>
+
+        <span class="n">corrected_month</span> <span class="o">=</span> <span class="n">apply_bias_corrector</span><span class="p">(</span>
+            <span class="n">biased_apply</span><span class="o">=</span><span class="n">biased_apply_month</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">corrector</span><span class="o">=</span><span class="n">correctors_by_month</span><span class="p">[</span><span class="n">month</span><span class="p">],</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">corrected_months</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">corrected_month</span><span class="p">)</span>
+
+        <span class="k">del</span> <span class="n">biased_apply_month</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">corrected_months</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"No application month was corrected."</span><span class="p">)</span>
+
+    <span class="n">corrected</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="n">corrected_months</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="s2">"time"</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span>
+
+    <span class="k">del</span> <span class="n">corrected_months</span>
+    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">corrected</span></div>
+
+
+
+<div class="viewcode-block" id="save_corrected_year">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.save_corrected_year">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_corrected_year</span><span class="p">(</span>
+    <span class="n">corrected</span><span class="p">,</span>
+    <span class="n">output_dirs</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Save each corrected variable in its own yearly NetCDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    corrected : xarray.Dataset</span>
+<span class="sd">        Corrected climate variables.</span>
+<span class="sd">    output_dirs : dict of str to str</span>
+<span class="sd">        Output directory for each variable.</span>
+<span class="sd">    year : int</span>
+<span class="sd">        Year written to the samples_&lt;year&gt;.nc filename.</span>
+<span class="sd">    variable_names : sequence of str</span>
+<span class="sd">        Variables to save.</span>
+<span class="sd">    logger : AID_BC.logger.Logger</span>
+<span class="sd">        Logger used to report output paths.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the corrected dataset has no time samples or lacks a requested</span>
+<span class="sd">        variable.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">corrected</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Corrected year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2"> contains no time step."</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">corrected</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Corrected dataset does not contain '</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dirs</span><span class="p">[</span><span class="n">variable_name</span><span class="p">])</span>
+        <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span>
+            <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"samples_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.nc"</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Writing corrected variable </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">"</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="n">output_dataset</span> <span class="o">=</span> <span class="n">corrected</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">)</span>
+
+        <span class="n">encoding</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">variable_name</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"dtype"</span><span class="p">:</span> <span class="s2">"float32"</span><span class="p">,</span>
+                <span class="s2">"zlib"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">"complevel"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">output_dataset</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span>
+            <span class="n">output_file</span><span class="p">,</span>
+            <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">output_dataset</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.main.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Run the complete CMIP6 bias-correction workflow.</span>
+
+<span class="sd">    The workflow validates arguments, loads and aligns training variables, fits</span>
+<span class="sd">    one global or monthly QM/OT corrector, applies the fitted correction to each</span>
+<span class="sd">    requested year, and saves each corrected variable in its configured output</span>
+<span class="sd">    directory.</span>
+<span class="sd">    """</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">validate_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">()</span>
+    <span class="n">variable_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+
+    <span class="n">era5_roots</span> <span class="o">=</span> <span class="n">parse_variable_paths</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">era5_root</span><span class="p">,</span>
+        <span class="s2">"--era5_root"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">era5_on_cmip6_roots</span> <span class="o">=</span> <span class="n">parse_variable_paths</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">era5_on_cmip6_root</span><span class="p">,</span>
+        <span class="s2">"--era5_on_cmip6_root"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cmip6_train_roots</span> <span class="o">=</span> <span class="n">parse_variable_paths</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">cmip6_train_root</span><span class="p">,</span>
+        <span class="s2">"--cmip6_train_root"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cmip6_apply_roots</span> <span class="o">=</span> <span class="n">parse_variable_paths</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">cmip6_apply_root</span><span class="p">,</span>
+        <span class="s2">"--cmip6_apply_root"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">output_dirs</span> <span class="o">=</span> <span class="n">parse_variable_paths</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
+        <span class="s2">"--output_dir"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">era5_on_cmip6_roots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">validate_variable_paths</span><span class="p">(</span>
+            <span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">era5_on_cmip6_roots</span><span class="p">,</span>
+            <span class="s2">"--era5_on_cmip6_root"</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">validate_variable_paths</span><span class="p">(</span>
+            <span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">era5_roots</span><span class="p">,</span>
+            <span class="s2">"--era5_root"</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">validate_variable_paths</span><span class="p">(</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">cmip6_train_roots</span><span class="p">,</span>
+        <span class="s2">"--cmip6_train_root"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">validate_variable_paths</span><span class="p">(</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">cmip6_apply_roots</span><span class="p">,</span>
+        <span class="s2">"--cmip6_apply_root"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">validate_variable_paths</span><span class="p">(</span>
+        <span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">output_dirs</span><span class="p">,</span>
+        <span class="s2">"--output_dir"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">run_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dirs</span><span class="p">[</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Selected bias-correction method: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Selected variables: </span><span class="si">{</span><span class="n">variable_names</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Selected split mode: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">split</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"qm"</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"QM will correct exactly one climate variable."</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">"OT will jointly transport all requested variables and "</span>
+            <span class="s2">"all spatial grid points."</span>
+        <span class="p">)</span>
+
+    <span class="n">ot_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">ot_epsilon</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">ot_epsilon</span><span class="p">,</span>
+        <span class="n">ot_num_iterations</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">ot_num_iterations</span><span class="p">,</span>
+        <span class="n">ot_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">ot_threshold</span><span class="p">,</span>
+        <span class="n">ot_batch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">ot_batch_size</span><span class="p">,</span>
+        <span class="n">ot_dtype</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">ot_dtype</span><span class="p">,</span>
+        <span class="n">ot_normalize</span><span class="o">=</span><span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">ot_no_normalization</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="p">(</span>
+        <span class="n">reference_train</span><span class="p">,</span>
+        <span class="n">biased_train</span><span class="p">,</span>
+        <span class="n">latitude_descending</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">load_training_data</span><span class="p">(</span>
+        <span class="n">train_start</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">train_start</span><span class="p">,</span>
+        <span class="n">train_end</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">train_end</span><span class="p">,</span>
+        <span class="n">era5_roots</span><span class="o">=</span><span class="n">era5_roots</span><span class="p">,</span>
+        <span class="n">era5_on_cmip6_roots</span><span class="o">=</span><span class="n">era5_on_cmip6_roots</span><span class="p">,</span>
+        <span class="n">cmip6_train_roots</span><span class="o">=</span><span class="n">cmip6_train_roots</span><span class="p">,</span>
+        <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+        <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">split</span> <span class="o">==</span> <span class="s2">"month"</span><span class="p">:</span>
+        <span class="n">correctors</span> <span class="o">=</span> <span class="n">fit_bias_correctors_by_month</span><span class="p">(</span>
+            <span class="n">reference_train</span><span class="o">=</span><span class="n">reference_train</span><span class="p">,</span>
+            <span class="n">biased_train</span><span class="o">=</span><span class="n">biased_train</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+            <span class="n">ot_kwargs</span><span class="o">=</span><span class="n">ot_kwargs</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">corrector</span> <span class="o">=</span> <span class="n">create_bias_corrector</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">ot_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">corrector</span> <span class="o">=</span> <span class="n">fit_bias_corrector</span><span class="p">(</span>
+            <span class="n">reference_train</span><span class="o">=</span><span class="n">reference_train</span><span class="p">,</span>
+            <span class="n">biased_train</span><span class="o">=</span><span class="n">biased_train</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">corrector</span><span class="o">=</span><span class="n">corrector</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">del</span> <span class="n">reference_train</span>
+    <span class="k">del</span> <span class="n">biased_train</span>
+    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">apply_start</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">apply_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Correcting CMIP6 year </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="n">reference_apply</span><span class="p">,</span> <span class="n">biased_apply</span> <span class="o">=</span> <span class="n">load_application_data</span><span class="p">(</span>
+            <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span>
+            <span class="n">era5_roots</span><span class="o">=</span><span class="n">era5_roots</span><span class="p">,</span>
+            <span class="n">era5_on_cmip6_roots</span><span class="o">=</span><span class="n">era5_on_cmip6_roots</span><span class="p">,</span>
+            <span class="n">cmip6_apply_roots</span><span class="o">=</span><span class="n">cmip6_apply_roots</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">latitude_descending</span><span class="o">=</span><span class="n">latitude_descending</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">split</span> <span class="o">==</span> <span class="s2">"month"</span><span class="p">:</span>
+            <span class="n">corrected</span> <span class="o">=</span> <span class="n">apply_bias_corrector_by_month</span><span class="p">(</span>
+                <span class="n">biased_apply</span><span class="o">=</span><span class="n">biased_apply</span><span class="p">,</span>
+                <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+                <span class="n">correctors_by_month</span><span class="o">=</span><span class="n">correctors</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">corrected</span> <span class="o">=</span> <span class="n">apply_bias_corrector</span><span class="p">(</span>
+                <span class="n">biased_apply</span><span class="o">=</span><span class="n">biased_apply</span><span class="p">,</span>
+                <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+                <span class="n">corrector</span><span class="o">=</span><span class="n">corrector</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">evaluate</span><span class="p">(</span>
+            <span class="n">reference</span><span class="o">=</span><span class="n">reference_apply</span><span class="p">,</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">biased_apply</span><span class="p">,</span>
+            <span class="n">corrected</span><span class="o">=</span><span class="n">corrected</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+            <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+            <span class="n">run_name</span><span class="o">=</span><span class="n">run_name</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">save_corrected_year</span><span class="p">(</span>
+            <span class="n">corrected</span><span class="o">=</span><span class="n">corrected</span><span class="p">,</span>
+            <span class="n">output_dirs</span><span class="o">=</span><span class="n">output_dirs</span><span class="p">,</span>
+            <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span>
+            <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">del</span> <span class="n">reference_apply</span>
+        <span class="k">del</span> <span class="n">biased_apply</span>
+        <span class="k">del</span> <span class="n">corrected</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="s2">"Full-grid CMIP6 bias correction completed"</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

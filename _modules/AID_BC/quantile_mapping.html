@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AID_BC.quantile_mapping &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sea_surface_temperature.html">Sea Surface Temperature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">AID_BC.quantile_mapping</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for AID_BC.quantile_mapping</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2026 CNRS</span>
+<span class="c1"># Authors: Kishanthan Kingston</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons</span>
+<span class="c1"># Attribution-NonCommercial-ShareAlike 4.0 International License.</span>
+<span class="c1"># To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc-sa/4.0/</span>
+
+<span class="sd">"""</span>
+<span class="sd">Perform empirical Quantile Mapping for bias correction.</span>
+
+<span class="sd">The method estimates the empirical distributions of reference and biased</span>
+<span class="sd">data independently for each feature. Biased values are corrected by mapping</span>
+<span class="sd">their empirical cumulative probabilities to the corresponding quantiles</span>
+<span class="sd">of the reference distribution using linear interpolation.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="QM">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.quantile_mapping.QM">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QM</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Basic empirical Quantile Mapping bias corrector.</span>
+
+<span class="sd">    Given a reference dataset Y0 and a biased dataset X0, this estimates the</span>
+<span class="sd">    empirical cumulative distribution function (CDF) of each, feature by</span>
+<span class="sd">    feature, and corrects biased values by matching their quantiles to those</span>
+<span class="sd">    of the reference distribution.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="QM.__init__">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.quantile_mapping.QM.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_X</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_Y</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_empirical_quantiles</span><span class="p">(</span><span class="n">sorted_values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Build the probability grid associated with a sorted sample.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sorted_values : numpy.ndarray</span>
+<span class="sd">            1D array of sample values, already sorted ascending.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Cumulative probabilities in (0, 1], one per sample, using the</span>
+<span class="sd">            plotting-position convention p_k = k / n (k = 1..n).</span>
+<span class="sd">        """</span>
+        <span class="c1"># Number of observations in the empirical distribution</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">sorted_values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Example for n = 5:</span>
+        <span class="c1">#</span>
+        <span class="c1">#     [1/5, 2/5, 3/5, 4/5, 5/5]</span>
+        <span class="c1">#</span>
+        <span class="c1"># which gives:</span>
+        <span class="c1">#</span>
+        <span class="c1">#     [0.2, 0.4, 0.6, 0.8, 1.0]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
+
+<div class="viewcode-block" id="QM.fit">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.quantile_mapping.QM.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y0</span><span class="p">,</span> <span class="n">X0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit the empirical distributions of the reference and biased data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Y0 : numpy.ndarray</span>
+<span class="sd">            Reference dataset with shape (n_samples, n_features), e.g. ERA5.</span>
+<span class="sd">        X0 : numpy.ndarray</span>
+<span class="sd">            Biased dataset with shape (n_samples, n_features), e.g. historical model data.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">Y0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">Y0</span> <span class="o">=</span> <span class="n">Y0</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">X0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">X0</span> <span class="o">=</span> <span class="n">X0</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Quantile Mapping is performed feature by feature.</span>
+        <span class="c1"># Therefore, the reference and biased datasets must contain</span>
+        <span class="c1"># exactly the same number of features.</span>
+        <span class="k">if</span> <span class="n">Y0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">X0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Y0 and X0 must have the same number of features: "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">Y0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">X0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">=</span> <span class="n">X0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Sort the biased values independently for each feature.</span>
+        <span class="c1"># Sorting gives a simple empirical representation of the</span>
+        <span class="c1"># biased distribution F_X.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_X</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">X0</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">)]</span>
+
+        <span class="c1"># Sort the reference values independently for each feature.</span>
+        <span class="c1"># These values will be used as the empirical inverse CDF</span>
+        <span class="c1"># (quantile function) F_Y^{-1}.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_Y</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">Y0</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="QM.predict">
+<a class="viewcode-back" href="../../api/AID_BC.html#AID_BC.quantile_mapping.QM.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Apply the fitted quantile mapping to new biased data.</span>
+
+<span class="sd">        For each feature, a value x is mapped to its empirical</span>
+<span class="sd">        non-exceedance probability p under the fitted biased distribution,</span>
+<span class="sd">        then p is mapped back to a value under the fitted reference</span>
+<span class="sd">        distribution (linear interpolation, clipped to the reference</span>
+<span class="sd">        sample's range).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X0 : numpy.ndarray</span>
+<span class="sd">            Data to correct with shape (n_samples, n_features).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Corrected data with shape (n_samples, n_features).</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"QM.fit() must be called before predict()."</span><span class="p">)</span>
+
+        <span class="c1"># Convert a one-dimensional time series into</span>
+        <span class="c1"># a two-dimensional array with one feature</span>
+        <span class="k">if</span> <span class="n">X0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">X0</span> <span class="o">=</span> <span class="n">X0</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">X0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2"> features, got </span><span class="si">{</span><span class="n">X0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="n">Z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">X0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Quantile Mapping is performed independently for every feature</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">):</span>
+            <span class="c1"># Empirical samples fitted for the current feature</span>
+            <span class="n">sorted_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">sorted_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="c1"># p_x describes the probability axis of the biased distribution,</span>
+            <span class="c1"># p_y describes the probability axis of the reference distribution.</span>
+            <span class="n">p_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_empirical_quantiles</span><span class="p">(</span><span class="n">sorted_x</span><span class="p">)</span>
+            <span class="n">p_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_empirical_quantiles</span><span class="p">(</span><span class="n">sorted_y</span><span class="p">)</span>
+
+            <span class="c1"># Step 1: map biased values to their empirical probabilities</span>
+            <span class="c1"># p = F_X(x)</span>
+            <span class="c1"># np.interp() approximates the empirical CDF by linear</span>
+            <span class="c1"># interpolation between the fitted biased sample values.</span>
+            <span class="n">probabilities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+                <span class="n">X0</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+                <span class="n">sorted_x</span><span class="p">,</span>
+                <span class="n">p_x</span><span class="p">,</span>
+                <span class="n">left</span><span class="o">=</span><span class="n">p_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">right</span><span class="o">=</span><span class="n">p_x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Step 2: map probabilities to the reference distribution</span>
+            <span class="c1"># z = F_Y^{-1}(p)</span>
+            <span class="n">Z0</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+                <span class="n">probabilities</span><span class="p">,</span>
+                <span class="n">p_y</span><span class="p">,</span>
+                <span class="n">sorted_y</span><span class="p">,</span>
+                <span class="n">left</span><span class="o">=</span><span class="n">sorted_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">right</span><span class="o">=</span><span class="n">sorted_y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Z0</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

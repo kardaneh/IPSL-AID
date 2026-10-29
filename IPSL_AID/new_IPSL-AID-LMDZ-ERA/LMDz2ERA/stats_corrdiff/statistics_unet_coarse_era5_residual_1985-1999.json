@@ -1,0 +1,8 @@
+{
+    "var131_residual": {"vmean": 0.01328265, "vstd": 1.2714771},
+    "var132_residual": {"vmean": 0.015402118, "vstd": 1.2978668},
+    "var130_residual": {"vmean": 0.07014818, "vstd": 0.71651083},
+    "var137_residual": {"vmean": -0.05741963, "vstd": 1.4542398},
+    "log_var59_residual": {"vmean": 0.008960558, "vstd": 1.0265768},
+    "log_var228_residual": {"vmean": -0.0066747675, "vstd": 0.40225545}
+}

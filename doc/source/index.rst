@@ -58,6 +58,7 @@ emphasis on **reproducibility, comprehensive testing, and configurability**.
 
    atmosphere_variable
    sea_surface_temperature
+   aid_bc
 
 .. toctree::
    :maxdepth: 2

@@ -15,6 +15,7 @@ os.environ.setdefault(
 
 from datetime import datetime
 import matplotlib as mpl
+import xarray as xr
 import numpy as np
 import unittest
 import torch
@@ -56,6 +57,7 @@ from IPSL_AID.diagnostics import (
     spread_skill_ratio,
     plot_validation_salpdfs,
     compute_sal_objects,
+    to_numpy_4d,
 )
 
 # ---------------------------------------------
@@ -424,6 +426,66 @@ class TestPlottingFunctions(unittest.TestCase):
         self.valid_loss_history = np.exp(
             -np.linspace(0, 1.5, 20)
         ) + 0.15 * np.random.random(20)
+
+    def test_to_numpy_4d(self):
+        """Test conversion of supported inputs to 4D NumPy arrays."""
+
+        # Test 1: NumPy 4D array
+        numpy_data = np.random.rand(5, 3, 8, 10)
+
+        result = to_numpy_4d(numpy_data)
+
+        self.assertIsInstance(result, np.ndarray)
+        self.assertEqual(result.shape, (5, 3, 8, 10))
+        np.testing.assert_array_equal(result, numpy_data)
+
+        # Test 2: PyTorch tensor
+        torch_data = torch.from_numpy(numpy_data)
+
+        result = to_numpy_4d(torch_data)
+
+        self.assertIsInstance(result, np.ndarray)
+        self.assertEqual(result.shape, (5, 3, 8, 10))
+        np.testing.assert_array_equal(result, numpy_data)
+
+        # Test 3: Single xarray.DataArray
+        xarray_data = xr.DataArray(
+            np.random.rand(5, 8, 10),
+            dims=("time", "latitude", "longitude"),
+        )
+
+        result = to_numpy_4d(xarray_data)
+
+        self.assertEqual(result.shape, (5, 1, 8, 10))
+        np.testing.assert_array_equal(
+            result[:, 0],
+            xarray_data.values,
+        )
+
+        # Test 4: List of xarray.DataArray
+        xarray_list = [
+            xr.DataArray(
+                np.random.rand(5, 8, 10),
+                dims=("time", "latitude", "longitude"),
+            )
+            for _ in range(3)
+        ]
+
+        result = to_numpy_4d(xarray_list)
+
+        self.assertEqual(result.shape, (5, 3, 8, 10))
+
+        for i, data_array in enumerate(xarray_list):
+            np.testing.assert_array_equal(
+                result[:, i],
+                data_array.values,
+            )
+
+        # Test 5: Invalid number of dimensions
+        invalid_data = np.random.rand(5, 8, 10)
+
+        with self.assertRaises(ValueError):
+            to_numpy_4d(invalid_data)
 
     # ============================================================================
     # SINGLE COMPREHENSIVE TEST FOR EACH DIAGNOSTIC METHOD

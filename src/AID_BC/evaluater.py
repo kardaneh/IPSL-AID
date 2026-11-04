@@ -10,11 +10,11 @@
 import numpy as np
 from pathlib import Path
 
-from AID_BC.diagnostics import (
+from IPSL_AID.diagnostics import (
     plot_power_spectra,
     plot_qq_quantiles,
     plot_validation_pdfs,
-    plot_metrics_heatmap,
+    plot_summary_metrics_heatmap,
     plot_surface,
     plot_validation_mvcorr,
 )
@@ -148,7 +148,7 @@ def print_metrics(variable_name, summaries, logger):
         Climate variable name.
     summaries : list of dict
         Summary statistics.
-    logger : AID_BC.logger.Logger
+    logger : Logger
         Logger used to report metrics.
     """
     lines = [
@@ -209,7 +209,7 @@ def evaluate(
         Bias-correction method name.
     year : int
         Evaluated application year.
-    logger : AID_BC.logger.Logger
+    logger : Logger
         Logger used to report evaluation progress.
     run_name : str
         Name of the bias-correction run used to create the corresponding
@@ -266,7 +266,7 @@ def evaluate(
 
         variable_dir = result_dir / variable_name
 
-        save_path = plot_metrics_heatmap(
+        save_path = plot_summary_metrics_heatmap(
             summaries=summaries,
             metric_names=["MAE", "RMSE"],
             filename="error_metrics.png",
@@ -275,7 +275,7 @@ def evaluate(
 
         logger.info(f"Saved error metrics for {variable_name} to: {save_path}")
 
-        save_path = plot_metrics_heatmap(
+        save_path = plot_summary_metrics_heatmap(
             summaries=summaries,
             metric_names=["MEAN", "STD", "MIN", "MAX"],
             filename="distribution_metrics.png",
@@ -335,41 +335,16 @@ def evaluate(
 
     logger.info(f"Saved QQ quantiles to: {save_path}")
 
-    # Convert the per-variable DataArrays into 4D arrays with shape
-    # [time, variable, latitude, longitude], as expected by
-    # plot_validation_mvcorr
-    reference_mvcorr = np.stack(
-        [x.transpose("time", "latitude", "longitude").values for x in reference_arrays],
-        axis=1,
-    )
-
-    raw_mvcorr = np.stack(
-        [x.transpose("time", "latitude", "longitude").values for x in raw_arrays],
-        axis=1,
-    )
-
-    corrected_mvcorr = np.stack(
-        [x.transpose("time", "latitude", "longitude").values for x in corrected_arrays],
-        axis=1,
-    )
-
     # Build 2D latitude/longitude grids required by the correlation-map plot
     lon_2d, lat_2d = np.meshgrid(
         lon_1d,
         lat_1d,
     )
 
-    logger.info(
-        f"Multivariable correlation shapes: "
-        f"ERA5={reference_mvcorr.shape}, "
-        f"raw={raw_mvcorr.shape}, "
-        f"corrected={corrected_mvcorr.shape}"
-    )
-
     save_path = plot_validation_mvcorr(
-        predictions=corrected_mvcorr,
-        targets=reference_mvcorr,
-        coarse_inputs=raw_mvcorr,
+        predictions=corrected_arrays,
+        targets=reference_arrays,
+        coarse_inputs=raw_arrays,
         lat=lat_2d,
         lon=lon_2d,
         variable_names=list(variable_names),

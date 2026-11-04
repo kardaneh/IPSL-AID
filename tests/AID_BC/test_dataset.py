@@ -21,7 +21,7 @@ sys.path.insert(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")),
 )
 
-from AID_BC.logger import Logger
+from IPSL_AID.logger import Logger
 from AID_BC.dataset import ClimateDataset, resize_with_torchvision
 
 # python -m unittest tests.test_dataset

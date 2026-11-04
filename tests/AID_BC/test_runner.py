@@ -17,7 +17,7 @@ sys.path.insert(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")),
 )
 
-from AID_BC.logger import Logger
+from IPSL_AID.logger import Logger
 
 # python -m tests.test_runner
 

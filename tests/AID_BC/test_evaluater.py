@@ -21,7 +21,7 @@ sys.path.insert(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")),
 )
 
-from AID_BC.logger import Logger
+from IPSL_AID.logger import Logger
 from AID_BC.evaluater import (
     MetricTracker,
     summary_metrics,
@@ -443,7 +443,7 @@ class TestEvaluate(unittest.TestCase):
     @patch("AID_BC.evaluater.plot_qq_quantiles")
     @patch("AID_BC.evaluater.plot_power_spectra")
     @patch("AID_BC.evaluater.plot_validation_pdfs")
-    @patch("AID_BC.evaluater.plot_metrics_heatmap")
+    @patch("AID_BC.evaluater.plot_summary_metrics_heatmap")
     def test_evaluate(
         self,
         mock_heatmap,

@@ -22,7 +22,7 @@ sys.path.insert(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")),
 )
 
-from AID_BC.logger import Logger
+from IPSL_AID.logger import Logger
 from AID_BC.bias_corrector import (
     BiasCorrector,
     OptimalTransportCorrector,

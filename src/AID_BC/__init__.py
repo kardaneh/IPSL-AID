@@ -19,7 +19,7 @@ __description__ = "AI Downscaling Bias Correction for Climate Data"
 from AID_BC.version import __version__, __version_info__, get_version
 
 # Import logger
-from AID_BC.logger import Logger
+from IPSL_AID.logger import Logger
 
 __all__ = [
     "__version__",

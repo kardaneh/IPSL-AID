@@ -33,7 +33,7 @@ from pathlib import Path
 import numpy as np
 
 from AID_BC.dataset import ClimateDataset
-from AID_BC.logger import Logger
+from IPSL_AID.logger import Logger
 
 
 def parse_args():
@@ -151,7 +151,7 @@ def process_year(
         Name of the climate variable to preprocess.
     output_dir : str or pathlib.Path
         Directory in which the precomputed ERA5-on-CMIP6 file is written.
-    logger : AID_BC.logger.Logger
+    logger : Logger
         Logger used to report progress, retries, and output paths.
 
     Returns

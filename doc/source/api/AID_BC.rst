@@ -20,26 +20,10 @@ AID_BC.dataset module
    :undoc-members:
    :show-inheritance:
 
-AID_BC.diagnostics module
--------------------------
-
-.. automodule:: AID_BC.diagnostics
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 AID_BC.evaluater module
 -----------------------
 
 .. automodule:: AID_BC.evaluater
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-AID_BC.logger module
---------------------
-
-.. automodule:: AID_BC.logger
    :members:
    :undoc-members:
    :show-inheritance:

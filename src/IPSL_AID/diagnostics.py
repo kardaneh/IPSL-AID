@@ -273,6 +273,66 @@ class PlotConfig:
         return PlotConfig.FIXED_SSR_RANGES.get(var_name, None)
 
 
+def to_numpy_4d(data):
+    """
+    Convert input data to a four-dimensional NumPy array.
+
+    The returned array follows the dimension order
+    "[time, variable, latitude, longitude]".
+
+    Parameters
+    ----------
+    data : torch.Tensor, numpy.ndarray, xarray.DataArray, or list of xarray.DataArray
+        Input data to convert.
+
+    Returns
+    -------
+    numpy.ndarray
+        Four-dimensional array with shape
+        "[time, variable, latitude, longitude]".
+
+    Raises
+    ------
+    ValueError
+        If the converted data does not have four dimensions.
+    """
+
+    # torch.Tensor -> numpy.ndarray
+    if hasattr(data, "detach"):
+        data = data.detach().cpu().numpy()
+
+    # xarray.DataArray -> numpy.ndarray
+    elif hasattr(data, "dims") and hasattr(data, "values"):
+        data = data.transpose("time", "latitude", "longitude").values
+        data = data[:, None, :, :]
+
+    # list of xarray.DataArray -> numpy.ndarray
+    elif isinstance(data, list):
+        arrays = []
+
+        for da in data:
+            if hasattr(da, "dims") and hasattr(da, "values"):
+                arr = da.transpose("time", "latitude", "longitude").values
+            else:
+                arr = np.asarray(da)
+
+            arrays.append(arr)
+
+        data = np.stack(arrays, axis=1)
+
+    # numpy-like input
+    else:
+        data = np.asarray(data)
+
+    if data.ndim != 4:
+        raise ValueError(
+            f"Expected data with 4 dimensions [time, variable, latitude, longitude], "
+            f"got shape {data.shape}"
+        )
+
+    return data
+
+
 def plot_validation_hexbin(
     predictions,  # Model predictions (fine predicted)
     targets,  # Ground truth (fine true)
@@ -806,6 +866,82 @@ def plot_metrics_heatmap(
     return save_path
 
 
+def plot_summary_metrics_heatmap(
+    summaries,
+    metric_names,
+    filename="validation_metrics_heatmap.png",
+    save_dir="./results",
+    figsize_multiplier=4,
+):
+    """
+    Plot a heatmap of summary metrics for bias correction.
+
+    Parameters
+    ----------
+    summaries : list of dict
+        Summary metrics returned by summary_metrics.
+    metric_names : list of str
+        Metrics to display.
+    filename : str, optional
+        Output filename.
+    save_dir : str, optional
+        Directory where the image is saved.
+    figsize_multiplier : float, optional
+        Controls overall figure size.
+
+    Returns
+    -------
+    str
+        Path to the saved figure.
+    """
+    dataset_names = [row["dataset"] for row in summaries]
+
+    values = np.asarray(
+        [[row.get(metric, np.nan) for metric in metric_names] for row in summaries],
+        dtype=np.float64,
+    )
+
+    fig_width = figsize_multiplier + len(metric_names)
+    fig_height = 0.6 * len(dataset_names) + figsize_multiplier / 2
+
+    fig, ax = plt.subplots(
+        figsize=(fig_width, fig_height),
+    )
+
+    sns.heatmap(
+        values,
+        ax=ax,
+        cmap="viridis",
+        annot=True,
+        fmt=".3f",
+        linewidths=0.8,
+        cbar=True,
+        xticklabels=metric_names,
+        yticklabels=dataset_names,
+    )
+
+    ax.set_title("Validation metrics")
+    ax.set_xlabel("Metric")
+    ax.set_ylabel("Dataset")
+
+    plt.tight_layout()
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(
+        save_dir,
+        filename,
+    )
+
+    plt.savefig(
+        save_path,
+        bbox_inches="tight",
+    )
+
+    plt.close(fig)
+
+    return save_path
+
+
 def plot_loss_histories(
     train_loss_history,
     valid_loss_history,
@@ -1150,12 +1286,9 @@ def plot_surface(
         figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
 
     # Convert tensors to numpy if needed
-    if hasattr(coarse_inputs, "detach"):
-        coarse_inputs = coarse_inputs.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
+    predictions = to_numpy_4d(predictions)
+    targets = to_numpy_4d(targets)
+    coarse_inputs = to_numpy_4d(coarse_inputs)
     if hasattr(lat_1d, "detach"):
         lat_1d = lat_1d.detach().cpu().numpy()
     if hasattr(lon_1d, "detach"):
@@ -3204,12 +3337,11 @@ def plot_validation_pdfs(
     >>> plot_validation_pdfs(predictions, targets, variable_names=['Temp', 'Pres', 'Humid'])
     """
     # Convert to numpy if they're tensors
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
-        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+    predictions = to_numpy_4d(predictions)
+    targets = to_numpy_4d(targets)
+
+    if coarse_inputs is not None:
+        coarse_inputs = to_numpy_4d(coarse_inputs)
 
     batch_size, num_vars, h, w = predictions.shape
 
@@ -3455,12 +3587,11 @@ def plot_power_spectra(
     None
     """
     # Convert to numpy if they're tensors
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
-        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+    predictions = to_numpy_4d(predictions)
+    targets = to_numpy_4d(targets)
+
+    if coarse_inputs is not None:
+        coarse_inputs = to_numpy_4d(coarse_inputs)
 
     batch_size, num_vars, nh, nw = predictions.shape
 
@@ -3745,12 +3876,9 @@ def plot_qq_quantiles(
     """
 
     # Convert tensors → numpy
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if hasattr(coarse_inputs, "detach"):
-        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+    predictions = to_numpy_4d(predictions)
+    targets = to_numpy_4d(targets)
+    coarse_inputs = to_numpy_4d(coarse_inputs)
 
     batch_size, num_vars, h, w = predictions.shape
 
@@ -5232,12 +5360,11 @@ def plot_validation_mvcorr(
         figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
 
     # Convert to numpy if they're tensors
-    if hasattr(predictions, "detach"):
-        predictions = predictions.detach().cpu().numpy()
-    if hasattr(targets, "detach"):
-        targets = targets.detach().cpu().numpy()
-    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
-        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+    predictions = to_numpy_4d(predictions)
+    targets = to_numpy_4d(targets)
+
+    if coarse_inputs is not None:
+        coarse_inputs = to_numpy_4d(coarse_inputs)
     if hasattr(lat, "detach"):
         lat = lat.detach().cpu().numpy()
     if hasattr(lon, "detach"):

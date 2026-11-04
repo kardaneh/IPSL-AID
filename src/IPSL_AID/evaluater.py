@@ -526,7 +526,7 @@ def denormalize(
         Data type for debugging (e.g., "residual", "coarse").
     debug : bool, optional
         Enable debug logging.
-    logger : IPSL_AID.logger.Logger, optional
+    logger : Logger, optional
         Logger instance for debug output.
     """
     # Add debug logging at the start
@@ -1163,7 +1163,7 @@ def reconstruct_original_layout(
         The validation dataset instance
     device : torch.device
         Device to store tensors on
-    logger : IPSL_AID.logger.Logger
+    logger : Logger
         Logger instance for logging
 
     Returns:
@@ -2038,7 +2038,7 @@ def generate_residuals_norm(
         Command line arguments
     device : torch.device
         Training device
-    logger : IPSL_AID.logger.Logger
+    logger : Logger
         Logger instance
     epoch : int
         Current epoch number
@@ -2143,7 +2143,7 @@ def run_validation(
         Command line arguments
     device : torch.device
         Training device
-    logger : IPSL_AID.logger.Logger
+    logger : Logger
         Logger instance
     epoch : int
         Current epoch number

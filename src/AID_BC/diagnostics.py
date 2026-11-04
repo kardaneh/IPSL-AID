@@ -1,5 +1,5 @@
 # Copyright 2026 CNRS
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh, Kishanthan Kingston, Rosie Eade
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -1325,4 +1325,312 @@ def plot_surface(
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
+    return save_path
+
+
+def calculate_pearsoncorr_nparray(arr1, arr2, axis=0):
+    """
+    Calculate Pearson correlation between 2 N-dimensional numpy arrays.
+
+    Parameters
+    -----------
+    arr1 : numpy.ndarray
+        First N-dimensional array
+    arr2 : numpy.ndarray
+        Second N-dimensional array (must have same shape as arr1)
+    axis : int or type of int, default=0
+        Axis or tuple of axes over which to compute correlation
+
+    Returns
+    --------
+    numpy.ndarray
+        Pearson correlation coefficients. Output has N - len(axis) dimensions
+        (input shape with the specified axis/axes removed).
+
+    """
+
+    if arr1.shape != arr2.shape:
+        raise ValueError(
+            f"Arrays must have the same shape. Got {arr1.shape} and {arr2.shape}"
+        )
+
+    # Center the data over axis/axes specified
+    arr1_centered = arr1 - arr1.mean(axis=axis, keepdims=True)
+    arr2_centered = arr2 - arr2.mean(axis=axis, keepdims=True)
+
+    # Compute correlation over axis/axes specified
+    numerator = (arr1_centered * arr2_centered).sum(axis=axis)
+    denominator = np.sqrt(
+        (arr1_centered**2).sum(axis=axis) * (arr2_centered**2).sum(axis=axis)
+    )
+
+    # Avoid division by zero (set as 0.0 instead of inf or nan)
+    correlations = np.divide(
+        numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0
+    )
+
+    return correlations
+
+
+def plot_validation_mvcorr(
+    predictions,  # Model predictions (fine predicted)
+    targets,  # Ground truth (fine true)
+    lat,
+    lon,
+    coarse_inputs=None,  # Coarse inputs for comparison (optional)
+    variable_names=None,  # List of variable names
+    filename="validation_mvcorr_time.png",
+    save_dir="./results",
+    figsize_multiplier=4,  # Base size per subplot
+    logger=None,
+):
+    """
+    Compute multivariate correlation over the time dimension and plot as maps,
+    comparing model predictions vs ground truth, for all combinations of variables.
+    Uses Pearson's correlation coefficient.
+
+    Parameters
+    ----------
+    predictions : torch.Tensor or np.array
+        Model predictions of shape [batch_size, num_variables, h, w]
+    targets : torch.Tensor or np.array
+        Ground truth of shape [batch_size, num_variables, h, w]
+    lat : array-like
+        2D array of latitude coordinates with shape [h, w].
+    lon : array-like
+        2D array of longitude coordinates with shape [h, w].
+    coarse_inputs : torch.Tensor or np.array, optional
+        Coarse inputs of shape [batch_size, num_variables, h, w]
+    variable_names : list of str, optional
+        Names of the variables for subplot titles
+    filename : str, optional
+        Output filename
+    save_dir : str, optional
+        Directory to save the plot
+    figsize_multiplier : int, optional
+        Base size multiplier for subplots
+
+    Returns
+    -------
+    save_path : str
+        Path to the saved figure
+    """
+
+    if save_dir is None:
+        save_dir = PlotConfig.DEFAULT_SAVE_DIR
+    if figsize_multiplier is None:
+        figsize_multiplier = PlotConfig.DEFAULT_FIGSIZE_MULTIPLIER
+
+    # Convert to numpy if they're tensors
+    if hasattr(predictions, "detach"):
+        predictions = predictions.detach().cpu().numpy()
+    if hasattr(targets, "detach"):
+        targets = targets.detach().cpu().numpy()
+    if coarse_inputs is not None and hasattr(coarse_inputs, "detach"):
+        coarse_inputs = coarse_inputs.detach().cpu().numpy()
+    if hasattr(lat, "detach"):
+        lat = lat.detach().cpu().numpy()
+    if hasattr(lon, "detach"):
+        lon = lon.detach().cpu().numpy()
+
+    lat_min, lat_max = lat.min(), lat.max()
+    lon_min, lon_max = lon.min(), lon.max()
+
+    T, n_vars, h, w = predictions.shape
+
+    lat_block = np.linspace(lat_max, lat_min, h)
+    lon_block = np.linspace(lon_min, lon_max, w)
+    lat, lon = np.meshgrid(lat_block, lon_block, indexing="ij")
+
+    lon_center = float((lon_min + lon_max) / 2)
+
+    batch_size, num_vars, h, w = predictions.shape
+
+    if num_vars < 2:
+        if logger is not None:
+            logger.error("ERROR: need at least 2 variables but num_vars < 2")
+        return "0"
+
+    # Default variable names if not provided
+    if variable_names is None:
+        variable_names = [f"VAR_{i}" for i in range(num_vars)]
+
+    # Make list of tuples defining variable combinations
+    list_var_combos = []
+    for ii in range(num_vars - 1):
+        for jj in range(num_vars - 1 - ii):
+            list_var_combos.append((ii, ii + jj + 1))
+
+    # Calculate grid dimensions
+    ncols = 2
+    if coarse_inputs is not None:
+        ncols = 3
+    nrows = int(num_vars * (num_vars - 1) / 2)  # no. distinct pairs of input variables
+
+    base_width_per_panel = 4.5
+    base_height_per_panel = 3.0
+
+    fig_width = base_width_per_panel * ncols
+    fig_height = base_height_per_panel * nrows
+
+    spa_cor_out = np.zeros([nrows, ncols - 1])
+    spa_rmse_out = np.zeros([nrows, ncols - 1])
+
+    # Set up figure
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(fig_width, fig_height),
+        subplot_kw={"projection": ccrs.PlateCarree(central_longitude=lon_center)},
+        squeeze=False,
+        gridspec_kw={"wspace": 0.1},
+    )
+
+    # Define geographic features
+    coastline = cfeature.COASTLINE.with_scale("50m")
+    borders = cfeature.BORDERS.with_scale("50m")
+    # lakes = cfeature.LAKES.with_scale('50m')
+
+    var_name_combo_list = []
+
+    # Plot each combination of variables
+    # max_count = 0
+    for i, varComb in enumerate(list_var_combos):
+        var_name_combo = variable_names[varComb[0]] + " & " + variable_names[varComb[1]]
+        var_name_combo_list.append(var_name_combo)
+
+        # Compute Correlation
+        pred_corr = calculate_pearsoncorr_nparray(
+            predictions[:, varComb[0], :, :], predictions[:, varComb[1], :, :], axis=0
+        )
+        target_corr = calculate_pearsoncorr_nparray(
+            targets[:, varComb[0], :, :], targets[:, varComb[1], :, :], axis=0
+        )
+        if coarse_inputs is not None:
+            coarse_corr = calculate_pearsoncorr_nparray(
+                coarse_inputs[:, varComb[0], :, :],
+                coarse_inputs[:, varComb[1], :, :],
+                axis=0,
+            )
+
+        spa_cor_out[i, 0] = np.corrcoef(
+            pred_corr.reshape(pred_corr.size), target_corr.reshape(target_corr.size)
+        )[0, 1]
+        if coarse_inputs is not None:
+            spa_cor_out[i, 1] = np.corrcoef(
+                coarse_corr.reshape(coarse_corr.size),
+                target_corr.reshape(target_corr.size),
+            )[0, 1]
+
+        spa_rmse_out[i, 0] = np.sqrt((np.square(pred_corr - target_corr)).mean())
+        if coarse_inputs is not None:
+            spa_rmse_out[i, 1] = np.sqrt((np.square(coarse_corr - target_corr)).mean())
+
+        # Col 0: Truth
+        ax_target = axes[i, 0]
+        ax_target.pcolormesh(
+            lon,
+            lat,
+            target_corr,
+            vmin=-1.0,
+            vmax=1.0,
+            cmap="RdBu",
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        ax_target.add_feature(coastline, linewidth=PlotConfig.COASTLINE_w)
+        ax_target.add_feature(
+            borders,
+            linewidth=PlotConfig.BORDER_w,
+            edgecolor="black",
+            linestyle=PlotConfig.BORDER_STYLE,
+        )
+        # ax_target.set_aspect("auto")
+        ax_target.set_extent(
+            [lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree()
+        )
+
+        # Col 1: Prediction
+        ax_pred = axes[i, 1]
+        im_pred = ax_pred.pcolormesh(
+            lon,
+            lat,
+            pred_corr,
+            vmin=-1.0,
+            vmax=1.0,
+            cmap="RdBu",
+            transform=ccrs.PlateCarree(),
+            shading="auto",
+        )
+        ax_pred.add_feature(coastline, linewidth=PlotConfig.COASTLINE_w)
+        ax_pred.add_feature(
+            borders,
+            linewidth=PlotConfig.BORDER_w,
+            edgecolor="black",
+            linestyle=PlotConfig.BORDER_STYLE,
+        )
+        # ax_pred.set_aspect("auto")
+        ax_pred.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+
+        if coarse_inputs is not None:
+            # Col 2: Coarse input
+            ax_coar = axes[i, 2]
+            ax_coar.pcolormesh(
+                lon,
+                lat,
+                coarse_corr,
+                vmin=-1.0,
+                vmax=1.0,
+                cmap="RdBu",
+                transform=ccrs.PlateCarree(),
+                shading="auto",
+            )
+            ax_coar.add_feature(coastline, linewidth=PlotConfig.COASTLINE_w)
+            ax_coar.add_feature(
+                borders,
+                linewidth=PlotConfig.BORDER_w,
+                edgecolor="black",
+                linestyle=PlotConfig.BORDER_STYLE,
+            )
+            # ax_coar.set_aspect("auto")
+            ax_coar.set_extent(
+                [lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree()
+            )
+
+    # Add col labels
+    col_labels = ["Truth", "Prediction"]
+    if coarse_inputs is not None:
+        col_labels = ["Truth", "Prediction", "Coarse"]
+    for col_idx, label in enumerate(col_labels):
+        axes[0, col_idx].set_title(label)
+
+    # Add row labels
+    for row_idx, label in enumerate(var_name_combo_list):
+        axes[row_idx, 0].text(
+            -0.1,
+            0.5,
+            label,
+            transform=axes[row_idx, 0].transAxes,
+            va="center",
+            ha="right",
+            rotation="vertical",
+            fontsize=12,
+        )
+
+    # Add colorbar
+    fig.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9, wspace=0.1)
+    pos_top = axes[0, 0].get_position()
+    pos_bottom = axes[-1, 0].get_position()
+    bottom = pos_bottom.y0
+    top = pos_top.y1
+    height = top - bottom
+    cbar_ax = fig.add_axes([0.92, bottom, 0.015, height])
+    fig.colorbar(im_pred, cax=cbar_ax, label=r"Temporal Pearson Correlation")
+
+    # Ensure save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
+
     return save_path

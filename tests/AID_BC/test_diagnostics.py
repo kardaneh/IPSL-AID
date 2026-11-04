@@ -1,5 +1,5 @@
 # Copyright 2026 IPSL / CNRS / Sorbonne University
-# Authors: Kazem Ardaneh, Kishanthan Kingston
+# Authors: Kazem Ardaneh, Kishanthan Kingston, Rosie Eade
 #
 # This work is licensed under the Creative Commons
 # Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -26,6 +26,7 @@ from AID_BC.diagnostics import (
     plot_power_spectra,
     plot_qq_quantiles,
     plot_surface,
+    plot_validation_mvcorr,
 )
 
 # python -m unittest tests.test_diagnostics
@@ -579,6 +580,78 @@ class TestPlottingFunctions(unittest.TestCase):
 
         if self.logger:
             self.logger.info("✅ All surface plot tests passed")
+
+    def test_mv_correlation(self):
+        """Test for correlation over the time dimension for pairs of variables.
+        Test for correlation over the spatial dimensions.
+        """
+
+        # Define lat lon grid
+        w = self.predictions.shape[2]
+        h = self.predictions.shape[3]
+        dlat = 20
+        dlon = 40
+        lat1 = 30
+        lon1 = -120
+        lon, lat = np.meshgrid(
+            np.linspace(lon1, lon1 + dlon, w), np.linspace(lat1, lat1 + dlat, h)
+        )
+
+        # Test 1: Standard configuration Numpy arrays for correlation over time dimension
+        expected_path = plot_validation_mvcorr(
+            predictions=self.predictions,
+            targets=self.targets,
+            lat=lat,
+            lon=lon,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="validation_mvcorr_numpy.png",
+            figsize_multiplier=3,
+            logger=self.logger,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        expected_path = plot_validation_mvcorr(
+            predictions=self.predictions,
+            targets=self.targets,
+            lat=lat,
+            lon=lon,
+            coarse_inputs=self.coarse_inputs,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="comparison_mvcorr_numpy.png",
+            figsize_multiplier=3,
+            logger=self.logger,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        # Test 2: Standard configuration PyTorch tensors for correlation over time dimension
+        coarse_tensor = torch.from_numpy(self.coarse_inputs.copy())
+        fine_tensor = torch.from_numpy(self.targets.copy())
+        pred_tensor = torch.from_numpy(self.predictions.copy())
+
+        expected_path = plot_validation_mvcorr(
+            predictions=pred_tensor,
+            targets=fine_tensor,
+            lat=lat,
+            lon=lon,
+            coarse_inputs=coarse_tensor,
+            variable_names=self.variable_names,
+            save_dir=self.output_dir,
+            filename="comparison_mvcorr_torch.png",
+            figsize_multiplier=3,
+            logger=self.logger,
+        )
+        self.assertTrue(
+            os.path.exists(expected_path), f"File not found: {expected_path}"
+        )
+
+        if self.logger:
+            self.logger.info("✅ All correlation plots tests passed")
 
 
 def run_tests():

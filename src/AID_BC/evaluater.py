@@ -16,6 +16,7 @@ from AID_BC.diagnostics import (
     plot_validation_pdfs,
     plot_metrics_heatmap,
     plot_surface,
+    plot_validation_mvcorr,
 )
 
 
@@ -265,19 +266,23 @@ def evaluate(
 
         variable_dir = result_dir / variable_name
 
-        plot_metrics_heatmap(
+        save_path = plot_metrics_heatmap(
             summaries=summaries,
             metric_names=["MAE", "RMSE"],
             filename="error_metrics.png",
             save_dir=variable_dir,
         )
 
-        plot_metrics_heatmap(
+        logger.info(f"Saved error metrics for {variable_name} to: {save_path}")
+
+        save_path = plot_metrics_heatmap(
             summaries=summaries,
             metric_names=["MEAN", "STD", "MIN", "MAX"],
             filename="distribution_metrics.png",
             save_dir=variable_dir,
         )
+
+        logger.info(f"Saved distribution metrics for {variable_name} to: {save_path}")
 
         reference_arrays.append(reference_variable)
         raw_arrays.append(raw_variable)
@@ -291,7 +296,7 @@ def evaluate(
     #    np.abs(reference["longitude"].values[1] - reference["longitude"].values[0])
     # )
 
-    plot_validation_pdfs(
+    save_path = plot_validation_pdfs(
         predictions=corrected_arrays,
         targets=reference_arrays,
         coarse_inputs=raw_arrays,
@@ -301,7 +306,9 @@ def evaluate(
         save_npz=True,
     )
 
-    plot_power_spectra(
+    logger.info(f"Saved validation PDFs to: {save_path}")
+
+    save_path = plot_power_spectra(
         predictions=corrected_arrays,
         targets=reference_arrays,
         coarse_inputs=raw_arrays,
@@ -313,7 +320,9 @@ def evaluate(
         save_npz=True,
     )
 
-    plot_qq_quantiles(
+    logger.info(f"Saved power spectra to: {save_path}")
+
+    save_path = plot_qq_quantiles(
         predictions=corrected_arrays,
         targets=reference_arrays,
         coarse_inputs=raw_arrays,
@@ -323,6 +332,53 @@ def evaluate(
         save_dir=str(result_dir),
         save_npz=True,
     )
+
+    logger.info(f"Saved QQ quantiles to: {save_path}")
+
+    # Convert the per-variable DataArrays into 4D arrays with shape
+    # [time, variable, latitude, longitude], as expected by
+    # plot_validation_mvcorr
+    reference_mvcorr = np.stack(
+        [x.transpose("time", "latitude", "longitude").values for x in reference_arrays],
+        axis=1,
+    )
+
+    raw_mvcorr = np.stack(
+        [x.transpose("time", "latitude", "longitude").values for x in raw_arrays],
+        axis=1,
+    )
+
+    corrected_mvcorr = np.stack(
+        [x.transpose("time", "latitude", "longitude").values for x in corrected_arrays],
+        axis=1,
+    )
+
+    # Build 2D latitude/longitude grids required by the correlation-map plot
+    lon_2d, lat_2d = np.meshgrid(
+        lon_1d,
+        lat_1d,
+    )
+
+    logger.info(
+        f"Multivariable correlation shapes: "
+        f"ERA5={reference_mvcorr.shape}, "
+        f"raw={raw_mvcorr.shape}, "
+        f"corrected={corrected_mvcorr.shape}"
+    )
+
+    save_path = plot_validation_mvcorr(
+        predictions=corrected_mvcorr,
+        targets=reference_mvcorr,
+        coarse_inputs=raw_mvcorr,
+        lat=lat_2d,
+        lon=lon_2d,
+        variable_names=list(variable_names),
+        filename="validation_mvcorr_time.png",
+        save_dir=str(result_dir),
+        logger=logger,
+    )
+
+    logger.info(f"Saved inter-variable temporal correlation maps to: {save_path}")
 
     num_time_steps_to_plot = min(3, reference.sizes["time"])
     for time_idx in range(num_time_steps_to_plot):

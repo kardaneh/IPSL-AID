@@ -191,3 +191,5 @@ data_tp/*
 
 # AID_BC generated data
 data/CMIP6_*/
+data/CNRM_*/
+data/HighResMIP_*/

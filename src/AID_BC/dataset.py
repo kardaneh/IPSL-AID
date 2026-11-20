@@ -342,7 +342,7 @@ class ClimateDataset:
             self.load_era5()
             self.load_cmip6()
 
-            # self.era5 = self.rename_coordinates(self.era5)
+            self.era5 = self.rename_coordinates(self.era5)
             # self.cmip6 = self.rename_coordinates(self.cmip6)
 
             self.era5_lat_descending = self.is_latitude_descending(self.era5)

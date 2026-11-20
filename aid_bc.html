@@ -1,0 +1,507 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bias-correction (AID-BC) &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "processEscapes": true}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Generative Downscaling (IPSL-AID)" href="ipsl_aid.html" />
+    <link rel="prev" title="Sea Surface Temperature" href="sea_surface_temperature.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sea_surface_temperature.html">Sea Surface Temperature</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bias-correction (AID-BC)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-preparation">Data Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-configuration">Model Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bias-correction-methods">Bias-correction methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#descriptive-statistics">Descriptive statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#power-spectral-density">Power spectral density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#probability-density-functions">Probability density functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#quantile-quantile-comparison">Quantile–quantile comparison</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation">Evaluation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#robustness-across-realizations">Robustness across realizations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Power spectral density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Quantile–quantile comparison</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sensitivity-to-ssp-scenarios">Sensitivity to SSP scenarios</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Power spectral density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Quantile–quantile comparison</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ipsl_aid.html">Generative Downscaling (IPSL-AID)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Bias-correction (AID-BC)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aid_bc.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="sea_surface_temperature.html" class="btn btn-neutral float-left" title="Sea Surface Temperature" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ipsl_aid.html" class="btn btn-neutral float-right" title="Generative Downscaling (IPSL-AID)" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bias-correction-aid-bc">
+<h1>Bias-correction (AID-BC)<a class="headerlink" href="#bias-correction-aid-bc" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>AID-BC is designed to reduce systematic biases in CMIP6 climate simulations
+using ERA5 as the reference.</p>
+<p>Two bias-correction approaches are considered:</p>
+<ul class="simple">
+<li><p><strong>Quantile Mapping (QM)</strong> for univariate correction;</p></li>
+<li><p><strong>Optimal Transport (OT)</strong> for joint multivariate correction.</p></li>
+</ul>
+<p>The corrected fields can be evaluated directly at low resolution or used as
+input to the IPSL-AID generative downscaling framework.</p>
+</section>
+<section id="data-preparation">
+<h2>Data Preparation<a class="headerlink" href="#data-preparation" title="Link to this heading"></a></h2>
+<p>Bias correction is performed on the native IPSL-CM6A-LR grid
+(<span class="math notranslate nohighlight">\(143 \times 144\)</span>). ERA5 is therefore preprocessed onto the same grid.</p>
+<p>The workflow uses four variables:</p>
+<ul class="simple">
+<li><p>2-m air temperature (<code class="docutils literal notranslate"><span class="pre">VAR_2T</span></code> / <code class="docutils literal notranslate"><span class="pre">tas</span></code>)</p></li>
+<li><p>10-m zonal wind (<code class="docutils literal notranslate"><span class="pre">VAR_10U</span></code> / <code class="docutils literal notranslate"><span class="pre">uas</span></code>)</p></li>
+<li><p>10-m meridional wind (<code class="docutils literal notranslate"><span class="pre">VAR_10V</span></code> / <code class="docutils literal notranslate"><span class="pre">vas</span></code>)</p></li>
+<li><p>precipitation (<code class="docutils literal notranslate"><span class="pre">VAR_TP</span></code> / <code class="docutils literal notranslate"><span class="pre">pr</span></code>)</p></li>
+</ul>
+<p>ERA5 and CMIP6 must use compatible temporal sampling and physical units.
+The fields are stored as yearly NetCDF files with four time steps per day.</p>
+<p>Separate CMIP6 datasets are provided for training and application.</p>
+<p>The ERA5-to-CMIP6 preprocessing procedure is described in the Core Concepts
+section.</p>
+</section>
+<section id="model-configuration">
+<h2>Model Configuration<a class="headerlink" href="#model-configuration" title="Link to this heading"></a></h2>
+<p>The correction is fitted independently for each month using <code class="docutils literal notranslate"><span class="pre">split</span> <span class="pre">=</span> <span class="pre">month</span></code>.</p>
+<p>For QM, each variable is corrected separately. For multivariate OT, the four
+variables are corrected jointly.</p>
+<p>The OT experiments use:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">epsilon</span> <span class="pre">=</span> <span class="pre">1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_iterations</span> <span class="pre">=</span> <span class="pre">1000000</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">threshold</span> <span class="pre">=</span> <span class="pre">0.1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">16</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dtype</span> <span class="pre">=</span> <span class="pre">float64</span></code></p></li>
+</ul>
+<p>The role of these parameters is described in the Core Concepts section.</p>
+</section>
+<section id="training">
+<h2>Training<a class="headerlink" href="#training" title="Link to this heading"></a></h2>
+<p>The bias-correction transformation is calibrated from historical ERA5 and
+CMIP6 data over <strong>1980–2014</strong>.</p>
+<p>One correction is fitted for each month and subsequently reused during
+inference.</p>
+</section>
+<section id="inference">
+<h2>Inference<a class="headerlink" href="#inference" title="Link to this heading"></a></h2>
+<p>The fitted correction is applied to CMIP6 simulations for <strong>2021</strong>.</p>
+<p>The experiments include different CMIP6 realizations and future scenarios
+using the same trained correction.</p>
+<p>The resulting bias-corrected fields are saved on the native CMIP6 grid as
+yearly NetCDF files and can be evaluated against ERA5 or used as input to
+IPSL-AID.</p>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h2>
+<section id="bias-correction-methods">
+<h3>Bias-correction methods<a class="headerlink" href="#bias-correction-methods" title="Link to this heading"></a></h3>
+<p>The impact of bias correction is evaluated by comparing raw CMIP6,
+Quantile Mapping (QM), Optimal Transport (OT), and ERA5 over 2021.</p>
+<section id="descriptive-statistics">
+<h4>Descriptive statistics<a class="headerlink" href="#descriptive-statistics" title="Link to this heading"></a></h4>
+<p>The table below summarizes the mean, standard deviation, minimum and maximum
+values over the 2021 application period. Temperature is expressed in K, wind
+components in m s<sup>-1</sup>, and precipitation in mm h<sup>-1</sup>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.8%" />
+<col style="width: 21.1%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+<col style="width: 15.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Dataset</p></th>
+<th class="head"><p>Mean</p></th>
+<th class="head"><p>Std</p></th>
+<th class="head"><p>Min</p></th>
+<th class="head"><p>Max</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_2T</span></code></p></td>
+<td><p>ERA5</p></td>
+<td><p>278.83</p></td>
+<td><p>21.35</p></td>
+<td><p>196.60</p></td>
+<td><p>324.24</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>CMIP6</p></td>
+<td><p>278.39</p></td>
+<td><p>22.20</p></td>
+<td><p>178.40</p></td>
+<td><p>322.03</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>QM</p></td>
+<td><p>279.19</p></td>
+<td><p>21.07</p></td>
+<td><p>193.87</p></td>
+<td><p>322.58</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>OT</p></td>
+<td><p>278.62</p></td>
+<td><p>21.20</p></td>
+<td><p>196.04</p></td>
+<td><p>324.76</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_10U</span></code></p></td>
+<td><p>ERA5</p></td>
+<td><p>-0.04</p></td>
+<td><p>5.47</p></td>
+<td><p>-36.44</p></td>
+<td><p>27.04</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>CMIP6</p></td>
+<td><p>-0.14</p></td>
+<td><p>5.22</p></td>
+<td><p>-30.96</p></td>
+<td><p>33.25</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>QM</p></td>
+<td><p>-0.07</p></td>
+<td><p>5.39</p></td>
+<td><p>-34.65</p></td>
+<td><p>27.14</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>OT</p></td>
+<td><p>-0.05</p></td>
+<td><p>5.41</p></td>
+<td><p>-33.93</p></td>
+<td><p>27.16</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_10V</span></code></p></td>
+<td><p>ERA5</p></td>
+<td><p>0.17</p></td>
+<td><p>4.59</p></td>
+<td><p>-27.55</p></td>
+<td><p>26.57</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>CMIP6</p></td>
+<td><p>0.20</p></td>
+<td><p>4.54</p></td>
+<td><p>-28.16</p></td>
+<td><p>30.12</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>QM</p></td>
+<td><p>0.19</p></td>
+<td><p>4.60</p></td>
+<td><p>-30.16</p></td>
+<td><p>29.47</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>OT</p></td>
+<td><p>0.20</p></td>
+<td><p>4.60</p></td>
+<td><p>-26.76</p></td>
+<td><p>31.55</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_TP</span></code></p></td>
+<td><p>ERA5</p></td>
+<td><p>0.10</p></td>
+<td><p>0.27</p></td>
+<td><p>0.00</p></td>
+<td><p>13.17</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>CMIP6</p></td>
+<td><p>0.10</p></td>
+<td><p>0.37</p></td>
+<td><p>0.00</p></td>
+<td><p>23.97</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>QM</p></td>
+<td><p>0.11</p></td>
+<td><p>0.27</p></td>
+<td><p>0.00</p></td>
+<td><p>14.29</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>OT</p></td>
+<td><p>0.09</p></td>
+<td><p>0.26</p></td>
+<td><p>0.00</p></td>
+<td><p>13.65</p></td>
+</tr>
+</tbody>
+</table>
+<p>Overall, both correction methods bring several first-order statistics closer
+to ERA5.
+For temperature, OT closely reproduces the ERA5 mean and range, while both
+methods improve the variability compared with raw CMIP6. For the wind
+components, the differences are relatively small, as CMIP6 is already close
+to ERA5.</p>
+<p>The largest change is observed for precipitation. Raw CMIP6 has a substantially
+larger standard deviation and maximum value than ERA5. Both corrections reduce
+this spread, with OT reproducing the ERA5 standard deviation and maximum more
+closely.</p>
+</section>
+<section id="power-spectral-density">
+<h4>Power spectral density<a class="headerlink" href="#power-spectral-density" title="Link to this heading"></a></h4>
+<p>The power spectral density (PSD) measures how spatial variance is distributed
+across scales. Low wavenumbers represent large-scale structures, while high
+wavenumbers correspond to finer spatial variability.</p>
+<a class="reference internal image-reference" href="_images/benchmark_QM_OT_psd.png"><img alt="Power spectral density comparison between ERA5, CMIP6, QM and OT." class="align-center" src="_images/benchmark_QM_OT_psd.png" style="width: 100%;" />
+</a>
+<p>For temperature, the four spectra are very similar over most of the resolved
+wavenumber range, with only small differences at the finest spatial scales.</p>
+<p>The same pattern is observed for the zonal and meridional wind components.
+At large and intermediate scales, QM and OT both follow ERA5 closely. At the
+finest scales, however, OT remains better aligned with ERA5, while QM stays
+closer to the uncorrected CMIP6 spectrum.</p>
+<p>Precipitation shows the clearest differences between the methods. The raw
+CMIP6 spectrum departs strongly from ERA5 at fine scales. Both corrections
+modify this behaviour, but OT follows the ERA5 spectral decay more closely
+than QM.</p>
+<p>Overall, the main differences between QM and OT appear at the finest spatial
+scales, especially for precipitation.</p>
+</section>
+<section id="probability-density-functions">
+<h4>Probability density functions<a class="headerlink" href="#probability-density-functions" title="Link to this heading"></a></h4>
+<p>The probability density functions compare the marginal distributions of ERA5,
+raw CMIP6, QM-corrected CMIP6 and OT-corrected CMIP6. The vertical axis shows
+the base-10 logarithm of the estimated probability density in order to make
+differences in the distribution tails more visible.</p>
+<a class="reference internal image-reference" href="_images/benchmark_QM_OT_pdf.png"><img alt="Log-PDF comparison between ERA5, CMIP6, QM and OT." class="align-center" src="_images/benchmark_QM_OT_pdf.png" style="width: 100%;" />
+</a>
+<p>For the two wind components, all four distributions are very similar, with only
+small differences across the range.</p>
+<p>For temperature, the main differences appear in the lower tail. Raw CMIP6
+departs from ERA5 at low temperatures, while both QM and OT bring the
+distribution closer to the reference.</p>
+<p>For precipitation, the four distributions are also very similar over most of
+the range, and the differences between CMIP6, QM, OT and ERA5 remain limited in
+the PDF representation.</p>
+</section>
+<section id="quantile-quantile-comparison">
+<h4>Quantile–quantile comparison<a class="headerlink" href="#quantile-quantile-comparison" title="Link to this heading"></a></h4>
+<p>The quantile–quantile (QQ) plots compare selected upper quantiles against the
+corresponding ERA5 values. The quantiles shown are 0.90, 0.95, 0.975, 0.99 and
+0.995.</p>
+<p>ERA5 quantiles are shown on the horizontal axis, while the corresponding
+CMIP6, QM and OT quantiles are shown on the vertical axis. The dashed black
+line represents the ideal 1:1 relationship.</p>
+<a class="reference internal image-reference" href="_images/benchmark_QM_OT_qq.png"><img alt="QQ comparison between CMIP6, QM and OT against ERA5." class="align-center" src="_images/benchmark_QM_OT_qq.png" style="width: 100%;" />
+</a>
+<p>For temperature, QM is very closely aligned with the 1:1 line across all
+quantiles and is closer to the ERA5 reference than OT, especially for the
+highest quantiles. This is expected, since QM directly corrects the marginal
+quantiles of each variable.</p>
+<p>The remaining OT underestimation may reflect its multivariate formulation,
+which targets the joint distribution rather than an exact temperature marginal.
+The use of a correction calibrated over 1980–2014 and applied to 2021 may
+also contribute to this residual bias.</p>
+<p>For the wind components, both QM and OT remain close to the ERA5 reference,
+with only small differences between the methods and the raw CMIP6 data.</p>
+<p>For precipitation, both correction methods reduce the deviation from ERA5
+observed in raw CMIP6. QM is slightly closer to the 1:1 line for the first
+two quantiles, while QM and OT give very similar results for the higher
+quantiles.</p>
+</section>
+</section>
+</section>
+<section id="evaluation">
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading"></a></h2>
+<p>Two complementary analyses are considered to assess the robustness of the
+bias-correction framework: robustness across CMIP6 realizations and sensitivity
+to SSP scenarios.</p>
+<section id="robustness-across-realizations">
+<h3>Robustness across realizations<a class="headerlink" href="#robustness-across-realizations" title="Link to this heading"></a></h3>
+<p>The robustness of the bias correction is evaluated using three
+IPSL-CM6A-LR realizations:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">r1i1p1f1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r2i1p1f1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r3i1p1f1</span></code></p></li>
+</ul>
+<section id="id1">
+<h4>Power spectral density<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/BC_OT_spectra_r1_r2_r3.png"><img alt="Power spectral density comparison of the three bias-corrected CMIP6 realizations against ERA5." class="align-center" src="_images/BC_OT_spectra_r1_r2_r3.png" style="width: 100%;" />
+</a>
+<p>The three realizations show very similar power spectra and remain closely
+aligned with ERA5 across all variables.</p>
+</section>
+<section id="id2">
+<h4>Quantile–quantile comparison<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/BC_OT_qq_r1_r2_r3.png"><img alt="QQ comparison of the three bias-corrected CMIP6 realizations against ERA5." class="align-center" src="_images/BC_OT_qq_r1_r2_r3.png" style="width: 100%;" />
+</a>
+<p>The corrected distributions are consistent across the three realizations and
+closely follow the ERA5 reference. A slight underestimation remains for
+2-m air temperature.</p>
+</section>
+</section>
+<section id="sensitivity-to-ssp-scenarios">
+<h3>Sensitivity to SSP scenarios<a class="headerlink" href="#sensitivity-to-ssp-scenarios" title="Link to this heading"></a></h3>
+<p>The sensitivity of the bias correction to the forcing scenario is evaluated
+for the <code class="docutils literal notranslate"><span class="pre">r1i1p1f1</span></code> realization using two scenarios:</p>
+<ul class="simple">
+<li><p>SSP1-2.6</p></li>
+<li><p>SSP2-4.5</p></li>
+</ul>
+<section id="id3">
+<h4>Power spectral density<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/BC_OT_spectra_r1_ssp_245_126.png"><img alt="Power spectral density comparison of the bias-corrected SSP1-2.6 and SSP2-4.5 simulations against ERA5." class="align-center" src="_images/BC_OT_spectra_r1_ssp_245_126.png" style="width: 100%;" />
+</a>
+<p>The two bias-corrected scenarios show very similar power spectra and remain
+closely aligned with ERA5 across all variables.</p>
+</section>
+<section id="id4">
+<h4>Quantile–quantile comparison<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/BC_OT_qq_r1_ssp_245_126.png"><img alt="QQ comparison of the bias-corrected SSP1-2.6 and SSP2-4.5 simulations against ERA5." class="align-center" src="_images/BC_OT_qq_r1_ssp_245_126.png" style="width: 100%;" />
+</a>
+<p>For 2021, the corrected distributions are highly consistent across both
+scenarios and closely follow the ERA5 reference. A slight underestimation
+remains for 2-m air temperature.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sea_surface_temperature.html" class="btn btn-neutral float-left" title="Sea Surface Temperature" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ipsl_aid.html" class="btn btn-neutral float-right" title="Generative Downscaling (IPSL-AID)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,556 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generative Downscaling (IPSL-AID) &mdash; IPSL-AID 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "processEscapes": true}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="IPSL-AID API" href="api/modules.html" />
+    <link rel="prev" title="Bias-correction (AID-BC)" href="aid_bc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            IPSL-AID
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing_philosophy.html">Testing Philosophy (Read This First)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pre_push_workflow.html">Pre-Push Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cartopy_configuration.html">Cartopy Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="diffusion_models.html">Diffusion Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neural_architectures.html">Neural Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training_strategy.html">Training Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_modes.html">Inference Modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bias_correction.html">Bias Correction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Case Studies</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="atmosphere_variable.html">Atmospheric Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sea_surface_temperature.html">Sea Surface Temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aid_bc.html">Bias-correction (AID-BC)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Generative Downscaling (IPSL-AID)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-preparation">Data Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-configuration">Model Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inference">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#era5">ERA5</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#validation-metrics">Validation metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spatial-error-patterns">Spatial error patterns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#probability-density-functions">Probability density functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#quantile-quantile-comparison">Quantile–quantile comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#power-spectral-density">Power spectral density</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#highresmip">HighResMIP</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Validation metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Probability density functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Quantile–quantile comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Power spectral density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#comparison-with-era5">Comparison with ERA5</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#cmip6-ipsl">CMIP6 IPSL</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id5">Quantile–quantile comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id6">Power spectral density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#comparison-of-bias-correction-methods">Comparison of bias-correction methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">IPSL-AID API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IPSL-AID</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Generative Downscaling (IPSL-AID)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/ipsl_aid.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="aid_bc.html" class="btn btn-neutral float-left" title="Bias-correction (AID-BC)" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/modules.html" class="btn btn-neutral float-right" title="IPSL-AID API" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="generative-downscaling-ipsl-aid">
+<h1>Generative Downscaling (IPSL-AID)<a class="headerlink" href="#generative-downscaling-ipsl-aid" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>IPSL-AID is a generative climate downscaling framework designed to reconstruct
+high-resolution atmospheric fields from coarse-resolution inputs.</p>
+<p>The framework uses a conditional diffusion model to generate fine-scale spatial
+variability while retaining the large-scale information in the conditioning
+fields.</p>
+<p>The model is trained using ERA5 data and can be applied to climate simulations
+from CMIP6, HighResMIP, and other climate models, with or without prior bias
+correction using AID-BC.</p>
+</section>
+<section id="data-preparation">
+<h2>Data Preparation<a class="headerlink" href="#data-preparation" title="Link to this heading"></a></h2>
+<p>The experiment uses ERA5 reanalysis at <span class="math notranslate nohighlight">\(0.25^\circ\)</span> resolution with four
+atmospheric variables:</p>
+<ul class="simple">
+<li><p>2-m air temperature (<code class="docutils literal notranslate"><span class="pre">VAR_2T</span></code>)</p></li>
+<li><p>10-m zonal wind (<code class="docutils literal notranslate"><span class="pre">VAR_10U</span></code>)</p></li>
+<li><p>10-m meridional wind (<code class="docutils literal notranslate"><span class="pre">VAR_10V</span></code>)</p></li>
+<li><p>precipitation (<code class="docutils literal notranslate"><span class="pre">VAR_TP</span></code>)</p></li>
+</ul>
+<p>Four time steps per day are randomly selected during training.</p>
+<p>Coarse-upsampled (CU) inputs are constructed from the high-resolution (HR)
+ERA5 reference over the global domain. The HR fields are first downsampled
+from <span class="math notranslate nohighlight">\(721 \times 1440\)</span> to the native CMIP6 grid
+(<span class="math notranslate nohighlight">\(143 \times 144\)</span>) and then upsampled back to the ERA5 grid
+(<span class="math notranslate nohighlight">\(721 \times 1440\)</span>) using bilinear interpolation in both steps.</p>
+<p>The target is the fine-scale residual:</p>
+<div class="math notranslate nohighlight">
+\[R = y^{\mathrm{HR}} - y^{\mathrm{CU}}.\]</div>
+<p>The model is conditioned on CU atmospheric fields, geographical information
+(latitude, longitude, topography and land-sea mask), and temporal embeddings
+representing the day of year and hour of day.</p>
+</section>
+<section id="model-configuration">
+<h2>Model Configuration<a class="headerlink" href="#model-configuration" title="Link to this heading"></a></h2>
+<p>The model is based on the Elucidating Diffusion Models (EDM) framework with
+an ADM U-Net architecture.</p>
+<p>The network configuration includes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model_channels</span> <span class="pre">=</span> <span class="pre">128</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">channel_mult</span> <span class="pre">=</span> <span class="pre">(1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_blocks</span> <span class="pre">=</span> <span class="pre">2</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">attn_resolutions</span> <span class="pre">=</span> <span class="pre">(32,</span> <span class="pre">16,</span> <span class="pre">8)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dropout</span> <span class="pre">=</span> <span class="pre">0.10</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dtype</span> <span class="pre">=</span> <span class="pre">fp32</span></code></p></li>
+</ul>
+<p>The four atmospheric variables are normalized before training using standard
+normalization for temperature and wind components, and log1p followed by
+standard normalization for precipitation.</p>
+<p>The diffusion model uses four input channels for the atmospheric residuals
+and eight conditioning channels combining the coarse-upsampled fields,
+spatial coordinates, topography and land-sea mask.</p>
+<p>The EDM sampling configuration uses:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">num_steps</span> <span class="pre">=</span> <span class="pre">10</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sigma_min</span> <span class="pre">=</span> <span class="pre">0.002</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sigma_max</span> <span class="pre">=</span> <span class="pre">80</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rho</span> <span class="pre">=</span> <span class="pre">7</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">solver</span> <span class="pre">=</span> <span class="pre">heun</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">s_churn</span> <span class="pre">=</span> <span class="pre">40</span></code></p></li>
+</ul>
+<p>The role of these parameters is described in the Core Concepts section.</p>
+</section>
+<section id="training">
+<h2>Training<a class="headerlink" href="#training" title="Link to this heading"></a></h2>
+<p>The model is trained using ERA5 data over <strong>2015–2019</strong>, with <strong>2020</strong>
+reserved for validation.</p>
+<p>Training is performed on randomly sampled spatial patches of
+<span class="math notranslate nohighlight">\(144 \times 360\)</span> grid points over the global domain.</p>
+<p>The training configuration uses:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">num_epochs</span> <span class="pre">=</span> <span class="pre">10</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">learning_rate</span> <span class="pre">=</span> <span class="pre">0.0001</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">70</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sbatch</span> <span class="pre">=</span> <span class="pre">12</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tbatch</span> <span class="pre">=</span> <span class="pre">1800</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">epsilon</span> <span class="pre">=</span> <span class="pre">0.02</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">beta</span> <span class="pre">=</span> <span class="pre">1.0</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">margin</span> <span class="pre">=</span> <span class="pre">8</span></code></p></li>
+</ul>
+</section>
+<section id="inference">
+<h2>Inference<a class="headerlink" href="#inference" title="Link to this heading"></a></h2>
+<p>The trained model is applied to ERA5, CMIP6 and HighResMIP datasets using
+fixed time steps: <strong>2021</strong> for ERA5 and CMIP6, and <strong>2013</strong> for HighResMIP.</p>
+<p>For ERA5 and HighResMIP, the high-resolution fields are downsampled to
+<span class="math notranslate nohighlight">\(143 \times 144\)</span> and then upsampled back to the ERA5 grid using
+bilinear interpolation. Both datasets are evaluated against their own
+high-resolution reference fields.</p>
+<p>For raw and AID-BC-corrected CMIP6, the fields are already available on
+the native coarse grid (<span class="math notranslate nohighlight">\(143 \times 144\)</span>) and therefore only require
+bilinear upsampling to the ERA5 grid (<span class="math notranslate nohighlight">\(721 \times 1440\)</span>).</p>
+<p>The generated residuals are added to the upsampled inputs to reconstruct
+the high-resolution atmospheric fields.</p>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h2>
+<section id="era5">
+<h3>ERA5<a class="headerlink" href="#era5" title="Link to this heading"></a></h3>
+<p>The downscaling performance is evaluated on ERA5 data for <strong>2021</strong> by
+comparing the IPSL-AID outputs with the ERA5 high-resolution reference over
+the global domain.</p>
+<section id="validation-metrics">
+<h4>Validation metrics<a class="headerlink" href="#validation-metrics" title="Link to this heading"></a></h4>
+<p>The table below summarizes the validation metrics for the four atmospheric
+variables. Temperature is expressed in K, wind components in m s<sup>-1</sup>,
+and precipitation in mm h<sup>-1</sup>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 17.1%" />
+<col style="width: 12.2%" />
+<col style="width: 12.2%" />
+<col style="width: 12.2%" />
+<col style="width: 12.2%" />
+<col style="width: 14.6%" />
+<col style="width: 9.8%" />
+<col style="width: 9.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>MAE</p></th>
+<th class="head"><p>NMAE</p></th>
+<th class="head"><p>RMSE</p></th>
+<th class="head"><p>R<sup>2</sup></p></th>
+<th class="head"><p>Pearson</p></th>
+<th class="head"><p>KL</p></th>
+<th class="head"><p>CRPS</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_2T</span></code></p></td>
+<td><p>0.325</p></td>
+<td><p>0.001</p></td>
+<td><p>0.546</p></td>
+<td><p>0.999</p></td>
+<td><p>1.000</p></td>
+<td><p>0.000</p></td>
+<td><p>0.172</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_10U</span></code></p></td>
+<td><p>0.357</p></td>
+<td><p>0.077</p></td>
+<td><p>0.579</p></td>
+<td><p>0.990</p></td>
+<td><p>0.995</p></td>
+<td><p>0.000</p></td>
+<td><p>0.202</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_10V</span></code></p></td>
+<td><p>0.347</p></td>
+<td><p>0.090</p></td>
+<td><p>0.565</p></td>
+<td><p>0.987</p></td>
+<td><p>0.993</p></td>
+<td><p>0.000</p></td>
+<td><p>0.188</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_TP</span></code></p></td>
+<td><p>0.041</p></td>
+<td><p>0.435</p></td>
+<td><p>0.193</p></td>
+<td><p>0.692</p></td>
+<td><p>0.848</p></td>
+<td><p>0.001</p></td>
+<td><p>0.024</p></td>
+</tr>
+</tbody>
+</table>
+<p>Overall, the model shows very good agreement with ERA5 for temperature and
+wind fields. The best performance is obtained for 2-m air temperature, with
+near-perfect correlation and very small errors. The two wind components are
+also well reproduced, with high correlation and low RMSE values.</p>
+<p>Precipitation remains more challenging, with lower correlation and R<sup>2</sup> values
+than the other variables. Nevertheless, the model captures a substantial
+part of its variability.</p>
+</section>
+<section id="spatial-error-patterns">
+<h4>Spatial error patterns<a class="headerlink" href="#spatial-error-patterns" title="Link to this heading"></a></h4>
+<p>The spatial distribution of the mean absolute error is shown below.</p>
+<a class="reference internal image-reference" href="_images/inference_full_domain_mae_map_epoch_0_ERA5.png"><img alt="Mean absolute error maps for IPSL-AID against ERA5 over 2021." class="align-center" src="_images/inference_full_domain_mae_map_epoch_0_ERA5.png" style="width: 100%;" />
+</a>
+<p>The MAE remains low across most of the global domain for all four variables.
+Larger errors are mainly observed at high northern latitudes for temperature
+and over continental regions for the wind components. Precipitation errors
+are more concentrated in tropical regions, particularly along the
+equatorial belt.</p>
+</section>
+<section id="probability-density-functions">
+<h4>Probability density functions<a class="headerlink" href="#probability-density-functions" title="Link to this heading"></a></h4>
+<p>The probability density functions compare the marginal distributions of the
+ERA5 reference and IPSL-AID outputs for the four atmospheric variables.</p>
+<a class="reference internal image-reference" href="_images/inference_full_domain_validation_pdfs_epoch_0_ERA5.png"><img alt="Probability density functions of IPSL-AID and ERA5 for 2021." class="align-center" src="_images/inference_full_domain_validation_pdfs_epoch_0_ERA5.png" style="width: 100%;" />
+</a>
+<p>The predicted distributions closely follow ERA5 for all four variables,
+with nearly overlapping curves for temperature and both wind components,
+including the distribution tails. Small differences remain for precipitation
+at higher intensities.</p>
+</section>
+<section id="quantile-quantile-comparison">
+<h4>Quantile–quantile comparison<a class="headerlink" href="#quantile-quantile-comparison" title="Link to this heading"></a></h4>
+<p>The quantile–quantile (QQ) plots compare the IPSL-AID distributions against
+the ERA5 reference, with particular attention to the upper quantiles.</p>
+<a class="reference internal image-reference" href="_images/inference_full_domain_qq_epoch_0_ERA5.png"><img alt="QQ comparison of IPSL-AID against ERA5 for 2021." class="align-center" src="_images/inference_full_domain_qq_epoch_0_ERA5.png" style="width: 100%;" />
+</a>
+<p>The predicted upper quantiles lie close to the 1:1 line for all four
+variables. Compared with the coarse inputs, IPSL-AID generally provides
+a better agreement with the reference, particularly at the highest quantiles.</p>
+</section>
+<section id="power-spectral-density">
+<h4>Power spectral density<a class="headerlink" href="#power-spectral-density" title="Link to this heading"></a></h4>
+<p>The power spectral density (PSD) is used to evaluate how well the generated
+fields reproduce the spatial variability of ERA5 across different scales.</p>
+<a class="reference internal image-reference" href="_images/inference_full_domain_power_spectra_epoch_0_ERA5.png"><img alt="Power spectral density comparison between IPSL-AID and ERA5 for 2021." class="align-center" src="_images/inference_full_domain_power_spectra_epoch_0_ERA5.png" style="width: 100%;" />
+</a>
+<p>The predicted spectra closely match ERA5 for temperature and precipitation.
+For both wind components, they also agree well with ERA5, except at the
+highest wavenumbers, where some differences remain. Overall, IPSL-AID
+recovers much of the fine-scale variability missing from the coarse inputs.</p>
+</section>
+</section>
+<section id="highresmip">
+<h3>HighResMIP<a class="headerlink" href="#highresmip" title="Link to this heading"></a></h3>
+<p>The downscaling performance is evaluated on HighResMIP data for <strong>2013</strong> by
+comparing the IPSL-AID outputs with the HighResMIP high-resolution reference
+over the global domain.</p>
+<section id="id1">
+<h4>Validation metrics<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<p>The table below summarizes the validation metrics for the four atmospheric
+variables. Temperature is expressed in K, wind components in m s<sup>-1</sup>,
+and precipitation in mm h<sup>-1</sup>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 17.1%" />
+<col style="width: 12.2%" />
+<col style="width: 12.2%" />
+<col style="width: 12.2%" />
+<col style="width: 12.2%" />
+<col style="width: 14.6%" />
+<col style="width: 9.8%" />
+<col style="width: 9.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>MAE</p></th>
+<th class="head"><p>NMAE</p></th>
+<th class="head"><p>RMSE</p></th>
+<th class="head"><p>R<sup>2</sup></p></th>
+<th class="head"><p>Pearson</p></th>
+<th class="head"><p>KL</p></th>
+<th class="head"><p>CRPS</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_2T</span></code></p></td>
+<td><p>0.527</p></td>
+<td><p>0.002</p></td>
+<td><p>0.950</p></td>
+<td><p>0.998</p></td>
+<td><p>0.999</p></td>
+<td><p>0.001</p></td>
+<td><p>0.300</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_10U</span></code></p></td>
+<td><p>0.577</p></td>
+<td><p>0.135</p></td>
+<td><p>0.868</p></td>
+<td><p>0.975</p></td>
+<td><p>0.987</p></td>
+<td><p>0.000</p></td>
+<td><p>0.374</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_10V</span></code></p></td>
+<td><p>0.564</p></td>
+<td><p>0.153</p></td>
+<td><p>0.857</p></td>
+<td><p>0.967</p></td>
+<td><p>0.984</p></td>
+<td><p>0.000</p></td>
+<td><p>0.360</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VAR_TP</span></code></p></td>
+<td><p>0.055</p></td>
+<td><p>0.557</p></td>
+<td><p>0.284</p></td>
+<td><p>0.627</p></td>
+<td><p>0.803</p></td>
+<td><p>0.002</p></td>
+<td><p>0.032</p></td>
+</tr>
+</tbody>
+</table>
+<p>Overall, the model shows good agreement with the HighResMIP reference,
+particularly for temperature and wind components. The errors are higher
+than those obtained with ERA5 across all four variables. This may be
+partly explained by the fact that the model was trained on ERA5 and is
+applied here to a different climate dataset.</p>
+</section>
+<section id="id2">
+<h4>Probability density functions<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/inference_full_domain_validation_pdfs_epoch_0_HighResMIP_2013.png"><img alt="Probability density functions of IPSL-AID and HighResMIP for 2013." class="align-center" src="_images/inference_full_domain_validation_pdfs_epoch_0_HighResMIP_2013.png" style="width: 100%;" />
+</a>
+<p>The predicted distributions remain close to the HighResMIP reference for all
+four variables. The agreement is very good for temperature and both wind
+components, with only small differences in the tails. For precipitation,
+the predicted distribution also follows the reference well over most of the
+range.</p>
+</section>
+<section id="id3">
+<h4>Quantile–quantile comparison<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/inference_full_domain_qq_epoch_0_HighResMIP_2013.png"><img alt="QQ comparison of IPSL-AID against HighResMIP for 2013." class="align-center" src="_images/inference_full_domain_qq_epoch_0_HighResMIP_2013.png" style="width: 100%;" />
+</a>
+<p>The predicted upper quantiles closely follow the 1:1 line for all four
+variables. Compared with the coarse inputs, IPSL-AID better reproduces
+the highest quantiles, with the clearest improvement for precipitation.</p>
+</section>
+<section id="id4">
+<h4>Power spectral density<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/inference_full_domain_power_spectra_epoch_0_HighResMIP_2013.png"><img alt="Power spectral density comparison between IPSL-AID and HighResMIP for 2013." class="align-center" src="_images/inference_full_domain_power_spectra_epoch_0_HighResMIP_2013.png" style="width: 100%;" />
+</a>
+<p>The predicted spectra closely match the HighResMIP reference for temperature.
+For both wind components and precipitation, the agreement is good at large
+and intermediate scales, but some underestimation appears at the highest
+wavenumbers. Overall, IPSL-AID recovers much of the fine-scale variability
+missing from the coarse inputs.</p>
+</section>
+<section id="comparison-with-era5">
+<h4>Comparison with ERA5<a class="headerlink" href="#comparison-with-era5" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/spectra_HighResMIP_ERA5_2013.png"><img alt="Power spectral density comparison of HighResMIP and ERA5 for 2013." class="align-center" src="_images/spectra_HighResMIP_ERA5_2013.png" style="width: 100%;" />
+</a>
+<p>The comparison with ERA5 helps explain the differences observed in the
+HighResMIP spectra. For both wind components, the predicted spectra follow
+ERA5 more closely at the highest wavenumbers, suggesting that the model
+tends to reproduce ERA5-like fine-scale variability.</p>
+<p>For precipitation, the predicted HighResMIP spectrum lies between the
+HighResMIP and ERA5 references, showing a different behaviour.</p>
+</section>
+</section>
+<section id="cmip6-ipsl">
+<h3>CMIP6 IPSL<a class="headerlink" href="#cmip6-ipsl" title="Link to this heading"></a></h3>
+<p>The downscaling results are evaluated for the IPSL-CM6A-LR simulation
+<code class="docutils literal notranslate"><span class="pre">r1i1p1f1</span></code> under the SSP2-4.5 scenario in <strong>2021</strong>, using CMIP6 fields
+bias-corrected with Optimal Transport (OT) as inputs.</p>
+<p>Unlike ERA5 and HighResMIP, CMIP6 does not provide a corresponding
+high-resolution reference. The evaluation therefore focuses on comparing
+the statistical distributions and spatial variability of the downscaled
+fields with ERA5.</p>
+<section id="id5">
+<h4>Quantile–quantile comparison<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/qq_CMIP6_r1i1p1f1_OT_bc_vs_ERA5_2021.png"><img alt="QQ comparison of OT-corrected CMIP6 and IPSL-AID against ERA5 for 2021." class="align-center" src="_images/qq_CMIP6_r1i1p1f1_OT_bc_vs_ERA5_2021.png" style="width: 100%;" />
+</a>
+<p>The QQ plots compare the ERA5 reference, ERA5 and CMIP6 predictions,
+and their corresponding coarse inputs.</p>
+<p>The downscaled CMIP6 quantiles are closer to the 1:1 line than the coarse
+inputs for all four variables. A slight underestimation remains for
+temperature, particularly at the highest quantiles, while both wind
+components and precipitation show good agreement with ERA5.</p>
+</section>
+<section id="id6">
+<h4>Power spectral density<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/spectra_CMIP6_r1i1p1f1_OT_bc_vs_ERA5_2021.png"><img alt="Power spectral density comparison of OT-corrected CMIP6, IPSL-AID and ERA5 for 2021." class="align-center" src="_images/spectra_CMIP6_r1i1p1f1_OT_bc_vs_ERA5_2021.png" style="width: 100%;" />
+</a>
+<p>The PSD comparison includes the ERA5 reference, ERA5 and CMIP6 predictions,
+and their corresponding coarse inputs.</p>
+<p>The downscaled CMIP6 spectra closely match ERA5 for temperature and
+precipitation. For both wind components, the CMIP6 predictions closely
+follow the ERA5 predictions, with some differences from the ERA5 reference
+at the highest wavenumbers. Overall, IPSL-AID recovers much of the
+fine-scale variability missing from the coarse CMIP6 inputs.</p>
+</section>
+<section id="comparison-of-bias-correction-methods">
+<h4>Comparison of bias-correction methods<a class="headerlink" href="#comparison-of-bias-correction-methods" title="Link to this heading"></a></h4>
+<a class="reference internal image-reference" href="_images/PSD_ERA5_CMIP6_OT_QM_RAW_2021.png"><img alt="Power spectral density comparison of raw, QM-corrected and OT-corrected CMIP6 downscaling against ERA5 for 2021." class="align-center" src="_images/PSD_ERA5_CMIP6_OT_QM_RAW_2021.png" style="width: 100%;" />
+</a>
+<p>The downscaled CMIP6 spectra obtained with OT are generally closer to ERA5
+than those obtained with QM or raw CMIP6, particularly at high wavenumbers
+for the wind components and precipitation. This agrees with the AID-BC
+results, where OT better reproduces the fine-scale variability of ERA5.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="aid_bc.html" class="btn btn-neutral float-left" title="Bias-correction (AID-BC)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/modules.html" class="btn btn-neutral float-right" title="IPSL-AID API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, CNRS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
